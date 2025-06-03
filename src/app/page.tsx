@@ -58,7 +58,7 @@ export default function ComingSoonPage() {
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
         {/* Logo */}
-        <div className="mb-8">
+        <div className="mb-0">
           <Image
             src="/devildev-logo.png"
             alt="DevilDev Logo"
