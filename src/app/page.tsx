@@ -58,23 +58,23 @@ export default function ComingSoonPage() {
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
         {/* Logo */}
-        <div className="mb-0">
+        <div className="mb-6">
           <Image
             src="/devildev-logo.png"
             alt="DevilDev Logo"
             width={400}
             height={120}
-            className="w-auto h-32 md:h-40 lg:h-72"
+            className="w-auto h-40 md:h-48 lg:h-72"
             priority
           />
         </div>
 
         {/* Coming Soon Text */}
-        <div className="text-center mb-12 pb-4">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold pb-4 bg-gradient-to-r from-white via-red-200 to-red-400 bg-clip-text text-transparent">
+        <div className="text-center mb-8 pb-2">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-4 bg-gradient-to-r from-white via-red-200 to-red-400 bg-clip-text text-transparent leading-tight">
             Cooking something...
           </h1>
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-2">
             Something wicked this way comes. We're crafting the ultimate
             development experience that will revolutionize how you vibe and code
             applications.
