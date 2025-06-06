@@ -332,10 +332,7 @@ export default function ComingSoonPage() {
       <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
 
       {/* Success Dialog */}
-      <SuccessDialog
-        isOpen={trueshowSuccessDialog}
-        onClose={handleCloseDialog}
-      />
+      <SuccessDialog isOpen={showSuccessDialog} onClose={handleCloseDialog} />
     </div>
   );
 }
