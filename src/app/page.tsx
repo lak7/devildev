@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, MouseEvent } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,52 +35,45 @@ const SuccessDialog = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/25 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/10 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Dialog */}
-      <div className="relative bg-gray-900/95 border border-red-500/50 rounded-2xl p-8 max-w-md w-full shadow-2xl backdrop-blur-sm">
+      <div className="relative bg-black/90 border border-gray-700/50 rounded-3xl p-8 max-w-sm w-full shadow-2xl backdrop-blur-xl ring-1 ring-white/10">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-red-400 transition-colors"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors duration-200 hover:bg-gray-800/50 rounded-full p-1"
         >
-          <X className="h-6 w-6" />
+          <X className="h-5 w-5" />
         </button>
 
         {/* Content */}
-        <div className="text-center space-y-6">
+        <div className="space-y-2">
+          {/* Header */}
+          <h2 className="text-2xl font-bold text-white text-left">
+            Thank You!
+          </h2>
+
+          {/* Message */}
+          <p className="text-sm text-gray-300 leading-relaxed text-left">
+            You've been added to our waitlist. We'll notify you when we launch!
+          </p>
+
           {/* Hell Satan GIF */}
-          <div className="flex justify-center">
-            <Image
-              src="/hell-satan.gif"
-              alt="Hell Satan"
-              width={200}
-              height={200}
-              className="rounded-lg shadow-lg"
-              unoptimized
-            />
+          <div className="flex justify-center pt-5">
+            <div className="rounded-xl overflow-hidden shadow-lg ring-1 ring-white/20">
+              <Image
+                src="/hell-satan.gif"
+                alt="Hell Satan"
+                width={200}
+                height={200}
+                className="w-full h-auto"
+                unoptimized
+              />
+            </div>
           </div>
-
-          {/* Success Message */}
-          <div className="space-y-3">
-            <h2 className="text-2xl font-bold text-white">
-              Welcome to the Waitlist!
-            </h2>
-            <p className="text-gray-300">
-              Your soul has been registered. Prepare for something wickedly
-              awesome! 🔥
-            </p>
-          </div>
-
-          {/* Close Button */}
-          <Button
-            onClick={onClose}
-            className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-semibold"
-          >
-            Hell Yeah!
-          </Button>
         </div>
       </div>
     </div>
@@ -96,7 +89,7 @@ export default function ComingSoonPage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
 
@@ -164,7 +157,6 @@ export default function ComingSoonPage() {
 
   const getButtonIcon = () => {
     if (isSubmitting) return <Loader2 className="ml-2 h-4 w-4 animate-spin" />;
-    if (alreadyJoined) return <CheckCircle className="ml-2 h-4 w-4" />;
     return (
       <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
     );
@@ -240,7 +232,7 @@ export default function ComingSoonPage() {
           <div className="flex items-center space-x-3 text-red-400 bg-gray-900/50 px-6 py-3 rounded-full border border-gray-800/50 backdrop-blur-sm">
             <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
             <span className="text-sm font-mono tracking-wider">
-              {alreadyJoined ? "SOUL REGISTERED" : "INITIALIZING SYSTEMS"}
+              INITIALIZING SYSTEMS
             </span>
             <div
               className="w-2 h-2 bg-red-500 rounded-full animate-ping"
@@ -270,11 +262,7 @@ export default function ComingSoonPage() {
             />
             <Button
               type="submit"
-              className={`px-8 h-12 group transition-all duration-300 font-semibold ${
-                alreadyJoined
-                  ? "bg-green-600 hover:bg-green-700"
-                  : "bg-red-600 hover:bg-red-700"
-              } text-white`}
+              className={`px-8 h-12 group transition-all duration-300 font-semibold bg-red-600 hover:bg-red-700 text-white`}
               disabled={isSubmitting}
             >
               {getButtonText()}
@@ -291,9 +279,8 @@ export default function ComingSoonPage() {
           )}
 
           <p className="text-xs text-gray-500 mt-3 text-center">
-            {alreadyJoined
-              ? "Your soul is already with us. Prepare for darkness! 🔥"
-              : "Be the first to experience pure development power. No spam, just wicked updates."}
+            Be the first to experience pure development power. No spam, just
+            wicked updates.
           </p>
         </div>
 
