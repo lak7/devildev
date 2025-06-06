@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { joinWaitlist } from "../../actions/user";
 import {
   Github,
   Twitter,
@@ -14,11 +15,84 @@ import {
   Code2,
   Zap,
   Sparkles,
+  X,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
+
+// Success Dialog Component
+const SuccessDialog = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/25 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Dialog */}
+      <div className="relative bg-gray-900/95 border border-red-500/50 rounded-2xl p-8 max-w-md w-full shadow-2xl backdrop-blur-sm">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-red-400 transition-colors"
+        >
+          <X className="h-6 w-6" />
+        </button>
+
+        {/* Content */}
+        <div className="text-center space-y-6">
+          {/* Hell Satan GIF */}
+          <div className="flex justify-center">
+            <Image
+              src="/hell-satan.gif"
+              alt="Hell Satan"
+              width={200}
+              height={200}
+              className="rounded-lg shadow-lg"
+              unoptimized
+            />
+          </div>
+
+          {/* Success Message */}
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-white">
+              Welcome to the Waitlist!
+            </h2>
+            <p className="text-gray-300">
+              Your soul has been registered. Prepare for something wickedly
+              awesome! 🔥
+            </p>
+          </div>
+
+          {/* Close Button */}
+          <Button
+            onClick={onClose}
+            className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-semibold"
+          >
+            Hell Yeah!
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function ComingSoonPage() {
   const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [alreadyJoined, setAlreadyJoined] = useState(false);
+  const [error, setError] = useState("");
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -30,13 +104,70 @@ export default function ComingSoonPage() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setIsSubmitted(true);
-      setTimeout(() => setIsSubmitted(false), 3000);
-      setEmail("");
+  // Check localStorage on component mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("devildev-waitlist-email");
+    if (savedEmail) {
+      setAlreadyJoined(true);
+      setEmail(savedEmail);
     }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    // If already joined, show success dialog
+    if (alreadyJoined) {
+      setShowSuccessDialog(true);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const result = await joinWaitlist(email.trim());
+
+      if (result.success) {
+        // Store email in localStorage
+        localStorage.setItem("devildev-waitlist-email", email.trim());
+        setAlreadyJoined(true);
+        setShowSuccessDialog(true);
+      } else if (result.error) {
+        if (result.error === "Email already in waitlist") {
+          // If email already exists in DB, store it in localStorage too
+          localStorage.setItem("devildev-waitlist-email", email.trim());
+          setAlreadyJoined(true);
+          setShowSuccessDialog(true);
+        } else {
+          setError(result.error);
+        }
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      console.error("Error submitting waitlist:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setShowSuccessDialog(false);
+  };
+
+  const getButtonText = () => {
+    if (isSubmitting) return "Joining...";
+    if (alreadyJoined) return "Already Joined!";
+    return "Notify Me";
+  };
+
+  const getButtonIcon = () => {
+    if (isSubmitting) return <Loader2 className="ml-2 h-4 w-4 animate-spin" />;
+    if (alreadyJoined) return <CheckCircle className="ml-2 h-4 w-4" />;
+    return (
+      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+    );
   };
 
   return (
@@ -109,7 +240,7 @@ export default function ComingSoonPage() {
           <div className="flex items-center space-x-3 text-red-400 bg-gray-900/50 px-6 py-3 rounded-full border border-gray-800/50 backdrop-blur-sm">
             <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
             <span className="text-sm font-mono tracking-wider">
-              INITIALIZING SYSTEMS
+              {alreadyJoined ? "SOUL REGISTERED" : "INITIALIZING SYSTEMS"}
             </span>
             <div
               className="w-2 h-2 bg-red-500 rounded-full animate-ping"
@@ -126,30 +257,43 @@ export default function ComingSoonPage() {
           >
             <Input
               type="email"
-              placeholder="Enter your email for early access"
+              placeholder={
+                alreadyJoined
+                  ? "Already joined waitlist!"
+                  : "Enter your email for early access"
+              }
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="flex-1 bg-gray-900/50 border-gray-700 text-white placeholder-gray-400 focus:border-red-500 focus:ring-red-500 backdrop-blur-sm h-12"
               required
+              disabled={alreadyJoined}
             />
             <Button
               type="submit"
-              className="bg-red-600 hover:bg-red-700 text-white px-8 h-12 group transition-all duration-300 font-semibold"
-              disabled={isSubmitted}
+              className={`px-8 h-12 group transition-all duration-300 font-semibold ${
+                alreadyJoined
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700"
+              } text-white`}
+              disabled={isSubmitting}
             >
-              {isSubmitted ? (
-                "Subscribed!"
-              ) : (
-                <>
-                  Notify Me
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
+              {getButtonText()}
+              {getButtonIcon()}
             </Button>
           </form>
+
+          {/* Error message */}
+          {error && (
+            <div className="mt-3 flex items-center gap-2 text-red-400 text-sm justify-center">
+              <AlertCircle className="h-4 w-4" />
+              {error}
+            </div>
+          )}
+
           <p className="text-xs text-gray-500 mt-3 text-center">
-            Be the first to experience pure development power. No spam, just
-            wicked updates.
+            {alreadyJoined
+              ? "Your soul is already with us. Prepare for darkness! 🔥"
+              : "Be the first to experience pure development power. No spam, just wicked updates."}
           </p>
         </div>
 
@@ -186,6 +330,12 @@ export default function ComingSoonPage() {
       <div className="absolute top-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
       <div className="absolute bottom-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
       <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+
+      {/* Success Dialog */}
+      <SuccessDialog
+        isOpen={trueshowSuccessDialog}
+        onClose={handleCloseDialog}
+      />
     </div>
   );
 }
