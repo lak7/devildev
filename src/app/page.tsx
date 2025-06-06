@@ -256,7 +256,7 @@ export default function ComingSoonPage() {
               }
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 bg-gray-900/50 border-gray-700 text-white placeholder-gray-400 focus:border-red-500 focus:ring-red-500 backdrop-blur-sm h-12"
+              className="flex-1 bg-gray-900/50 border-gray-700 text-white placeholder-gray-400 focus:border-red-500 focus:ring-red-500 backdrop-blur-sm min-h-[48px] py-3 px-4 text-base sm:text-sm"
               required
               disabled={alreadyJoined}
             />
@@ -285,7 +285,7 @@ export default function ComingSoonPage() {
         </div>
 
         {/* Social Links */}
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 max-lg:hidden">
           <a
             href="https://github.com/lak7"
             target="_blank"
