@@ -9,7 +9,7 @@ import rehypeRaw from 'rehype-raw'
 import 'highlight.js/styles/github-dark.css'
 
 interface DevlogPageProps {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 interface Devlog {
@@ -68,7 +68,8 @@ async function getDevlog(slug: string): Promise<Devlog | null> {
 
 // Generate metadata for SEO and Open Graph
 export async function generateMetadata({ params }: DevlogPageProps): Promise<Metadata> {
-  const devlog = await getDevlog(params.slug)
+  const { slug } = await params
+  const devlog = await getDevlog(slug)
 
   if (!devlog) {
     return {
@@ -110,7 +111,8 @@ export async function generateMetadata({ params }: DevlogPageProps): Promise<Met
 }
 
 const DevlogPage = async ({ params }: DevlogPageProps) => {
-  const devlog = await getDevlog(params.slug)
+  const { slug } = await params
+  const devlog = await getDevlog(slug)
   
   if (!devlog) {
     notFound()
