@@ -390,12 +390,6 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
           </ReactMarkdown>
         </article>
 
-        {/* Footer */}
-        <footer className="mt-12 pt-8 border-t border-gray-800">
-          <div className="text-center text-gray-400">
-            <p>Slug: {devlog.slug}</p>
-          </div>
-        </footer>
       </div>
     </div>
   )
