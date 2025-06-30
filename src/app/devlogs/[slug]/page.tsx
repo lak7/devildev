@@ -9,7 +9,7 @@ import rehypeRaw from 'rehype-raw'
 import 'highlight.js/styles/github-dark.css'
 
 interface DevlogPageProps {
-  params: { title: string }
+  params: { slug: string }
 }
 
 interface Devlog {
@@ -38,16 +38,13 @@ interface Devlog {
   updatedAt: string
 }
 
-async function getDevlog(title: string): Promise<Devlog | null> {
+async function getDevlog(slug: string): Promise<Devlog | null> {
   try {
-    const decodedTitle = decodeURIComponent(title)
+    const decodedSlug = decodeURIComponent(slug)
     
     const devlog = await db.devlogs.findFirst({
       where: {
-        OR: [
-          { title: decodedTitle },
-          { slug: decodedTitle }
-        ]
+        slug: decodedSlug
       }
     })
 
@@ -71,7 +68,7 @@ async function getDevlog(title: string): Promise<Devlog | null> {
 
 // Generate metadata for SEO and Open Graph
 export async function generateMetadata({ params }: DevlogPageProps): Promise<Metadata> {
-  const devlog = await getDevlog(params.title)
+  const devlog = await getDevlog(params.slug)
 
   if (!devlog) {
     return {
@@ -113,7 +110,7 @@ export async function generateMetadata({ params }: DevlogPageProps): Promise<Met
 }
 
 const DevlogPage = async ({ params }: DevlogPageProps) => {
-  const devlog = await getDevlog(params.title)
+  const devlog = await getDevlog(params.slug)
   
   if (!devlog) {
     notFound()
@@ -394,7 +391,6 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-gray-800">
           <div className="text-center text-gray-400">
-            <p>Article ID: {devlog.id}</p>
             <p>Slug: {devlog.slug}</p>
           </div>
         </footer>

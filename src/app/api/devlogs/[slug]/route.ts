@@ -3,28 +3,25 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { title: string } }
+  { params }: { params: { slug: string } }
 ) {
   try {
-    const { title } = params
+    const { slug } = params
     
-    if (!title) {
+    if (!slug) {
       return NextResponse.json(
-        { error: 'Title parameter is required' },
+        { error: 'Slug parameter is required' },
         { status: 400 }
       )
     }
 
-    // Decode the title parameter in case it's URL encoded
-    const decodedTitle = decodeURIComponent(title)
+    // Decode the slug parameter in case it's URL encoded
+    const decodedSlug = decodeURIComponent(slug)
     
-    // Find devlog by title or slug
+    // Find devlog by slug
     const devlog = await db.devlogs.findFirst({
       where: {
-        OR: [
-          { title: decodedTitle },
-          { slug: decodedTitle }
-        ]
+        slug: decodedSlug
       }
     })
 
