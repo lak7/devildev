@@ -1,11 +1,13 @@
 import React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { db } from '@/lib/db'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeRaw from 'rehype-raw'
+import { ArrowLeft, Clock, Calendar, Tag } from 'lucide-react'
 import 'highlight.js/styles/github-dark.css'
 
 interface DevlogPageProps {
@@ -128,8 +130,61 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 opacity-10">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+          `,
+            backgroundSize: "60px 60px",
+          }}
+        />
+      </div>
+
+      {/* Floating particles */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-red-500/30 rounded-full animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 2}s`,
+              animationDuration: `${2 + Math.random() * 2}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Corner decorations */}
+      <div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
+      <div className="absolute top-4 right-4 w-12 h-12 border-r-2 border-t-2 border-red-500/40"></div>
+      <div className="absolute bottom-4 left-4 w-12 h-12 border-l-2 border-b-2 border-red-500/40"></div>
+      <div className="absolute bottom-4 right-4 w-12 h-12 border-r-2 border-b-2 border-red-500/40"></div>
+
+      {/* Additional corner accents */}
+      <div className="absolute top-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+      <div className="absolute top-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+      <div className="absolute bottom-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+      <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+
+      <div className="relative z-10 max-w-4xl mx-auto px-4 py-8">
+        {/* Navigation */}
+        <div className="mb-8">
+          <Link
+            href="/devlogs"
+            className="inline-flex items-center text-gray-400 hover:text-red-400 transition-colors duration-300 group"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+            Back to DevLogs
+          </Link>
+        </div>
+
         {/* Header Section */}
         <header className="mb-8">
           {/* Categories */}
@@ -138,7 +193,7 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
               {devlog.categories.map((category, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 text-sm bg-gray-800 text-gray-300 rounded-full"
+                  className="px-3 py-1 text-sm bg-gray-800/70 text-gray-300 rounded-full border border-gray-700/50 backdrop-blur-sm"
                 >
                   {category}
                 </span>
@@ -147,7 +202,7 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
           )}
 
           {/* Title */}
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight bg-gradient-to-r from-red-400 via-red-500 to-red-600 bg-clip-text text-transparent">
             {devlog.title}
           </h1>
 
@@ -160,17 +215,17 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
 
           {/* Meta Information */}
           <div className="flex flex-wrap items-center gap-6 text-sm text-gray-400 mb-6">
-            <div className="flex items-center gap-2">
-              <span>📅</span>
+            <div className="flex items-center gap-2 bg-gray-900/50 backdrop-blur-sm rounded-full px-3 py-2 border border-gray-700/50">
+              <Calendar className="h-4 w-4" />
               <span>Published: {formatDate(devlog.publishedDate)}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span>📝</span>
+            <div className="flex items-center gap-2 bg-gray-900/50 backdrop-blur-sm rounded-full px-3 py-2 border border-gray-700/50">
+              <Calendar className="h-4 w-4" />
               <span>Updated: {formatDate(devlog.updatedDate)}</span>
             </div>
             {devlog.readingTime && (
-              <div className="flex items-center gap-2">
-                <span>⏱️</span>
+              <div className="flex items-center gap-2 bg-gray-900/50 backdrop-blur-sm rounded-full px-3 py-2 border border-gray-700/50">
+                <Clock className="h-4 w-4" />
                 <span>{devlog.readingTime} min read</span>
               </div>
             )}
@@ -182,9 +237,10 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
               {devlog.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 text-sm bg-blue-900/30 text-blue-300 rounded-full border border-blue-700/50"
+                  className="px-3 py-1 text-sm bg-red-900/30 text-red-300 rounded-full border border-red-700/50 backdrop-blur-sm flex items-center gap-1"
                 >
-                  #{tag}
+                  <Tag className="h-3 w-3" />
+                  {tag}
                 </span>
               ))}
             </div>
@@ -197,13 +253,13 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
             <img
               src={devlog.coverImage}
               alt={devlog.title}
-              className="w-full h-64 md:h-96 object-cover rounded-lg shadow-2xl"
+              className="w-full h-64 md:h-96 object-cover rounded-3xl shadow-2xl ring-1 ring-white/10"
             />
           </div>
         )}
 
         {/* Content Section */}
-        <article className="max-w-none">
+        <article className="max-w-none bg-gray-900/20 backdrop-blur-sm rounded-3xl p-8 border border-gray-700/50 ring-1 ring-white/10">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeHighlight, rehypeRaw]}
@@ -271,7 +327,7 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
                 return (
                   <a 
                     href={href} 
-                    className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors duration-200"
+                    className="text-red-400 hover:text-red-300 underline underline-offset-2 transition-colors duration-200"
                     target={isInternalLink ? undefined : "_blank"}
                     rel={isInternalLink ? undefined : "noopener noreferrer"}
                   >
@@ -282,7 +338,7 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
               // Code blocks with better styling
               pre: ({ children }) => (
                 <div className="my-8">
-                  <pre className="bg-gray-900 border border-gray-700 rounded-xl p-6 overflow-x-auto text-sm leading-relaxed">
+                  <pre className="bg-gray-900/70 border border-gray-700/50 rounded-2xl p-6 overflow-x-auto text-sm leading-relaxed backdrop-blur-sm">
                     {children}
                   </pre>
                 </div>
@@ -292,7 +348,7 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
                 const isInline = !className
                 if (isInline) {
                   return (
-                    <code className="bg-gray-800/70 text-green-400 px-2 py-1 rounded-md text-base font-mono">
+                    <code className="bg-gray-800/70 text-red-400 px-2 py-1 rounded-lg text-base font-mono border border-gray-700/50">
                       {children}
                     </code>
                   )
@@ -301,7 +357,7 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
               },
               // Blockquotes
               blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-blue-500 bg-gray-900/40 pl-6 pr-4 py-4 my-8 italic text-gray-300 text-lg rounded-r-lg">
+                <blockquote className="border-l-4 border-red-500 bg-gray-900/40 pl-6 pr-4 py-4 my-8 italic text-gray-300 text-lg rounded-r-2xl backdrop-blur-sm">
                   {children}
                 </blockquote>
               ),
@@ -323,19 +379,19 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
               ),
               // Tables
               table: ({ children }) => (
-                <div className="overflow-x-auto my-8 rounded-lg border border-gray-700">
+                <div className="overflow-x-auto my-8 rounded-2xl border border-gray-700/50 backdrop-blur-sm">
                   <table className="min-w-full">
                     {children}
                   </table>
                 </div>
               ),
               thead: ({ children }) => (
-                <thead className="bg-gray-800">
+                <thead className="bg-gray-800/70">
                   {children}
                 </thead>
               ),
               tbody: ({ children }) => (
-                <tbody className="divide-y divide-gray-700">
+                <tbody className="divide-y divide-gray-700/50">
                   {children}
                 </tbody>
               ),
@@ -350,7 +406,7 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
                 </td>
               ),
               tr: ({ children }) => (
-                <tr className="hover:bg-gray-800/50 transition-colors duration-150">
+                <tr className="hover:bg-gray-800/30 transition-colors duration-150">
                   {children}
                 </tr>
               ),
@@ -367,7 +423,7 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
               ),
               // Horizontal rule
               hr: () => (
-                <hr className="border-gray-700 my-12 border-t-2" />
+                <hr className="border-gray-700/50 my-12 border-t-2" />
               ),
               // Images
               img: ({ src, alt }) => (
@@ -375,7 +431,7 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
                   <img 
                     src={src} 
                     alt={alt} 
-                    className="rounded-lg shadow-2xl max-w-full h-auto mx-auto"
+                    className="rounded-2xl shadow-2xl max-w-full h-auto mx-auto ring-1 ring-white/10"
                   />
                   {alt && (
                     <p className="text-center text-gray-400 text-sm mt-2 italic">
@@ -389,8 +445,10 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
             {devlog.content}
           </ReactMarkdown>
         </article>
-
       </div>
+
+      {/* Bottom decoration */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { Metadata } from 'next'
+import { ArrowLeft, Clock, Calendar, Tag } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'DevLogs - DevilDev',
@@ -76,11 +77,64 @@ const DevlogsPage = async () => {
   const devlogs = await getAllDevlogs()
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-7xl mx-auto px-4 py-12">
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 opacity-10">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+          `,
+            backgroundSize: "60px 60px",
+          }}
+        />
+      </div>
+
+      {/* Floating particles */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-red-500/30 rounded-full animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 2}s`,
+              animationDuration: `${2 + Math.random() * 2}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Corner decorations */}
+      <div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
+      <div className="absolute top-4 right-4 w-12 h-12 border-r-2 border-t-2 border-red-500/40"></div>
+      <div className="absolute bottom-4 left-4 w-12 h-12 border-l-2 border-b-2 border-red-500/40"></div>
+      <div className="absolute bottom-4 right-4 w-12 h-12 border-r-2 border-b-2 border-red-500/40"></div>
+
+      {/* Additional corner accents */}
+      <div className="absolute top-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+      <div className="absolute top-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+      <div className="absolute bottom-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+      <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-12">
+        {/* Navigation */}
+        <div className="mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center text-gray-400 hover:text-red-400 transition-colors duration-300 group"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+            Back to Home
+          </Link>
+        </div>
+
         {/* Header Section */}
         <header className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-red-400 via-red-500 to-red-600 bg-clip-text text-transparent">
             DevLogs
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
@@ -101,7 +155,7 @@ const DevlogsPage = async () => {
           <>
             {/* Stats */}
             <div className="flex justify-center mb-12">
-              <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg px-6 py-3 border border-gray-800">
+              <div className="bg-gray-900/50 backdrop-blur-sm rounded-full px-6 py-3 border border-gray-700/50 ring-1 ring-white/10">
                 <span className="text-gray-300">
                   {devlogs.length} {devlogs.length === 1 ? 'DevLog' : 'DevLogs'} Published
                 </span>
@@ -116,10 +170,10 @@ const DevlogsPage = async () => {
                   href={`/devlogs/${devlog.slug}`}
                   className="group block h-full"
                 >
-                  <article className="bg-gray-900/50 backdrop-blur-sm rounded-xl overflow-hidden border border-gray-800 hover:border-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:scale-[1.02] h-full flex flex-col">
+                  <article className="bg-gray-900/50 backdrop-blur-sm rounded-3xl overflow-hidden border border-gray-700/50 hover:border-red-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:scale-[1.02] h-full flex flex-col ring-1 ring-white/10">
                     {/* Cover Image */}
                     {devlog.coverImage ? (
-                      <div className="relative h-48 overflow-hidden">
+                      <div className="relative h-48 overflow-hidden rounded-t-3xl">
                         <img
                           src={devlog.coverImage}
                           alt={devlog.title}
@@ -128,7 +182,7 @@ const DevlogsPage = async () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       </div>
                     ) : (
-                      <div className="h-48 bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
+                      <div className="h-48 bg-gradient-to-br from-red-600/20 to-gray-800/20 flex items-center justify-center rounded-t-3xl">
                         <div className="text-4xl">📄</div>
                       </div>
                     )}
@@ -141,13 +195,13 @@ const DevlogsPage = async () => {
                           {devlog.categories.slice(0, 2).map((category, index) => (
                             <span
                               key={index}
-                              className="px-2 py-1 text-xs bg-gray-800 text-gray-300 rounded-md"
+                              className="px-3 py-1 text-xs bg-gray-800/70 text-gray-300 rounded-full border border-gray-700/50"
                             >
                               {category}
                             </span>
                           ))}
                           {devlog.categories.length > 2 && (
-                            <span className="px-2 py-1 text-xs bg-gray-800 text-gray-300 rounded-md">
+                            <span className="px-3 py-1 text-xs bg-gray-800/70 text-gray-300 rounded-full border border-gray-700/50">
                               +{devlog.categories.length - 2}
                             </span>
                           )}
@@ -155,7 +209,7 @@ const DevlogsPage = async () => {
                       )}
 
                       {/* Title */}
-                      <h2 className="text-xl font-bold mb-3 group-hover:text-blue-400 transition-colors line-clamp-2">
+                      <h2 className="text-xl font-bold mb-3 group-hover:text-red-400 transition-colors line-clamp-2">
                         {devlog.title}
                       </h2>
 
@@ -178,9 +232,10 @@ const DevlogsPage = async () => {
                           {devlog.tags.slice(0, 3).map((tag, index) => (
                             <span
                               key={index}
-                              className="px-2 py-1 text-xs bg-blue-900/30 text-blue-300 rounded-md border border-blue-700/30"
+                              className="px-2 py-1 text-xs bg-red-900/30 text-red-300 rounded-full border border-red-700/30 flex items-center gap-1"
                             >
-                              #{tag}
+                              <Tag className="h-3 w-3" />
+                              {tag}
                             </span>
                           ))}
                           {devlog.tags.length > 3 && (
@@ -194,12 +249,18 @@ const DevlogsPage = async () => {
                       {/* Meta Info */}
                       <div className="flex items-center justify-between text-xs text-gray-400 mt-auto">
                         <div className="flex items-center gap-4">
-                          <span>📅 {formatDate(devlog.publishedDate)}</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(devlog.publishedDate)}
+                          </span>
                           {devlog.readingTime && (
-                            <span>⏱️ {devlog.readingTime} min</span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {devlog.readingTime} min
+                            </span>
                           )}
                         </div>
-                        <div className="text-blue-400 group-hover:text-blue-300 transition-colors">
+                        <div className="text-red-400 group-hover:text-red-300 transition-colors">
                           Read more →
                         </div>
                       </div>
@@ -211,6 +272,9 @@ const DevlogsPage = async () => {
           </>
         )}
       </div>
+
+      {/* Bottom decoration */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
     </div>
   )
 }
