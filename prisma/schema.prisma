@@ -13,3 +13,36 @@ model WaitList {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Devlogs {
+  id              String    @id @default(uuid())
+  title           String    @unique
+  slug            String    @unique
+  content         String
+  coverImage      String?
+  publishedDate   DateTime  @default(now())
+  updatedDate     DateTime  @updatedAt
+  tags            String[]  // Array of tag strings
+  categories      String[]  // Array of category strings
+  readingTime     Int?      // Estimated reading time in minutes
+  excerpt         String?   // Optional short summary
+  
+  // SEO metadata
+  seoTitleTag         String?
+  seoMetaDescription  String?
+  seoCanonicalUrl     String?
+  
+  // Open Graph data for social sharing
+  ogTitle       String?
+  ogDescription String?
+  ogImage       String?
+  
+  // Twitter Card data for social sharing
+  twitterCard        String?
+  twitterTitle       String?
+  twitterDescription String?
+  twitterImage       String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
