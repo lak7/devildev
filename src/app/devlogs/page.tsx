@@ -133,13 +133,10 @@ const DevlogsPage = async () => {
         </div>
 
         {/* Header Section */}
-        <header className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-red-400 via-red-500 to-red-600 bg-clip-text text-transparent">
+        <header className="text-center mb-5">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 pb-5 bg-gradient-to-r from-red-400 via-red-500 to-red-600 bg-clip-text text-transparent">
             DevLogs
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            Welcome to my development journey. Here you'll find insights, updates, and behind-the-scenes stories from my projects.
-          </p>
         </header>
 
         {/* Content Section */}
