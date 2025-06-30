@@ -210,36 +210,54 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
             rehypePlugins={[rehypeHighlight, rehypeRaw]}
             components={{
               // Headers with proper hierarchy and spacing
-              h1: ({ children }) => (
-                <h1 className="text-4xl font-bold text-white mt-12 mb-6 first:mt-0">
-                  {children}
-                </h1>
-              ),
-              h2: ({ children }) => (
-                <h2 className="text-3xl font-bold text-white mt-10 mb-5 first:mt-0">
-                  {children}
-                </h2>
-              ),
-              h3: ({ children }) => (
-                <h3 className="text-2xl font-semibold text-white mt-8 mb-4 first:mt-0">
-                  {children}
-                </h3>
-              ),
-              h4: ({ children }) => (
-                <h4 className="text-xl font-semibold text-white mt-6 mb-3 first:mt-0">
-                  {children}
-                </h4>
-              ),
-              h5: ({ children }) => (
-                <h5 className="text-lg font-semibold text-white mt-5 mb-2 first:mt-0">
-                  {children}
-                </h5>
-              ),
-              h6: ({ children }) => (
-                <h6 className="text-base font-semibold text-white mt-4 mb-2 first:mt-0">
-                  {children}
-                </h6>
-              ),
+              h1: ({ children }) => {
+                const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : undefined
+                return (
+                  <h1 id={id} className="text-4xl font-bold text-white mt-12 mb-6 first:mt-0 scroll-mt-8">
+                    {children}
+                  </h1>
+                )
+              },
+              h2: ({ children }) => {
+                const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : undefined
+                return (
+                  <h2 id={id} className="text-3xl font-bold text-white mt-10 mb-5 first:mt-0 scroll-mt-8">
+                    {children}
+                  </h2>
+                )
+              },
+              h3: ({ children }) => {
+                const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : undefined
+                return (
+                  <h3 id={id} className="text-2xl font-semibold text-white mt-8 mb-4 first:mt-0 scroll-mt-8">
+                    {children}
+                  </h3>
+                )
+              },
+              h4: ({ children }) => {
+                const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : undefined
+                return (
+                  <h4 id={id} className="text-xl font-semibold text-white mt-6 mb-3 first:mt-0 scroll-mt-8">
+                    {children}
+                  </h4>
+                )
+              },
+              h5: ({ children }) => {
+                const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : undefined
+                return (
+                  <h5 id={id} className="text-lg font-semibold text-white mt-5 mb-2 first:mt-0 scroll-mt-8">
+                    {children}
+                  </h5>
+                )
+              },
+              h6: ({ children }) => {
+                const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : undefined
+                return (
+                  <h6 id={id} className="text-base font-semibold text-white mt-4 mb-2 first:mt-0 scroll-mt-8">
+                    {children}
+                  </h6>
+                )
+              },
               // Paragraphs with proper spacing
               p: ({ children }) => (
                 <p className="text-gray-200 text-lg leading-relaxed mb-6">
@@ -247,16 +265,21 @@ const DevlogPage = async ({ params }: DevlogPageProps) => {
                 </p>
               ),
               // Links with hover effects
-              a: ({ children, href }) => (
-                <a 
-                  href={href} 
-                  className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors duration-200"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {children}
-                </a>
-              ),
+              a: ({ children, href }) => {
+                // Check if it's an internal anchor link (starts with #)
+                const isInternalLink = href?.startsWith('#')
+                
+                return (
+                  <a 
+                    href={href} 
+                    className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors duration-200"
+                    target={isInternalLink ? undefined : "_blank"}
+                    rel={isInternalLink ? undefined : "noopener noreferrer"}
+                  >
+                    {children}
+                  </a>
+                )
+              },
               // Code blocks with better styling
               pre: ({ children }) => (
                 <div className="my-8">
