@@ -287,6 +287,13 @@ export default function ComingSoonPage() {
         {/* Social Links */}
         <div className="flex space-x-4 max-lg:hidden">
           <a
+            href="/devlogs"
+            className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
+            title="Dev Logs"
+          >
+            <Code2 className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
+          </a>
+          <a
             href="https://github.com/lak7"
             target="_blank"
             rel="noopener noreferrer"
