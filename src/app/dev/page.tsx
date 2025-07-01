@@ -7,7 +7,7 @@ import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic
 const DevPage = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [textareaHeight, setTextareaHeight] = useState('auto');
+  const [textareaHeight, setTextareaHeight] = useState('60px');
 
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
@@ -32,7 +32,7 @@ const DevPage = () => {
     const textarea = e.target;
     textarea.style.height = 'auto';
     const scrollHeight = textarea.scrollHeight;
-    const maxHeight = 120; // Maximum height in pixels (about 5 lines)
+    const maxHeight = 180; // Maximum height in pixels (about 7-8 lines)
     
     if (scrollHeight <= maxHeight) {
       textarea.style.height = scrollHeight + 'px';
@@ -103,9 +103,9 @@ const DevPage = () => {
         </h1>
 
                  {/* Search Input */}
-         <div className="w-full max-w-3xl">
+         <div className="w-full max-w-2xl">
            <form onSubmit={handleSubmit} className="relative">
-             <div className="relative bg-gray-900/50 border border-gray-700/50 rounded-2xl backdrop-blur-sm overflow-hidden">
+             <div className="bg-gray-900/50 border-t border-x border-gray-700/50 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                <textarea
                  placeholder="What you want to build?"
                  value={inputMessage}
@@ -116,18 +116,21 @@ const DevPage = () => {
                      handleSubmit(e);
                    }
                  }}
-                 className="w-full bg-transparent text-white placeholder-gray-400 px-6 py-4 text-sm md:text-base focus:outline-none pr-16 resize-none overflow-y-auto min-h-[56px] max-h-[120px]"
-                 rows={1}
+                 className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
+                 rows={2}
                  style={{ height: textareaHeight }}
+                 maxLength={5000}
                />
-               
-               {/* Send button */}
+             </div>
+             
+             {/* Button section */}
+             <div className="bg-gray-900/50 border-x border-b border-gray-700/50 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
                <button 
                  type="submit" 
-                 className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+                 className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                  disabled={!inputMessage.trim()}
                >
-                 <BarChart3 className="h-5 w-5" />
+                 <BarChart3 className="h-4 w-4" />
                </button>
              </div>
            </form>
