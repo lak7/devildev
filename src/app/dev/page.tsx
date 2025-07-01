@@ -105,7 +105,7 @@ const DevPage = () => {
                  {/* Search Input */}
          <div className="w-full max-w-2xl">
            <form onSubmit={handleSubmit} className="relative">
-             <div className="bg-gray-900/50 border-t border-x border-gray-700/50 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+             <div className="bg-white/5 border-t border-x border-gray-600/100 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                <textarea
                  placeholder="What you want to build?"
                  value={inputMessage}
@@ -124,7 +124,7 @@ const DevPage = () => {
              </div>
              
              {/* Button section */}
-             <div className="bg-gray-900/50 border-x border-b border-gray-700/50 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
+             <div className="bg-white/5 border-x border-b border-gray-600/100 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
                <button 
                  type="submit" 
                  className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
