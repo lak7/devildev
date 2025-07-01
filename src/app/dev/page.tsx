@@ -11,6 +11,14 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+interface Particle {
+  id: number;
+  left: string;
+  top: string;
+  animationDelay: string;
+  animationDuration: string;
+}
+
 const DevPage = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -18,6 +26,7 @@ const DevPage = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
@@ -26,6 +35,18 @@ const DevPage = () => {
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // Generate particles only on client side to avoid hydration mismatch
+  useEffect(() => {
+    const generatedParticles: Particle[] = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDelay: `${Math.random() * 2}s`,
+      animationDuration: `${2 + Math.random() * 2}s`,
+    }));
+    setParticles(generatedParticles);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,15 +127,15 @@ const DevPage = () => {
 
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => (
+        {particles.map((particle) => (
           <div
-            key={i}
+            key={particle.id}
             className="absolute w-1 h-1 bg-red-500/30 rounded-full animate-pulse"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
+              left: particle.left,
+              top: particle.top,
+              animationDelay: particle.animationDelay,
+              animationDuration: particle.animationDuration,
             }}
           />
         ))}
@@ -154,8 +175,8 @@ const DevPage = () => {
               <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                   message.type === 'user' 
-                    ? 'bg-red-600 text-white' 
-                    : 'bg-white/10 text-white border border-gray-600/40'
+                    ? 'bg-white/10 border border-gray-600/40 text-white' 
+                    : 'text-white'
                 }`}>
                   <p className="text-sm md:text-base whitespace-pre-wrap">{message.content}</p>
                 </div>
