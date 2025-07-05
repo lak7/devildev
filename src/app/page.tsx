@@ -256,7 +256,7 @@ export default function ComingSoonPage() {
       <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-120px)] px-6 mt-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Content */}
-          <div className="space-y-8">
+          <div className="space-y-8 mt-10">
             {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
               Build Like a Pro.{" "}
@@ -424,6 +424,74 @@ export default function ComingSoonPage() {
         </div>
       </div>
     </section>
+
+      {/* Why Now / Why It Matters Section */}
+      <section className="relative bg-black py-24 px-6 overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-red-950/10 to-black opacity-50"></div>
+        
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          {/* Section Heading */}
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8">
+            Why Now / <span className="text-red-400">Why It Matters</span>
+          </h2>
+
+          {/* Content */}
+          <div className="space-y-6 mb-12">
+            <p className="text-lg md:text-xl text-gray-300 leading-relaxed">
+              Developers are vibecoding more than ever — blending instinct, creativity, and speed. 
+              Devildev gives them the power of a CTO, architect, and co-pilot — all in one AI.
+            </p>
+            
+            <p className="text-lg md:text-xl text-gray-300 leading-relaxed">
+              For beginners, it's a <span className="text-red-400 font-semibold">cheat-code to build fast</span>. 
+              For pros, it's an <span className="text-red-400 font-semibold">accelerator</span>.
+            </p>
+          </div>
+
+          {/* Join Waitlist Form */}
+          <div className="max-w-md mx-auto">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col sm:flex-row gap-3"
+            >
+              <Input
+                type="email"
+                placeholder={
+                  alreadyJoined
+                    ? "Already joined waitlist!"
+                    : "Enter your email for early access"
+                }
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1 bg-gray-900/50 border-gray-300 text-white placeholder-gray-400 focus:border-red-500 focus:ring-red-500 backdrop-blur-sm min-h-[48px] py-3 px-4 text-base sm:text-sm"
+                required
+                disabled={alreadyJoined}
+              />
+              <Button
+                type="submit"
+                className={`px-8 h-12 group transition-all duration-300 font-semibold bg-red-600 hover:bg-red-700 text-white`}
+                disabled={isSubmitting}
+              >
+                {getButtonText()}
+                {getButtonIcon()}
+              </Button>
+            </form>
+
+            {/* Error message */}
+            {error && (
+              <div className="mt-3 flex items-center gap-2 text-red-400 text-sm">
+                <AlertCircle className="h-4 w-4" />
+                {error}
+              </div>
+            )}
+
+            <p className="text-xs text-gray-500 mt-3">
+              Join thousands of developers already on the waitlist.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="relative bg-black border-t border-gray-800/50 py-16 px-6">
