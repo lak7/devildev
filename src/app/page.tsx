@@ -183,7 +183,7 @@ export default function ComingSoonPage() {
       </div>
 
       {/* Navbar */}
-      <nav className="relative z-10 border-b border-white/10 backdrop-blur-md bg-black/20">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 backdrop-blur-xl bg-black/30 shadow-lg lg:h-16">
         <div className="max-w-7xl mx-auto px-6 py-2">
           <div className="flex items-center justify-between">
             {/* Logo and Navigation Items */}
@@ -199,14 +199,6 @@ export default function ComingSoonPage() {
               
               {/* Navigation Items */}
               <div className="hidden md:flex items-center space-x-6">
-                <a
-                  href="#features"
-                  className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-300 font-medium relative group"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  <span>Features</span>
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
-                </a>
                 <a
                   href="/devlogs"
                   className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-300 font-medium relative group"
@@ -231,7 +223,7 @@ export default function ComingSoonPage() {
       </nav>
 
       {/* Main content */}
-      <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-120px)] px-6 mt-10">
+      <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-120px)] px-6 pt-24">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Content */}
           <div className="space-y-8 mt-10">
@@ -335,7 +327,7 @@ export default function ComingSoonPage() {
       </div>
 
       {/* Features */}
-      <section className="relative bg-black py-24 px-6 overflow-hidden">
+      <section id="features" className="relative bg-black py-24 px-6 overflow-hidden">
       {/* Background Text */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="flex space-x-8 text-8xl md:text-9xl lg:text-[12rem] font-bold text-white/10 tracking-wider">
@@ -511,13 +503,13 @@ export default function ComingSoonPage() {
               <h4 className="text-white font-semibold text-lg">Quick Links</h4>
               <ul className="space-y-3">
                 <li>
-                  <a
+                  {/* <a
                     href="#features"
                     className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center space-x-2"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Features</span>
-                  </a>
+                  </a> */}
                 </li>
                 <li>
                   <a
