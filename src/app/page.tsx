@@ -88,16 +88,6 @@ export default function ComingSoonPage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
   const [error, setError] = useState("");
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const handleMouseMove = (e: globalThis.MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
 
   // Check localStorage on component mount
   useEffect(() => {
@@ -166,13 +156,8 @@ export default function ComingSoonPage() {
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      {/* Animated background gradient */}
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,0,0,0.15), transparent 40%)`,
-        }}
-      />
+      {/* Static background gradient */}
+      <div className="absolute inset-0 opacity-20 bg-gradient-to-br from-red-950/20 via-black to-black" />
 
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 opacity-10">
@@ -188,20 +173,13 @@ export default function ComingSoonPage() {
         />
       </div>
 
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-red-500/30 rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
-            }}
-          />
-        ))}
+      {/* Static decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-2 h-2 bg-red-500/20 rounded-full animate-pulse" />
+        <div className="absolute top-40 right-32 w-1 h-1 bg-red-500/30 rounded-full animate-pulse" />
+        <div className="absolute bottom-32 left-1/4 w-1.5 h-1.5 bg-red-500/25 rounded-full animate-pulse" />
+        <div className="absolute bottom-1/4 right-20 w-1 h-1 bg-red-500/20 rounded-full animate-pulse" />
+        <div className="absolute top-1/3 left-1/3 w-1 h-1 bg-red-500/15 rounded-full animate-pulse" />
       </div>
 
       {/* Navbar */}
@@ -360,7 +338,7 @@ export default function ComingSoonPage() {
       <section className="relative bg-black py-24 px-6 overflow-hidden">
       {/* Background Text */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="flex space-x-8 text-8xl md:text-9xl lg:text-[12rem] font-bold text-white/5 tracking-wider">
+        <div className="flex space-x-8 text-8xl md:text-9xl lg:text-[12rem] font-bold text-white/10 tracking-wider">
           <span>IDEA</span>
           <span>GUIDE</span>
           <span>CODE</span>
@@ -577,7 +555,7 @@ export default function ComingSoonPage() {
                 © 2025 <span className="text-red-400">DevilDev</span>. All rights reserved.
               </p>
               <p className="text-gray-500 text-sm">
-                Built with <span className="text-red-400">❤️</span> by the <span className="text-red-400">DevilDev</span> team
+                Built by the <span className="text-red-400">DevilDev</span> team
               </p>
             </div>
           </div>
