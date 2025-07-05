@@ -19,6 +19,8 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Globe,
+  Ban,
 } from "lucide-react";
 
 // Success Dialog Component
@@ -354,20 +356,165 @@ export default function ComingSoonPage() {
         </div>
       </div>
 
-      {/* Bottom decoration */}
-      {/* <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"></div> */}
+      {/* Features */}
+      <section className="relative bg-black py-24 px-6 overflow-hidden">
+      {/* Background Text */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="flex space-x-8 text-8xl md:text-9xl lg:text-[12rem] font-bold text-white/5 tracking-wider">
+          <span>IDEA</span>
+          <span>GUIDE</span>
+          <span>CODE</span>
+        </div>
+      </div>
 
-      {/* Enhanced corner decorations */}
-      {/* <div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
-      <div className="absolute top-4 right-4 w-12 h-12 border-r-2 border-t-2 border-red-500/40"></div>
-      <div className="absolute bottom-4 left-4 w-12 h-12 border-l-2 border-b-2 border-red-500/40"></div>
-      <div className="absolute bottom-4 right-4 w-12 h-12 border-r-2 border-b-2 border-red-500/40"></div> */}
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto">
+        {/* Section Heading */}
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+            Core Features
+          </h2>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+          {/* Fee-less transactions */}
+          <div className="bg-red-950/20 backdrop-blur-sm border border-red-500/20 rounded-2xl p-8 text-center md:text-left shadow-lg shadow-red-500/10">
+            <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
+              <Ban className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-2xl lg:text-3xl font-bold text-white mb-4">
+              Idea to
+              <br />
+              Architecture
+            </h3>
+            <p className="text-gray-300 text-base lg:text-lg leading-relaxed">
+              Input an idea → Get detailed tech stack, architecture diagram, and execution phases.
+            </p>
+          </div>
 
-      {/* Additional corner accents */}
-      {/* <div className="absolute top-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-      <div className="absolute top-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-      <div className="absolute bottom-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-      <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div> */}
+          {/* Lightning-fast trades */}
+          <div className="bg-red-950/20 backdrop-blur-sm border border-red-500/20 rounded-2xl p-8 text-center md:text-left shadow-lg shadow-red-500/10">
+            <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-2xl lg:text-3xl font-bold text-white mb-4">
+              Real-Time Screen
+              <br />
+              Companion
+            </h3>
+            <p className="text-gray-300 text-base lg:text-lg leading-relaxed">
+              Share your screen with devildev. It watches and guides you like a senior engineer.
+            </p>
+          </div>
+
+          {/* Global market */}
+          <div className="bg-red-950/20 backdrop-blur-sm border border-red-500/20 rounded-2xl p-8 text-center md:text-left shadow-lg shadow-red-500/10">
+            <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
+              <Globe className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-2xl lg:text-3xl font-bold text-white mb-4">
+              Vibecoding-Optimized
+              <br />
+              Prompts
+            </h3>
+            <p className="text-gray-300 text-base lg:text-lg leading-relaxed">
+              Get high-quality coding prompts to integrate APIs, DBs, auth, UI libs in one go.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+      {/* Footer */}
+      <footer className="relative bg-black border-t border-gray-800/50 py-16 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12">
+            {/* Company Info */}
+            <div className="md:col-span-2 space-y-4">
+              <Image
+                src="/textlogo.png"
+                alt="DevilDev Logo"
+                width={150}
+                height={45}
+                className="w-auto h-10 drop-shadow-lg"
+              />
+              <p className="text-gray-400 text-base leading-relaxed max-w-md">
+                Your AI coding companion that turns ideas into full-blown tech architecture, 
+                real-time dev assistance, and detailed code prompts.
+              </p>
+              <div className="flex space-x-4">
+                <a
+                  href="/devlogs"
+                  className="p-3 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
+                  title="Dev Logs"
+                >
+                  <Code2 className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
+                </a>
+                <a
+                  href="mailto:contact@devildev.com"
+                  className="p-3 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
+                  title="Contact"
+                >
+                  <Mail className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div className="space-y-4">
+              <h4 className="text-white font-semibold text-lg">Quick Links</h4>
+              <ul className="space-y-3">
+                <li>
+                  <a
+                    href="#features"
+                    className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center space-x-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Features</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/devlogs"
+                    className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center space-x-2"
+                  >
+                    <Code2 className="h-4 w-4" />
+                    <span>Devlogs</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div className="space-y-4">
+              <h4 className="text-white font-semibold text-lg">Contact</h4>
+              <ul className="space-y-3">
+                <li>
+                  <a
+                    href="mailto:contact@devildev.com"
+                    className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center space-x-2"
+                  >
+                    <Mail className="h-4 w-4" />
+                    <span>contact@devildev.com</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="mt-12 pt-8 border-t border-gray-800/50">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <p className="text-gray-500 text-sm">
+                © 2025 <span className="text-red-400">DevilDev</span>. All rights reserved.
+              </p>
+              <p className="text-gray-500 text-sm">
+                Built with <span className="text-red-400">❤️</span> by the <span className="text-red-400">DevilDev</span> team
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* Success Dialog */}
       <SuccessDialog isOpen={showSuccessDialog} onClose={handleCloseDialog} />
