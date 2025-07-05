@@ -317,16 +317,16 @@ export default function ComingSoonPage() {
               >
                 <Code2 className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
               </a>
-              <a
+              {/* <a
                 href="https://github.com/lak7"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
               >
                 <Github className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
-              </a>
+              </a> */}
               <a
-                href="mailto:lakshaygupta2511@gmail.com?subject=DevilDev%20Coming%20Soon%20-%20Inquiry"
+                href="mailto:contact@devildev.com?subject=DevilDev%20Coming%20Soon%20-%20Inquiry"
                 className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
               >
                 <Mail className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
