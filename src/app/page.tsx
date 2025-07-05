@@ -152,7 +152,7 @@ export default function ComingSoonPage() {
   const getButtonText = () => {
     if (isSubmitting) return "Joining...";
     if (alreadyJoined) return "Already Joined!";
-    return "Notify Me";
+    return "Join Waitlist";
   };
 
   const getButtonIcon = () => {
@@ -202,111 +202,163 @@ export default function ComingSoonPage() {
         ))}
       </div>
 
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-8">
-        {/* Logo */}
-        <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
-          <Image
-            src="/devildev-logo.png"
-            alt="DevilDev Logo"
-            width={400}
-            height={120}
-            className="w-auto h-32 md:h-40 lg:h-48 drop-shadow-2xl"
-            priority
-          />
-        </div>
+      {/* Navbar */}
+      <nav className="relative z-10 border-b border-white/10 backdrop-blur-md bg-black/20">
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <div className="flex items-center justify-between">
+            {/* Logo and Navigation Items */}
+            <div className="flex items-center space-x-8">
+              <Image
+                src="/textlogo.png"
+                alt="DevilDev Logo"
+                width={150}
+                height={45}
+                className="w-auto h-10 drop-shadow-lg"
+                priority
+              />
+              
+              {/* Navigation Items */}
+              <div className="hidden md:flex items-center space-x-6">
+                <a
+                  href="#features"
+                  className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-300 font-medium relative group"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>Features</span>
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a
+                  href="/devlogs"
+                  className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-300 font-medium relative group"
+                >
+                  <Code2 className="h-4 w-4" />
+                  <span>Devlogs</span>
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+              </div>
+            </div>
 
-        {/* Main description */}
-        <div className="text-center mb-12 space-y-6">
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed px-4">
-            We're crafting the{" "}
-            <span className="text-red-400 font-semibold">
-              ultimate development experience
-            </span>{" "}
-            that will revolutionize how you build and ship applications.
-          </p>
-        </div>
-
-        {/* Status indicator */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 text-red-400 bg-gray-900/50 px-6 py-3 rounded-full border border-gray-800/50 backdrop-blur-sm">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
-            <span className="text-sm font-mono tracking-wider">
-              INITIALIZING SYSTEMS
-            </span>
-            <div
-              className="w-2 h-2 bg-red-500 rounded-full animate-ping"
-              style={{ animationDelay: "0.5s" }}
-            ></div>
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button className="text-gray-300 hover:text-white transition-colors duration-300">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
+      </nav>
 
-        {/* Email Signup */}
-        <div className="w-full max-w-md mb-12">
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row gap-3"
-          >
-            <Input
-              type="email"
-              placeholder={
-                alreadyJoined
-                  ? "Already joined waitlist!"
-                  : "Enter your email for early access"
-              }
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 bg-gray-900/50 border-gray-700 text-white placeholder-gray-400 focus:border-red-500 focus:ring-red-500 backdrop-blur-sm min-h-[48px] py-3 px-4 text-base sm:text-sm"
-              required
-              disabled={alreadyJoined}
-            />
-            <Button
-              type="submit"
-              className={`px-8 h-12 group transition-all duration-300 font-semibold bg-red-600 hover:bg-red-700 text-white`}
-              disabled={isSubmitting}
-            >
-              {getButtonText()}
-              {getButtonIcon()}
-            </Button>
-          </form>
+      {/* Main content */}
+      <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-120px)] px-6 mt-10">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Column - Content */}
+          <div className="space-y-8">
+            {/* Headline */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
+              Build Like a Pro.{" "}
+              <span className="text-red-400">Without Being One.</span>
+            </h1>
 
-          {/* Error message */}
-          {error && (
-            <div className="mt-3 flex items-center gap-2 text-red-400 text-sm justify-center">
-              <AlertCircle className="h-4 w-4" />
-              {error}
+            {/* Subheadline */}
+            <p className="text-lg md:text-xl text-gray-300 leading-relaxed max-w-2xl">
+              Devildev is your AI coding companion that turns your idea into a full-blown tech architecture, real-time dev assistant, and detailed code prompts — all in one go.
+            </p>
+
+            {/* Email Signup */}
+            <div className="max-w-md">
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col sm:flex-row gap-3"
+              >
+                <Input
+                  type="email"
+                  placeholder={
+                    alreadyJoined
+                      ? "Already joined waitlist!"
+                      : "Enter your email for early access"
+                  }
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="flex-1 bg-gray-900/50 border-gray-700 text-white placeholder-gray-400 focus:border-red-500 focus:ring-red-500 backdrop-blur-sm min-h-[48px] py-3 px-4 text-base sm:text-sm"
+                  required
+                  disabled={alreadyJoined}
+                />
+                <Button
+                  type="submit"
+                  className={`px-8 h-12 group transition-all duration-300 font-semibold bg-red-600 hover:bg-red-700 text-white`}
+                  disabled={isSubmitting}
+                >
+                  {getButtonText()}
+                  {getButtonIcon()}
+                </Button>
+              </form>
+
+              {/* Error message */}
+              {error && (
+                <div className="mt-3 flex items-center gap-2 text-red-400 text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  {error}
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 mt-3">
+                Be the first to experience pure development power. Get early access to Devildev.
+              </p>
             </div>
-          )}
 
-          <p className="text-xs text-gray-500 mt-3 text-center">
-            Be the first to experience pure development power. No spam, just
-            wicked updates.
-          </p>
-        </div>
+            {/* Social Links */}
+            <div className="flex space-x-4">
+              <a
+                href="/devlogs"
+                className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
+                title="Dev Logs"
+              >
+                <Code2 className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
+              </a>
+              <a
+                href="https://github.com/lak7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
+              >
+                <Github className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
+              </a>
+              <a
+                href="mailto:lakshaygupta2511@gmail.com?subject=DevilDev%20Coming%20Soon%20-%20Inquiry"
+                className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
+              >
+                <Mail className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
+              </a>
+            </div>
+          </div>
 
-        {/* Social Links */}
-        <div className="flex space-x-4 max-lg:hidden">
-          <a
-            href="/devlogs"
-            className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
-            title="Dev Logs"
-          >
-            <Code2 className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
-          </a>
-          <a
-            href="https://github.com/lak7"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
-          >
-            <Github className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
-          </a>
-          <a
-            href="mailto:lakshaygupta2511@gmail.com?subject=DevilDev%20Coming%20Soon%20-%20Inquiry"
-            className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
-          >
-            <Mail className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
-          </a>
+          {/* Right Column - Hero Image */}
+          <div className="flex justify-center lg:justify-end">
+            <div className="relative p-8">
+              <Image
+                src="/hero-devil.png"
+                alt="Hero Devil"
+                width={600}
+                height={600}
+                className="w-full max-w-lg h-auto drop-shadow-2xl"
+                priority
+              />
+              
+              {/* Corner accents outside hero image */}
+              <div className="absolute -top-4 -left-4 w-8 h-8 border-l-2 border-t-2 border-red-500/40"></div>
+              <div className="absolute -top-4 -right-4 w-8 h-8 border-r-2 border-t-2 border-red-500/40"></div>
+              <div className="absolute -bottom-4 -left-4 w-8 h-8 border-l-2 border-b-2 border-red-500/40"></div>
+              <div className="absolute -bottom-4 -right-4 w-8 h-8 border-r-2 border-b-2 border-red-500/40"></div>
+              
+              {/* Corner accent dots outside hero image */}
+              <div className="absolute -top-2 -left-2 w-1.5 h-1.5 bg-red-500/60 rounded-full"></div>
+              <div className="absolute -top-2 -right-2 w-1.5 h-1.5 bg-red-500/60 rounded-full"></div>
+              <div className="absolute -bottom-2 -left-2 w-1.5 h-1.5 bg-red-500/60 rounded-full"></div>
+              <div className="absolute -bottom-2 -right-2 w-1.5 h-1.5 bg-red-500/60 rounded-full"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -314,16 +366,16 @@ export default function ComingSoonPage() {
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
 
       {/* Enhanced corner decorations */}
-      <div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
+      {/* <div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
       <div className="absolute top-4 right-4 w-12 h-12 border-r-2 border-t-2 border-red-500/40"></div>
       <div className="absolute bottom-4 left-4 w-12 h-12 border-l-2 border-b-2 border-red-500/40"></div>
-      <div className="absolute bottom-4 right-4 w-12 h-12 border-r-2 border-b-2 border-red-500/40"></div>
+      <div className="absolute bottom-4 right-4 w-12 h-12 border-r-2 border-b-2 border-red-500/40"></div> */}
 
       {/* Additional corner accents */}
-      <div className="absolute top-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+      {/* <div className="absolute top-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
       <div className="absolute top-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
       <div className="absolute bottom-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-      <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+      <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div> */}
 
       {/* Success Dialog */}
       <SuccessDialog isOpen={showSuccessDialog} onClose={handleCloseDialog} />
