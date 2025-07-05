@@ -281,7 +281,7 @@ export default function ComingSoonPage() {
                   }
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 bg-gray-900/50 border-gray-700 text-white placeholder-gray-400 focus:border-red-500 focus:ring-red-500 backdrop-blur-sm min-h-[48px] py-3 px-4 text-base sm:text-sm"
+                  className="flex-1 bg-gray-900/50 border-gray-300 text-white placeholder-gray-400 focus:border-red-500 focus:ring-red-500 backdrop-blur-sm min-h-[48px] py-3 px-4 text-base sm:text-sm"
                   required
                   disabled={alreadyJoined}
                 />
@@ -317,14 +317,6 @@ export default function ComingSoonPage() {
               >
                 <Code2 className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
               </a>
-              {/* <a
-                href="https://github.com/lak7"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
-              >
-                <Github className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
-              </a> */}
               <a
                 href="mailto:contact@devildev.com?subject=DevilDev%20Coming%20Soon%20-%20Inquiry"
                 className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
@@ -363,7 +355,7 @@ export default function ComingSoonPage() {
       </div>
 
       {/* Bottom decoration */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+      {/* <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"></div> */}
 
       {/* Enhanced corner decorations */}
       {/* <div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
