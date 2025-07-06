@@ -219,13 +219,12 @@ const DevPage = () => {
       <nav className="h-12 bg-black flex items-center px-4 flex-shrink-0">
         <div className="flex items-center space-x-3">
           <Image
-            src="/devildev-logo.png"
+            src="/old.png"
             alt="DevilDev Logo"
-            width={32}
-            height={32}
-            className="w-8 h-8"
+            width={30}
+            height={30}
+            className="w-full h-full"
           />
-          <span className="text-lg font-medium">DevilDev</span>
         </div>
       </nav>
 
@@ -233,6 +232,15 @@ const DevPage = () => {
       <div className="flex-1 flex gap-4 p-4 min-h-0">
         {/* Left Chat Panel - Bordered Container */}
         <div className="w-1/2 bg-gray-900/30 border border-gray-600/30 rounded-xl flex flex-col min-h-0">
+        <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-600/30">
+            <div className="flex space-x-1">
+              <button
+                className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
+              >
+                Chat
+              </button>
+            </div>
+          </div>
           {/* Chat Messages with separate scroll and custom scrollbar */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
             {messages.map((message) => (
@@ -262,7 +270,7 @@ const DevPage = () => {
           </div>
 
           {/* Input Area */}
-          <div className="p-6 border-t border-gray-600/30 flex-shrink-0">
+          <div className="p-0 px-3 pb-3 flex-shrink-0">
             <form onSubmit={handleSubmit} className="relative">
               <div className="bg-white/5 border-t border-x border-gray-600/100 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
@@ -300,13 +308,13 @@ const DevPage = () => {
         {/* Right Panel with Tabs - Bordered Container */}
         <div className="w-1/2 bg-gray-900/30 border border-gray-600/30 rounded-xl flex flex-col min-h-0">
           {/* Clean Tab Headers - Like in screenshot */}
-          <div className="flex items-center px-4 py-3 rounded-t-xl">
-            <div className="flex space-x-1">
+          <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-600/30">
+            <div className="flex space-x-1"> 
               <button
                 onClick={() => setActiveTab('architecture')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
                   activeTab === 'architecture'
-                    ? 'text-white bg-gray-700'
+                    ? 'text-white bg-gray-700/50'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -314,9 +322,9 @@ const DevPage = () => {
               </button>
               <button
                 onClick={() => setActiveTab('phases')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
                   activeTab === 'phases'
-                    ? 'text-white bg-gray-700'
+                    ? 'text-white bg-gray-700/50'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
