@@ -152,7 +152,7 @@ const DevPage = () => {
         <div className={`transition-all duration-700 ease-in-out ${
           isChatMode ? 'opacity-0 -translate-y-8 h-0 overflow-hidden' : 'opacity-100 translate-y-0'
         }`}>
-          <div className="mb-0 transform hover:scale-105 transition-transform duration-300 flex justify-center">
+          <div className="mb-0 transform flex justify-center">
             <Image
               src="/devildev-logo.png"
               alt="DevilDev Logo"
