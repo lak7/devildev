@@ -6,7 +6,22 @@ import { useState, useRef, useCallback, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Monitor, Server, Database, Shield, Move, RotateCcw, Activity, ArrowRight } from "lucide-react"
+import { 
+  Monitor, Server, Database, Shield, Move, RotateCcw, Activity, ArrowRight,
+  Globe, Cpu, Cloud, Lock, Users, Code, Search, Mail, Bell, Settings,
+  FileText, Image, Music, Video, Download, Upload, Smartphone, Tablet,
+  Laptop, HardDrive, Wifi, Bluetooth, Headphones, Camera,
+  Speaker, Battery, Zap, BarChart, PieChart, TrendingUp, TrendingDown,
+  DollarSign, CreditCard, ShoppingCart, Package, Truck, MapPin, Calendar,
+  Clock, Timer, Play, Pause, SkipBack, SkipForward, Volume,
+  VolumeX, Repeat, Shuffle, Heart, Star, Bookmark, Flag, Tag, Filter,
+  Grid, List, Eye, EyeOff, Edit, Trash, Plus, Minus, X, Check,
+  ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUp, ArrowDown,
+  ArrowLeft, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight,
+  RefreshCw, Maximize, Minimize, Copy, Scissors, Clipboard, Link,
+  ExternalLink, Home, User, MessageSquare, MessageCircle, Send, Phone,
+  Mic, MicOff, VideoOff, Volume2, MoreHorizontal, MoreVertical
+} from "lucide-react"
 
 interface Position {
   x: number
@@ -32,6 +47,41 @@ interface ComponentData {
     sends: string[]
     receives: string[]
   }
+}
+
+interface ArchitectureProps {
+  architectureData?: {
+    components: ComponentData[]
+    connectionLabels: Record<string, string>
+  }
+  isLoading?: boolean
+  isFullscreen?: boolean
+}
+
+// Icon mapping for dynamic icon resolution
+const iconMap: Record<string, any> = {
+  Monitor, Server, Database, Shield, Move, RotateCcw, Activity, ArrowRight,
+  Globe, Cpu, Cloud, Lock, Users, Code, Search, Mail, Bell, Settings,
+  FileText, Image, Music, Video, Download, Upload, Smartphone, Tablet,
+  Laptop, HardDrive, Wifi, Bluetooth, Headphones, Camera,
+  Speaker, Battery, Zap, BarChart, PieChart, TrendingUp, TrendingDown,
+  DollarSign, CreditCard, ShoppingCart, Package, Truck, MapPin, Calendar,
+  Clock, Timer, Play, Pause, SkipBack, SkipForward, Volume,
+  VolumeX, Repeat, Shuffle, Heart, Star, Bookmark, Flag, Tag, Filter,
+  Grid, List, Eye, EyeOff, Edit, Trash, Plus, Minus, X, Check,
+  ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUp, ArrowDown,
+  ArrowLeft, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight,
+  RefreshCw, Maximize, Minimize, Copy, Scissors, Clipboard, Link,
+  ExternalLink, Home, User, MessageSquare, MessageCircle, Send, Phone,
+  Mic, MicOff, VideoOff, Volume2, MoreHorizontal, MoreVertical
+}
+
+// Helper function to get icon component from string
+const getIconComponent = (iconName: string | any) => {
+  if (typeof iconName === 'string') {
+    return iconMap[iconName] || Monitor // fallback to Monitor icon
+  }
+  return iconName // assume it's already a component
 }
 
 const initialComponents: ComponentData[] = [
@@ -109,15 +159,20 @@ const initialComponents: ComponentData[] = [
   },
 ]
 
-const connectionLabels: Record<string, string> = {
-  "frontend-backend": "HTTP/API",
-  "frontend-authentication": "Auth Flow",
-  "backend-database": "SQL/ORM",
-  "backend-authentication": "Session",
-}
 
-export default function Architecture() {
-  const [components, setComponents] = useState<ComponentData[]>(initialComponents)
+
+export default function Architecture({ architectureData, isLoading = false, isFullscreen = false }: ArchitectureProps) {
+  const [components, setComponents] = useState<ComponentData[]>(
+    architectureData?.components || initialComponents
+  )
+  const [connectionLabels, setConnectionLabels] = useState<Record<string, string>>(
+    architectureData?.connectionLabels || {
+      "frontend-backend": "HTTP/API",
+      "frontend-authentication": "Auth Flow",
+      "backend-database": "SQL/ORM",
+      "backend-authentication": "Session",
+    }
+  )
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
   const [hoveredComponent, setHoveredComponent] = useState<string | null>(null)
   const [showDataFlow, setShowDataFlow] = useState(true)
@@ -125,6 +180,21 @@ export default function Architecture() {
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 })
   const [animationKey, setAnimationKey] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Update components when architectureData changes
+  useEffect(() => {
+    if (architectureData?.components) {
+      // Process icons to convert string names to components
+      const processedComponents = architectureData.components.map(comp => ({
+        ...comp,
+        icon: getIconComponent(comp.icon)
+      }))
+      setComponents(processedComponents)
+    }
+    if (architectureData?.connectionLabels) {
+      setConnectionLabels(architectureData.connectionLabels)
+    }
+  }, [architectureData])
 
   // Trigger animation restart when selection changes
   useEffect(() => {
@@ -282,13 +352,34 @@ export default function Architecture() {
     return selectedComp?.connections.includes(componentId) || false
   }
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-full bg-black text-white p-4 overflow-hidden flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-gray-600 border-t-red-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-red-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-white mb-2">Generating Architecture...</h3>
+            <p className="text-sm text-gray-400">DevilDev is analyzing your requirements and crafting the perfect architecture</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-black text-white p-4 overflow-hidden">
+    <div className="min-h-full bg-black text-white p-4 overflow-hidden">
       {/* Interactive Canvas */}
       <div
           ref={containerRef}
-          className="relative  overflow-hidden cursor-pointer"
-          style={{ height: "600px", minHeight: "600px" }}
+          className="relative overflow-hidden cursor-pointer"
+          style={{ 
+            height: isFullscreen ? "calc(100vh - 120px)" : "600px", 
+            minHeight: isFullscreen ? "calc(100vh - 120px)" : "600px" 
+          }}
           onClick={handleCanvasClick}
         >
           {/* Grid Background */}
@@ -490,8 +581,8 @@ export default function Architecture() {
                 style={{
                   left: `${component.position.x}px`,
                   top: `${component.position.y}px`,
-                  width: "280px",
-                  height: "200px",
+                  width: isFullscreen ? "320px" : "280px",
+                  height: isFullscreen ? "240px" : "200px",
                   transform: isDraggingThis ? "scale(1.02)" : "scale(1)",
                   transition: isDraggingThis ? "none" : "all 0.3s ease",
                 }}

@@ -6,7 +6,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3 } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X } from 'lucide-react';
+import Architecture from '@/components/core/architecture';
 
 interface ChatMessage {
   id: string;
@@ -33,6 +34,10 @@ const DevPage = () => {
   const [isChatMode, setIsChatMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'architecture' | 'phases'>('architecture');
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [architectureData, setArchitectureData] = useState<any>(null);
+  const [isArchitectureLoading, setIsArchitectureLoading] = useState(false);
+  const [architectureGenerated, setArchitectureGenerated] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30); // 30% default
@@ -98,6 +103,35 @@ const DevPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Function to generate architecture
+  const generateArchitecture = async (requirement: string) => {
+    if (architectureGenerated) return; // Don't regenerate if already done
+    
+    setIsArchitectureLoading(true);
+    
+    try {
+      const response = await fetch('/api/architecture', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ requirement }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate architecture');
+      }
+
+      const data = await response.json();
+      setArchitectureData(data.architecture);
+      setArchitectureGenerated(true);
+    } catch (error) {
+      console.error('Error generating architecture:', error);
+    } finally {
+      setIsArchitectureLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
@@ -117,6 +151,11 @@ const DevPage = () => {
     const currentInput = inputMessage;
     setInputMessage('');
     setTextareaHeight('60px');
+
+    // Generate architecture on first message
+    if (messages.length === 0) {
+      generateArchitecture(currentInput);
+    }
 
     try {
       // Call the OpenAI API with streaming
@@ -338,6 +377,34 @@ const DevPage = () => {
     );
   }
 
+  // Fullscreen Architecture view
+  if (isFullscreen) {
+    return (
+      <div className="fixed inset-0 bg-black text-white z-50 flex flex-col">
+        {/* Close button in top left */}
+        <div className="absolute top-4 left-4 z-60">
+          <button
+            onClick={() => setIsFullscreen(false)}
+            className="p-2 bg-gray-800/80 hover:bg-gray-700/80 border border-gray-600/40 rounded-lg transition-colors group"
+          >
+            <X className="h-5 w-5 text-gray-300 group-hover:text-white" />
+          </button>
+        </div>
+
+        {/* Fullscreen Architecture */}
+        <div className="flex-1 p-8 pt-16 overflow-hidden">
+          <div className="h-full">
+            <Architecture 
+              architectureData={architectureData} 
+              isLoading={isArchitectureLoading}
+              isFullscreen={true}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Chat mode layout
   return (
     <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
@@ -496,7 +563,7 @@ const DevPage = () => {
           style={{ width: `${100 - leftPanelWidth}%` }}
         >
           {/* Clean Tab Headers - Like in screenshot */}
-          <div className="flex items-center px-4 py-3 rounded-tr-xl border-b border-gray-600/30">
+          <div className="flex items-center justify-between px-4 py-3 rounded-tr-xl border-b border-gray-600/30">
             <div className="flex space-x-1"> 
               <button
                 onClick={() => setActiveTab('architecture')}
@@ -519,17 +586,28 @@ const DevPage = () => {
                 Phases
               </button>
             </div>
+            
+            {/* Fullscreen button - only show for architecture tab */}
+            {activeTab === 'architecture' && (
+              <button
+                onClick={() => setIsFullscreen(true)}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
+                title="Fullscreen Architecture"
+              >
+                <Maximize className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 p-6 overflow-y-auto min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {activeTab === 'architecture' ? (
-              <div className="text-gray-300">
-                <h3 className="text-lg font-semibold mb-4">Architecture Overview</h3>
-                <p className="text-sm">Architecture content will be displayed here based on the AI analysis.</p>
-              </div>
+              <Architecture 
+                architectureData={architectureData} 
+                isLoading={isArchitectureLoading} 
+              />
             ) : (
-              <div className="text-gray-300">
+              <div className="p-6 text-gray-300">
                 <h3 className="text-lg font-semibold mb-4">Development Phases</h3>
                 <p className="text-sm">Phase breakdown and timeline will be displayed here.</p>
               </div>
