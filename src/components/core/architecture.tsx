@@ -284,13 +284,10 @@ export default function Architecture() {
 
   return (
     <div className="min-h-screen bg-black text-white p-4 overflow-hidden">
-      <div className="w-full max-w-7xl mx-auto space-y-6">
-       
-
-        {/* Interactive Canvas */}
-        <div
+      {/* Interactive Canvas */}
+      <div
           ref={containerRef}
-          className="relative bg-gray-950/50 rounded-xl border border-gray-800 overflow-hidden cursor-pointer"
+          className="relative  overflow-hidden cursor-pointer"
           style={{ height: "600px", minHeight: "600px" }}
           onClick={handleCanvasClick}
         >
@@ -603,9 +600,6 @@ export default function Architecture() {
 
     
         </div>
-
-      
-      </div>
 
       {/* CSS for animations */}
       <style jsx>{`

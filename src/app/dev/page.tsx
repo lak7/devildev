@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -33,16 +33,53 @@ const DevPage = () => {
   const [isChatMode, setIsChatMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'architecture' | 'phases'>('architecture');
   const [particles, setParticles] = useState<Particle[]>([]);
+  
+  // Panel resize state
+  const [leftPanelWidth, setLeftPanelWidth] = useState(30); // 30% default
+  const [isResizing, setIsResizing] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startLeftWidth, setStartLeftWidth] = useState(30);
+  
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
+      
+      // Handle panel resizing
+      if (isResizing && containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const newX = e.clientX - containerRect.left;
+        const containerWidth = containerRect.width;
+        const newLeftWidth = (newX / containerWidth) * 100;
+        
+        // Constrain between 20% and 80%
+        const constrainedWidth = Math.min(80, Math.max(20, newLeftWidth));
+        setLeftPanelWidth(constrainedWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+    window.addEventListener("mouseup", handleMouseUp);
+    
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
+
+  // Handle resize start
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    setStartX(e.clientX);
+    setStartLeftWidth(leftPanelWidth);
+  };
 
   // Generate particles only on client side to avoid hydration mismatch
   useEffect(() => {
@@ -318,10 +355,13 @@ const DevPage = () => {
       </nav>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex gap-4 p-4 min-h-0">
-        {/* Left Chat Panel - Bordered Container */}
-        <div className="w-1/2 bg-gray-900/30 border border-gray-600/30 rounded-xl flex flex-col min-h-0">
-        <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-600/30">
+      <div ref={containerRef} className="flex-1 flex gap-0 p-4 min-h-0 relative">
+        {/* Left Chat Panel - Resizable */}
+        <div 
+          className="bg-gray-900/30 border border-gray-600/30 rounded-l-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
+          style={{ width: `${leftPanelWidth}%` }}
+        >
+          <div className="flex items-center px-4 py-3 rounded-tl-xl border-b border-gray-600/30">
             <div className="flex space-x-1">
               <button
                 className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
@@ -330,6 +370,7 @@ const DevPage = () => {
               </button>
             </div>
           </div>
+          
           {/* Chat Messages with separate scroll and custom scrollbar */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
             {messages.map((message) => (
@@ -433,10 +474,29 @@ const DevPage = () => {
           </div>
         </div>
 
-        {/* Right Panel with Tabs - Bordered Container */}
-        <div className="w-1/2 bg-gray-900/30 border border-gray-600/30 rounded-xl flex flex-col min-h-0">
+        {/* Resize Handle */}
+        <div 
+          className={`w-1 bg-transparent hover:bg-gray-500/50 cursor-col-resize transition-all duration-200 relative group ${
+            isResizing ? 'bg-gray-500/70' : ''
+          }`}
+          onMouseDown={handleResizeStart}
+        >
+          {/* Invisible wider hit area for easier grabbing */}
+          <div className="absolute inset-0 -left-2 -right-2 w-5"></div>
+          
+          {/* Visual indicator on hover */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="w-0.5 h-8 bg-gray-400 rounded-full"></div>
+          </div>
+        </div>
+
+        {/* Right Panel with Tabs - Resizable */}
+        <div 
+          className="bg-gray-900/30 border border-gray-600/30 rounded-r-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
+          style={{ width: `${100 - leftPanelWidth}%` }}
+        >
           {/* Clean Tab Headers - Like in screenshot */}
-          <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-600/30">
+          <div className="flex items-center px-4 py-3 rounded-tr-xl border-b border-gray-600/30">
             <div className="flex space-x-1"> 
               <button
                 onClick={() => setActiveTab('architecture')}
@@ -502,6 +562,9 @@ const DevPage = () => {
           scrollbar-width: thin;
           scrollbar-color: #4b5563 transparent;
         }
+        
+        /* Disable text selection during resize */
+        ${isResizing ? '*{user-select: none !important;}' : ''}
       `}</style>
     </div>
   );
