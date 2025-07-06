@@ -11,13 +11,44 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+interface Particle {
+  id: number;
+  left: string;
+  top: string;
+  animationDelay: string;
+  animationDuration: string;
+}
+
 const DevPage = () => {
   const [inputMessage, setInputMessage] = useState('');
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [textareaHeight, setTextareaHeight] = useState('60px');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'architecture' | 'phases'>('architecture');
+  const [particles, setParticles] = useState<Particle[]>([]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // Generate particles only on client side to avoid hydration mismatch
+  useEffect(() => {
+    const generatedParticles: Particle[] = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDelay: `${Math.random() * 2}s`,
+      animationDuration: `${2 + Math.random() * 2}s`,
+    }));
+    setParticles(generatedParticles);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +106,14 @@ const DevPage = () => {
   if (!isChatMode) {
     return (
       <div className="min-h-screen bg-black text-white relative overflow-hidden">
+        {/* Animated background gradient */}
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,0,0,0.15), transparent 40%)`,
+          }}
+        />
+
         {/* Grid pattern overlay */}
         <div className="absolute inset-0 opacity-10">
           <div
@@ -89,9 +128,25 @@ const DevPage = () => {
           />
         </div>
 
+        {/* Floating particles */}
+        <div className="absolute inset-0 overflow-hidden">
+          {particles.map((particle) => (
+            <div
+              key={particle.id}
+              className="absolute w-1 h-1 bg-red-500/30 rounded-full animate-pulse"
+              style={{
+                left: particle.left,
+                top: particle.top,
+                animationDelay: particle.animationDelay,
+                animationDuration: particle.animationDuration,
+              }}
+            />
+          ))}
+        </div>
+
         {/* Main content */}
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
-          <div className="mb-0 transform flex justify-center">
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 bottom-12">
+          <div className="mb-0 transform hover:scale-105 transition-transform duration-300 flex justify-center">
             <Image
               src="/devildev-logo.png"
               alt="DevilDev Logo"
