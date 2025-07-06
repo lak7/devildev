@@ -2,6 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.css';
 import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3 } from 'lucide-react';
 
 interface ChatMessage {
@@ -70,18 +74,48 @@ const DevPage = () => {
     setInputMessage('');
     setTextareaHeight('60px');
 
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
+    try {
+      // Call the OpenAI API
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: currentInput,
+          messages: messages // Send conversation history
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      const data = await response.json();
+      
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: `I'll help you build "${currentInput}". This is a simulated response. In a real implementation, this would connect to your AI service to generate a proper response with architecture suggestions, code examples, and implementation steps.`,
+        content: data.message,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error calling OpenAI API:', error);
+      
+      // Show error message to user
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: 'Sorry, I encountered an error while processing your request. Please make sure your OpenAI API key is properly configured and try again.',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -248,9 +282,42 @@ const DevPage = () => {
                 <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                   message.type === 'user' 
                     ? 'bg-white/10 border border-gray-600/40 text-white' 
-                    : 'text-white'
+                    : ' text-white'
                 }`}>
-                  <p className="text-sm md:text-base whitespace-pre-wrap">{message.content}</p>
+                  {message.type === 'assistant' ? (
+                    <div className="prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeHighlight]}
+                        components={{
+                          h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-red-400">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-red-300">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-sm font-medium mb-1 text-red-200">{children}</h3>,
+                          p: ({ children }) => <p className="mb-2 text-gray-200">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc ml-4 mb-2 text-gray-200">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal ml-4 mb-2 text-gray-200">{children}</ol>,
+                          li: ({ children }) => <li className="mb-1">{children}</li>,
+                          code: ({ children, className, ...props }: any) => {
+                            const match = /language-(\w+)/.exec(className || '');
+                            const inline = props.inline;
+                            return !inline ? (
+                              <pre className="bg-gray-900 rounded-lg p-3 mb-2 overflow-x-auto">
+                                <code className={className}>{children}</code>
+                              </pre>
+                            ) : (
+                              <code className="bg-gray-700 px-1 py-0.5 rounded text-sm">{children}</code>
+                            );
+                          },
+                          blockquote: ({ children }) => <blockquote className="border-l-4 border-red-500 pl-4 italic text-gray-300">{children}</blockquote>,
+                          strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-sm md:text-base whitespace-pre-wrap">{message.content}</p>
+                  )}
                 </div>
               </div>
             ))}
