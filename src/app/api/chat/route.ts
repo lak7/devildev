@@ -60,22 +60,46 @@ Always structure your responses with clear headings, bullet points, and actionab
       }
     ];
 
-    const completion = await client.chat.completions.create({
+    const stream = await client.chat.completions.create({
       model: 'gpt-4-1106-preview',
       messages: openaiMessages,
       temperature: 0.7,
       max_tokens: 2000,
+      stream: true,
     });
 
-    const assistantMessage = completion.choices[0]?.message?.content;
+    // Create a readable stream for the response
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) {
+              const data = `data: ${JSON.stringify({ content })}\n\n`;
+              controller.enqueue(encoder.encode(data));
+            }
+          }
+          
+          // Send end signal
+          const endData = `data: ${JSON.stringify({ done: true })}\n\n`;
+          controller.enqueue(encoder.encode(endData));
+          controller.close();
+        } catch (error) {
+          console.error('Streaming error:', error);
+          const errorData = `data: ${JSON.stringify({ error: 'Streaming failed' })}\n\n`;
+          controller.enqueue(encoder.encode(errorData));
+          controller.close();
+        }
+      },
+    });
 
-    if (!assistantMessage) {
-      return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
-    }
-
-    return NextResponse.json({ 
-      message: assistantMessage,
-      usage: completion.usage 
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
 
   } catch (error) {

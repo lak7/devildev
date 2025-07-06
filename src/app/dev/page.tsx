@@ -13,6 +13,7 @@ interface ChatMessage {
   type: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 interface Particle {
@@ -32,6 +33,7 @@ const DevPage = () => {
   const [isChatMode, setIsChatMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'architecture' | 'phases'>('architecture');
   const [particles, setParticles] = useState<Particle[]>([]);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
@@ -54,6 +56,11 @@ const DevPage = () => {
     setParticles(generatedParticles);
   }, []);
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
@@ -75,7 +82,7 @@ const DevPage = () => {
     setTextareaHeight('60px');
 
     try {
-      // Call the OpenAI API
+      // Call the OpenAI API with streaming
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -91,20 +98,69 @@ const DevPage = () => {
         throw new Error('Failed to get AI response');
       }
 
-      const data = await response.json();
-      
+      // Create initial assistant message with empty content
+      const assistantMessageId = (Date.now() + 1).toString();
       const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: assistantMessageId,
         type: 'assistant',
-        content: data.message,
-        timestamp: new Date()
+        content: '',
+        timestamp: new Date(),
+        isStreaming: true
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+      setIsLoading(false); // Stop loading indicator as streaming starts
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                if (data.content) {
+                  // Update the assistant message with new content
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === assistantMessageId 
+                      ? { ...msg, content: msg.content + data.content }
+                      : msg
+                  ));
+                } else if (data.done) {
+                  // Streaming finished - mark as no longer streaming
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === assistantMessageId 
+                      ? { ...msg, isStreaming: false }
+                      : msg
+                  ));
+                  break;
+                } else if (data.error) {
+                  throw new Error(data.error);
+                }
+              } catch (parseError) {
+                // Ignore parse errors for incomplete JSON
+                continue;
+              }
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error('Error calling OpenAI API:', error);
       
-      // Show error message to user
+      // Mark any streaming message as finished and show error
+      setMessages(prev => prev.map(msg => ({ ...msg, isStreaming: false })));
+      
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
@@ -113,7 +169,6 @@ const DevPage = () => {
       };
       
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -312,8 +367,11 @@ const DevPage = () => {
                           strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
                         }}
                       >
-                        {message.content}
+                        {message.content || (message.isStreaming ? "DevilDev is thinking..." : "")}
                       </ReactMarkdown>
+                      {message.isStreaming && message.content && (
+                        <span className="inline-block w-2 h-4 bg-red-500 ml-1 animate-pulse"></span>
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm md:text-base whitespace-pre-wrap">{message.content}</p>
@@ -334,6 +392,9 @@ const DevPage = () => {
                 </div>
               </div>
             )}
+            
+            {/* Auto-scroll target */}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Input Area */}
