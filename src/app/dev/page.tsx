@@ -8,6 +8,7 @@ import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface ChatMessage {
   id: string;
@@ -251,7 +252,7 @@ const DevPage = () => {
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
-    
+     
     // Auto-resize the textarea
     const textarea = e.target;
     textarea.style.height = 'auto';
@@ -409,7 +410,7 @@ const DevPage = () => {
   return (
     <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
       {/* Thin Navbar */}
-      <nav className="h-12 bg-black flex items-center px-4 flex-shrink-0">
+      <nav className="h-12 bg-black flex items-center justify-between px-4 flex-shrink-0">
         <div className="flex items-center space-x-3">
           <Image
             src="/old.png"
@@ -418,6 +419,12 @@ const DevPage = () => {
             height={30}
             className="w-full h-full"
           />
+        </div>
+        <div className="flex items-center">
+          <Avatar className="size-8">
+            <AvatarImage src="https://github.com/shadcn.png" alt="User" />
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
         </div>
       </nav>
 
@@ -441,10 +448,29 @@ const DevPage = () => {
           {/* Chat Messages with separate scroll and custom scrollbar */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
             {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+              <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-start'}`}>
+                {message.type === 'assistant' && (
+                  <div className="mr-3 flex-shrink-0">
+                    <Image
+                      src="/old.png"
+                      alt="Assistant"
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  </div>
+                )}
+                {message.type === 'user' && (
+                  <div className="mr-1 flex-shrink-0">
+                    <Avatar className="size-8">
+                      <AvatarImage src="https://github.com/shadcn.png" alt="User" />
+                      <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                  </div>
+                )}
+                <div className={`max-w-[80%] rounded-2xl px-2 py-1 ${
                   message.type === 'user' 
-                    ? 'bg-white/10 border border-gray-600/40 text-white' 
+                    ? ' text-white' 
                     : ' text-white'
                 }`}>
                   {message.type === 'assistant' ? (
