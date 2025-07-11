@@ -9,6 +9,7 @@ import 'highlight.js/styles/github-dark.css';
 import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { startOrNot } from '../../../actions/startOrNot';
 
 interface ChatMessage {
   id: string;
@@ -171,6 +172,7 @@ const DevPage = () => {
         }),
       });
 
+      const isStart = await startOrNot(currentInput);
       if (!response.ok) {
         throw new Error('Failed to get AI response');
       }
@@ -675,3 +677,4 @@ const DevPage = () => {
 };
 
 export default DevPage;
+

@@ -10,12 +10,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@langchain/core": "^0.3.62",
+    "@langchain/openai": "^0.5.18",
     "@prisma/client": "^6.9.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-slot": "^1.2.3",
     "@vercel/analytics": "^1.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "langchain": "^0.3.29",
     "lucide-react": "^0.511.0",
     "next": "15.3.3",
     "openai": "^5.8.2",
