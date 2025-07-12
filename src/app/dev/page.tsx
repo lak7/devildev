@@ -9,7 +9,7 @@ import 'highlight.js/styles/github-dark.css';
 import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { startOrNot } from '../../../actions/startOrNot';
+import { startOrNot } from '../../../actions/agentsFlow';
 
 interface ChatMessage {
   id: string;
@@ -106,7 +106,7 @@ const DevPage = () => {
   }, [messages]);
 
   // Function to generate architecture
-  const generateArchitecture = async (requirement: string) => {
+  const genArchitecture = async (requirement: string) => {
     if (architectureGenerated) return; // Don't regenerate if already done
     
     setIsArchitectureLoading(true);
@@ -154,10 +154,12 @@ const DevPage = () => {
     setInputMessage('');
     setTextareaHeight('60px');
 
+    const isStart = await startOrNot(currentInput);
+
     // Generate architecture on first message
-    if (messages.length === 0) {
-      generateArchitecture(currentInput);
-    }
+    // if (messages.length === 0) {
+    //   genArchitecture(currentInput);
+    // }
 
     try {
       // Call the OpenAI API with streaming
@@ -172,7 +174,6 @@ const DevPage = () => {
         }),
       });
 
-      const isStart = await startOrNot(currentInput);
       if (!response.ok) {
         throw new Error('Failed to get AI response');
       }
@@ -397,11 +398,11 @@ const DevPage = () => {
         {/* Fullscreen Architecture */}
         <div className="flex-1 p-8 pt-16 overflow-hidden">
           <div className="h-full">
-            <Architecture 
+            {/* <Architecture 
               architectureData={architectureData} 
               isLoading={isArchitectureLoading}
               isFullscreen={true}
-            />
+            /> */}
           </div>
         </div>
       </div>
@@ -630,10 +631,11 @@ const DevPage = () => {
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
             {activeTab === 'architecture' ? (
-              <Architecture 
-                architectureData={architectureData} 
-                isLoading={isArchitectureLoading} 
-              />
+              <div className=""></div>
+              // <Architecture 
+              //   architectureData={architectureData} 
+              //   isLoading={isArchitectureLoading} 
+              // />
             ) : (
               <div className="p-6 text-gray-300">
                 <h3 className="text-lg font-semibold mb-4">Development Phases</h3>
