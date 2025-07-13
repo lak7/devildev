@@ -5,30 +5,63 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({openAIApiKey: openaiKey})
 
-export async function startOrNot(userInput: string) {
-    const template = `You are an intent classifier. Analyze if the user input describes a software project they want to build.
+export async function startOrNot(userInput: string, conversationHistory: any[] = []) {
+    const template = `You are an intent classifier for DevilDev, a software architecture platform. Analyze if the user input describes a specific software project they want to build.
 
-            Return only "true" or "false".
+CONVERSATION CONTEXT: {conversationHistory}
 
-            Return "true" if:
-            - User describes wanting to build/create/develop software
-            - User explains app/website/platform functionality
-            - User mentions technical requirements
+Return only "true" or "false".
 
-            Return "false" if:
-            - General conversation/greetings
-            - Questions about the platform
-            - Vague statements without clear project intent
+Return "true" if:
+- The user expresses a desire to create, build, or develop a software product (even if phrased creatively or metaphorically)
+- The user describes a concept, platform, app, website, or tool they envision — including abstract or poetic language (e.g. “a digital garden” or “a space where ideas grow”)
+- The user outlines features, user interactions, or goals of a potential software system, even vaguely
+- The user uses terms like "I want", "I'm planning", "I'm thinking of building", or even "imagine a platform..." and provides a conceptual description
+- The prompt clearly implies a system with users, content, actions, or interactions — even if it's not explicitly technical
 
-            Input: {user_input}
-            Classification:`
+Return "false" if:
+- The message is a general greeting or unrelated conversation
+- The user asks for suggestions or help without describing their own idea
+- The input is purely educational (e.g., “Tell me about serverless functions”)
+- The user asks for tech comparisons or definitions
+- The input is ambiguous AND does not suggest any user-facing system or functionality
+
+EXAMPLES:
+
+TRUE cases:
+- "Create a decentralized website where users can buy and exchange game skins"
+- "I want to build a social media app where users can share photos"
+- "Build a task management tool with real-time collaboration"
+- "Make an e-commerce platform with user authentication"
+- "Please create a website for booking appointments"
+- "I’m imagining a digital garden where people plant ideas and others can grow them into projects"
+- "What would the architecture look like for a system where user feedback evolves over time?"
+
+FALSE cases:
+- "Please suggest me something based on blockchain"
+- "What should I build with React?"
+- "Tell me about different database options"
+- "How do I choose between MongoDB and PostgreSQL?"
+- "What are some good project ideas?"
+- "Hello, what can you help me with?"
+
+IMPORTANT: Even if the input is abstract or metaphorical, return "true" if the user describes a concept that could be built as a software system.
+
+Current Input: {user_input}  
+Previous Context: {conversationHistory}  
+Classification:`
+
+    // Format conversation history for the prompt
+    const formattedHistory = conversationHistory.map(msg => 
+        `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+    ).join('\n');
     const prompt = PromptTemplate.fromTemplate(template);
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
-    const result = await chain.invoke({user_input: userInput});
+    const result = await chain.invoke({user_input: userInput, conversationHistory: formattedHistory});
     return result;
 }
 
-export async function firstBot(userInput: string, startOrNot: boolean) {
+export async function firstBot(userInput: string, startOrNot: boolean, conversationHistory: any[] = []) {
     const template = `You are DevilDev Assistant, an AI helper for software architecture and development.
 
 RESPONSE STYLE:
@@ -40,6 +73,9 @@ RESPONSE STYLE:
 BEHAVIOR BASED ON ARCHITECTURE STATUS:
 - If {startOrNot} is true: The user has described a project and architecture generation is starting
 - If {startOrNot} is false: Continue normal conversation, help clarify project ideas
+
+CONVERSATION CONTEXT:
+Previous conversation history: {conversationHistory}
 
 RESPONSE PATTERNS:
 
@@ -84,11 +120,22 @@ You: "Depends on your needs! Supabase is great for rapid development with built-
 User: "Thanks"
 You: "You're welcome! Got any project ideas you'd like me to help architect?"
 
-Current conversation: {input}
-Architecture Generation Status: {startOrNot}`
+Current user input: {input}
+Architecture Generation Status: {startOrNot}
 
-const prompt = PromptTemplate.fromTemplate(template);
-const chain = prompt.pipe(llm).pipe(new StringOutputParser());
-const result = await chain.invoke({input: userInput, startOrNot});
-return result;
+Based on the conversation history and current input, provide a helpful response that maintains context and continuity.`
+
+    // Format conversation history for the prompt
+    const formattedHistory = conversationHistory.map(msg => 
+        `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+    ).join('\n');
+
+    const prompt = PromptTemplate.fromTemplate(template);
+    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const result = await chain.invoke({
+        input: userInput, 
+        startOrNot,
+        conversationHistory: formattedHistory
+    });
+    return result;
 }

@@ -9,9 +9,9 @@ import 'highlight.js/styles/github-dark.css';
 import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { startOrNot } from '../../../actions/agentsFlow';
+import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 
-interface ChatMessage {
+export interface ChatMessage {
   id: string;
   type: 'user' | 'assistant';
   content: string;
@@ -154,97 +154,38 @@ const DevPage = () => {
     setInputMessage('');
     setTextareaHeight('60px');
 
-    const isStart = await startOrNot(currentInput);
+    const isStart = await startOrNot(currentInput, messages);
+    // alert(isStart);
 
     // Generate architecture on first message
     // if (messages.length === 0) {
     //   genArchitecture(currentInput);
     // }
+    // alert(isStart.toLowerCase());
+    const isTrue = isStart.toLowerCase() === "true";
+    // alert(isTrue);
 
     try {
-      // Call the OpenAI API with streaming
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: currentInput,
-          messages: messages // Send conversation history
-        }),
-      });
+      // Use firstBot function directly instead of API call
+      const assistantResponse = await firstBot(currentInput, isTrue, messages);
 
-      if (!response.ok) {
-        throw new Error('Failed to get AI response');
-      }
-
-      // Create initial assistant message with empty content
-      const assistantMessageId = (Date.now() + 1).toString();
+      // Create assistant message with the response
       const assistantMessage: ChatMessage = {
-        id: assistantMessageId,
+        id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: '',
-        timestamp: new Date(),
-        isStreaming: true
+        content: assistantResponse,
+        timestamp: new Date()
       };
       
       setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false); // Stop loading indicator as streaming starts
-
-      // Handle streaming response
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          
-          if (done) break;
-          
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-          
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                
-                if (data.content) {
-                  // Update the assistant message with new content
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === assistantMessageId 
-                      ? { ...msg, content: msg.content + data.content }
-                      : msg
-                  ));
-                } else if (data.done) {
-                  // Streaming finished - mark as no longer streaming
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === assistantMessageId 
-                      ? { ...msg, isStreaming: false }
-                      : msg
-                  ));
-                  break;
-                } else if (data.error) {
-                  throw new Error(data.error);
-                }
-              } catch (parseError) {
-                // Ignore parse errors for incomplete JSON
-                continue;
-              }
-            }
-          }
-        }
-      }
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error calling OpenAI API:', error);
-      
-      // Mark any streaming message as finished and show error
-      setMessages(prev => prev.map(msg => ({ ...msg, isStreaming: false })));
+      console.error('Error calling firstBot:', error);
       
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: 'Sorry, I encountered an error while processing your request. Please make sure your OpenAI API key is properly configured and try again.',
+        content: 'Sorry, I encountered an error while processing your request. Please try again.',
         timestamp: new Date()
       };
       
@@ -504,11 +445,8 @@ const DevPage = () => {
                           strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
                         }}
                       >
-                        {message.content || (message.isStreaming ? "DevilDev is thinking..." : "")}
+                        {message.content}
                       </ReactMarkdown>
-                      {message.isStreaming && message.content && (
-                        <span className="inline-block w-2 h-4 bg-red-500 ml-1 animate-pulse"></span>
-                      )}
                     </div>
                   ) : (
                     <p className="text-sm md:text-base whitespace-pre-wrap">{message.content}</p>
