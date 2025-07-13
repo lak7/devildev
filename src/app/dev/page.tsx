@@ -121,7 +121,7 @@ const DevPage = () => {
         : architectureResult;
       
       setArchitectureData(parsedArchitecture);
-      setArchitectureGenerated(true);
+      // setArchitectureGenerated(true);
     } catch (error) {
       console.error('Error generating architecture:', error);
     } finally {
@@ -151,7 +151,7 @@ const DevPage = () => {
 
     const isStart = await startOrNot(currentInput, messages);
     const isTrue = isStart.toLowerCase() === "true";
-    // alert(isStart);
+    // alert(isTrue);
 
     // Generate architecture on first message
     if (isTrue) {
