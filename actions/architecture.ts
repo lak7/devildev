@@ -67,31 +67,31 @@ export async function generateArchitecture(requirement: string, conversationHist
 RESPONSE FORMAT:
 Return ONLY a JSON object with this exact structure:
 
-{
+{{
   "components": [
-    {
+    {{
       "id": "unique-component-id",
       "title": "Descriptive Component Name",
       "icon": "appropriate-icon-from-list",
       "color": "from-color-500 to-color-600",
       "borderColor": "border-color-500/30",
-      "technologies": {
+      "technologies": {{
         "primary": "Main Technology",
         "framework": "Framework Used",
         "additional": "Other Tools"
-      },
+      }},
       "connections": ["connected-component-ids"],
-      "position": { "x": 0-800, "y": 50-600 },
-      "dataFlow": {
+      "position": {{ "x": 0-800, "y": 50-600 }},
+      "dataFlow": {{
         "sends": ["specific-data-types"],
         "receives": ["specific-data-types"]
-      }
-    }
+      }}
+    }}
   ],
-  "connectionLabels": {
+  "connectionLabels": {{
     "component1-component2": "Connection Protocol/Type"
-  }
-}
+  }}
+}}
 
 REQUIREMENTS:
 - 5-10 components based on project complexity

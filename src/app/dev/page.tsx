@@ -10,6 +10,7 @@ import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
+import { generateArchitecture } from '../../../actions/architecture';
 
 export interface ChatMessage {
   id: string;
@@ -106,26 +107,20 @@ const DevPage = () => {
   }, [messages]);
 
   // Function to generate architecture
-  const genArchitecture = async (requirement: string) => {
+  const genArchitecture = async (requirement: string, conversationHistory: any[] = []) => {
     if (architectureGenerated) return; // Don't regenerate if already done
     
     setIsArchitectureLoading(true);
     
     try {
-      const response = await fetch('/api/architecture', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ requirement }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate architecture');
-      }
-
-      const data = await response.json();
-      setArchitectureData(data.architecture);
+      const architectureResult = await generateArchitecture(requirement, conversationHistory);
+      
+      // Parse the JSON result if it's a string
+      const parsedArchitecture = typeof architectureResult === 'string' 
+        ? JSON.parse(architectureResult) 
+        : architectureResult;
+      
+      setArchitectureData(parsedArchitecture);
       setArchitectureGenerated(true);
     } catch (error) {
       console.error('Error generating architecture:', error);
@@ -155,14 +150,14 @@ const DevPage = () => {
     setTextareaHeight('60px');
 
     const isStart = await startOrNot(currentInput, messages);
+    const isTrue = isStart.toLowerCase() === "true";
     // alert(isStart);
 
     // Generate architecture on first message
-    // if (messages.length === 0) {
-    //   genArchitecture(currentInput);
-    // }
+    if (isTrue) {
+      genArchitecture(currentInput, messages);
+    }
     // alert(isStart.toLowerCase());
-    const isTrue = isStart.toLowerCase() === "true";
     // alert(isTrue);
 
     try {
@@ -339,11 +334,11 @@ const DevPage = () => {
         {/* Fullscreen Architecture */}
         <div className="flex-1 p-8 pt-16 overflow-hidden">
           <div className="h-full">
-            {/* <Architecture 
+            <Architecture 
               architectureData={architectureData} 
               isLoading={isArchitectureLoading}
               isFullscreen={true}
-            /> */}
+            />
           </div>
         </div>
       </div>
@@ -569,11 +564,10 @@ const DevPage = () => {
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
             {activeTab === 'architecture' ? (
-              <div className=""></div>
-              // <Architecture 
-              //   architectureData={architectureData} 
-              //   isLoading={isArchitectureLoading} 
-              // />
+              <Architecture 
+                architectureData={architectureData} 
+                isLoading={isArchitectureLoading} 
+              />
             ) : (
               <div className="p-6 text-gray-300">
                 <h3 className="text-lg font-semibold mb-4">Development Phases</h3>
