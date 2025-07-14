@@ -73,15 +73,23 @@ const iconMap: Record<string, any> = {
   ArrowLeft, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight,
   RefreshCw, Maximize, Minimize, Copy, Scissors, Clipboard, Link,
   ExternalLink, Home, User, MessageSquare, MessageCircle, Send, Phone,
-  Mic, MicOff, VideoOff, Volume2, MoreHorizontal, MoreVertical
+  Mic, MicOff, VideoOff, Volume2, MoreHorizontal, MoreVertical,
+  // Add aliases for common variations
+  Microphone: Mic,
+  Sort: Filter // Using Filter as Sort alias since Sort icon doesn't exist in lucide-react
 }
 
 // Helper function to get icon component from string
 const getIconComponent = (iconName: string | any) => {
   if (typeof iconName === 'string') {
-    return iconMap[iconName] || Monitor // fallback to Monitor icon
+    // Handle case-insensitive icon names
+    const normalizedIconName = iconName.charAt(0).toUpperCase() + iconName.slice(1).toLowerCase();
+    return iconMap[normalizedIconName] || iconMap[iconName] || Monitor; // fallback to Monitor icon
   }
-  return iconName // assume it's already a component
+  if (typeof iconName === 'function' || (iconName && typeof iconName === 'object')) {
+    return iconName; // assume it's already a component
+  }
+  return Monitor; // safe fallback
 }
 
 const initialComponents: ComponentData[] = [
@@ -162,9 +170,14 @@ const initialComponents: ComponentData[] = [
 
 
 export default function Architecture({ architectureData, isLoading = false, isFullscreen = false }: ArchitectureProps) {
-  const [components, setComponents] = useState<ComponentData[]>(
-    architectureData?.components || initialComponents
-  )
+  const [components, setComponents] = useState<ComponentData[]>(() => {
+    // Process icons when initializing state
+    const initialData = architectureData?.components || initialComponents;
+    return initialData.map(comp => ({
+      ...comp,
+      icon: getIconComponent(comp.icon)
+    }));
+  })
   const [connectionLabels, setConnectionLabels] = useState<Record<string, string>>(
     architectureData?.connectionLabels || {
       "frontend-backend": "HTTP/API",
@@ -561,7 +574,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
 
           {/* Draggable Components */}
           {components.map((component) => {
-            const IconComponent = component.icon
+            const IconComponent = getIconComponent(component.icon)
             const isSelected = selectedComponent === component.id
             const isHighlighted = isComponentHighlighted(component.id)
             const isDraggingThis = isDragging === component.id
