@@ -55,3 +55,12 @@ export async function getDevlog(slug: string): Promise<Devlog | null> {
     return null
   }
 }
+
+export async function getDevlogsSlugs(): Promise<string[]> {
+  const devlogs = await db.devlogs.findMany({
+    select: {
+      slug: true
+    }
+  })
+  return devlogs.map(devlog => devlog.slug)
+}
