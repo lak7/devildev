@@ -2,76 +2,25 @@ import React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { db } from '@/lib/db'
+import { getDevlog } from '../../../../actions/devlog'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeRaw from 'rehype-raw'
 import { ArrowLeft, Clock, Calendar, Tag } from 'lucide-react'
 import 'highlight.js/styles/github-dark.css'
+import { cache } from 'react'
 
 interface DevlogPageProps {
   params: Promise<{ slug: string }>
 }
 
-interface Devlog {
-  id: string
-  title: string
-  slug: string
-  content: string
-  coverImage: string | null
-  publishedDate: string
-  updatedDate: string
-  tags: string[]
-  categories: string[]
-  readingTime: number | null
-  excerpt: string | null
-  seoTitleTag: string | null
-  seoMetaDescription: string | null
-  seoCanonicalUrl: string | null
-  ogTitle: string | null
-  ogDescription: string | null
-  ogImage: string | null
-  twitterCard: string | null
-  twitterTitle: string | null
-  twitterDescription: string | null
-  twitterImage: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-async function getDevlog(slug: string): Promise<Devlog | null> {
-  try {
-    const decodedSlug = decodeURIComponent(slug)
-    
-    const devlog = await db.devlogs.findFirst({
-      where: {
-        slug: decodedSlug
-      }
-    })
-
-    if (!devlog) {
-      return null
-    }
-
-    // Convert dates to strings for serialization
-    return {
-      ...devlog,
-      publishedDate: devlog.publishedDate.toISOString(),
-      updatedDate: devlog.updatedDate.toISOString(),
-      createdAt: devlog.createdAt.toISOString(),
-      updatedAt: devlog.updatedAt.toISOString(),
-    }
-  } catch (error) {
-    console.error('Error fetching devlog:', error)
-    return null
-  }
-}
+const getCachedDevlog = cache(getDevlog)
 
 // Generate metadata for SEO and Open Graph
 export async function generateMetadata({ params }: DevlogPageProps): Promise<Metadata> {
   const { slug } = await params
-  const devlog = await getDevlog(slug)
+  const devlog = await getCachedDevlog(slug)
 
   if (!devlog) {
     return {
@@ -114,7 +63,7 @@ export async function generateMetadata({ params }: DevlogPageProps): Promise<Met
 
 const DevlogPage = async ({ params }: DevlogPageProps) => {
   const { slug } = await params
-  const devlog = await getDevlog(slug)
+  const devlog = await getCachedDevlog(slug)
   
   if (!devlog) {
     notFound()
