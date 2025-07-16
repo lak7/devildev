@@ -2,7 +2,7 @@ import React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getDevlog } from '../../../../actions/devlog'
+import { getDevlog, getDevlogsSlugs } from '../../../../actions/devlog'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -11,11 +11,21 @@ import { ArrowLeft, Clock, Calendar, Tag } from 'lucide-react'
 import 'highlight.js/styles/github-dark.css'
 import { cache } from 'react'
 
+
 interface DevlogPageProps {
   params: Promise<{ slug: string }>
 }
 
 const getCachedDevlog = cache(getDevlog)
+
+// Generate static params for all devlog slugs
+export async function generateStaticParams() {
+  const allSlugs = await getDevlogsSlugs()
+  
+  return allSlugs.map((slug) => ({
+    slug,
+  }))
+}
 
 // Generate metadata for SEO and Open Graph
 export async function generateMetadata({ params }: DevlogPageProps): Promise<Metadata> {

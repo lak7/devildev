@@ -4,6 +4,9 @@ import { db } from '@/lib/db'
 import { Metadata } from 'next'
 import { ArrowLeft, Clock, Calendar, Tag } from 'lucide-react'
 
+
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'DevLogs - DevilDev',
   description: 'Browse all development logs and project updates from DevilDev',
