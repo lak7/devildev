@@ -20,12 +20,20 @@ import {
   ArrowLeft, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight,
   RefreshCw, Maximize, Minimize, Copy, Scissors, Clipboard, Link,
   ExternalLink, Home, User, MessageSquare, MessageCircle, Send, Phone,
-  Mic, MicOff, VideoOff, Volume2, MoreHorizontal, MoreVertical
+  Mic, MicOff, VideoOff, Volume2, MoreHorizontal, MoreVertical,
+  ZoomIn, ZoomOut, Hand, MousePointer,
+  Cross
 } from "lucide-react"
 
 interface Position {
   x: number
   y: number
+}
+
+interface ViewportTransform {
+  x: number
+  y: number
+  scale: number
 }
 
 interface DataFlowItem {
@@ -74,6 +82,7 @@ const iconMap: Record<string, any> = {
   RefreshCw, Maximize, Minimize, Copy, Scissors, Clipboard, Link,
   ExternalLink, Home, User, MessageSquare, MessageCircle, Send, Phone,
   Mic, MicOff, VideoOff, Volume2, MoreHorizontal, MoreVertical,
+  ZoomIn, ZoomOut, Hand, MousePointer,
   // Add aliases for common variations
   Microphone: Mic,
   Sort: Filter // Using Filter as Sort alias since Sort icon doesn't exist in lucide-react
@@ -191,11 +200,22 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   const [isDragging, setIsDragging] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 })
   const [animationKey, setAnimationKey] = useState(0)
+  
+  // Canvas transform state
+  const [transform, setTransform] = useState<ViewportTransform>({ x: 0, y: 0, scale: 1 })
+  const [isPanning, setIsPanning] = useState(false)
+  const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 })
+  const [isSpacePressed, setIsSpacePressed] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(true)
+  
   const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
 
   // Component dimensions
   const COMPONENT_WIDTH = 280
-  const COMPONENT_HEIGHT = 200
+  const COMPONENT_HEIGHT = 210
+  const MIN_SCALE = 0.1
+  const MAX_SCALE = 3
 
   // Update components when architectureData changes
   useEffect(() => {
@@ -219,58 +239,224 @@ export default function Architecture({ architectureData, isLoading = false, isFu
     }
   }, [selectedComponent])
 
+  // Keyboard event handlers for space key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isSpacePressed) {
+        e.preventDefault()
+        setIsSpacePressed(true)
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'grab'
+        }
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault()
+        setIsSpacePressed(false)
+        setIsPanning(false)
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'default'
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [isSpacePressed])
+
+  // Convert screen coordinates to canvas coordinates
+  const screenToCanvas = useCallback((screenX: number, screenY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return { x: screenX, y: screenY }
+    
+    return {
+      x: (screenX - rect.left - transform.x) / transform.scale,
+      y: (screenY - rect.top - transform.y) / transform.scale
+    }
+  }, [transform])
+
+  // Convert canvas coordinates to screen coordinates
+  const canvasToScreen = useCallback((canvasX: number, canvasY: number) => {
+    return {
+      x: canvasX * transform.scale + transform.x,
+      y: canvasY * transform.scale + transform.y
+    }
+  }, [transform])
+
+  // Zoom functions
+  const zoomIn = useCallback(() => {
+    setTransform(prev => ({
+      ...prev,
+      scale: Math.min(prev.scale * 1.2, MAX_SCALE)
+    }))
+  }, [])
+
+  const zoomOut = useCallback(() => {
+    setTransform(prev => ({
+      ...prev,
+      scale: Math.max(prev.scale / 1.2, MIN_SCALE)
+    }))
+  }, [])
+
+  const resetView = useCallback(() => {
+    setTransform({ x: 0, y: 0, scale: 1 })
+  }, [])
+
+  const fitToView = useCallback(() => {
+    if (!containerRef.current || components.length === 0) return
+
+    const rect = containerRef.current.getBoundingClientRect()
+    const padding = 50
+
+    // Calculate bounding box of all components
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    
+    components.forEach(comp => {
+      minX = Math.min(minX, comp.position.x)
+      minY = Math.min(minY, comp.position.y)
+      maxX = Math.max(maxX, comp.position.x + COMPONENT_WIDTH)
+      maxY = Math.max(maxY, comp.position.y + COMPONENT_HEIGHT)
+    })
+
+    const contentWidth = maxX - minX
+    const contentHeight = maxY - minY
+    const scaleX = (rect.width - padding * 2) / contentWidth
+    const scaleY = (rect.height - padding * 2) / contentHeight
+    const scale = Math.min(scaleX, scaleY, MAX_SCALE)
+
+    const centerX = (minX + maxX) / 2
+    const centerY = (minY + maxY) / 2
+    const viewCenterX = rect.width / 2
+    const viewCenterY = rect.height / 2
+
+    setTransform({
+      scale,
+      x: viewCenterX - centerX * scale,
+      y: viewCenterY - centerY * scale
+    })
+  }, [components])
+
+  // Mouse wheel zoom
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault()
+    
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    
+    const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1
+    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, transform.scale * scaleFactor))
+    
+    if (newScale !== transform.scale) {
+      const scaleRatio = newScale / transform.scale
+      setTransform(prev => ({
+        scale: newScale,
+        x: mouseX - (mouseX - prev.x) * scaleRatio,
+        y: mouseY - (mouseY - prev.y) * scaleRatio
+      }))
+    }
+  }, [transform.scale])
+
+  // Attach wheel listener
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => container.removeEventListener('wheel', handleWheel)
+  }, [handleWheel])
+
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
     // Only deselect if clicking on the canvas itself, not on components
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget || e.target === canvasRef.current) {
       setSelectedComponent(null)
     }
   }, [])
 
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isSpacePressed) {
+      e.preventDefault()
+      setIsPanning(true)
+      setPanStart({ x: e.clientX - transform.x, y: e.clientY - transform.y })
+      if (containerRef.current) {
+        containerRef.current.style.cursor = 'grabbing'
+      }
+    }
+  }, [isSpacePressed, transform])
+
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning && isSpacePressed) {
+      e.preventDefault()
+      setTransform(prev => ({
+        ...prev,
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      }))
+    }
+  }, [isPanning, isSpacePressed, panStart])
+
+  const handleCanvasMouseUp = useCallback(() => {
+    setIsPanning(false)
+    if (isSpacePressed && containerRef.current) {
+      containerRef.current.style.cursor = 'grab'
+    }
+  }, [isSpacePressed])
+
   const handleComponentClick = useCallback(
     (e: React.MouseEvent, componentId: string) => {
       e.stopPropagation()
-      if (!isDragging) {
+      if (!isDragging && !isPanning) {
         setSelectedComponent((prev) => (prev === componentId ? null : componentId))
       }
     },
-    [isDragging],
+    [isDragging, isPanning],
   )
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, componentId: string) => {
+      if (isSpacePressed) return // Don't drag components when space is pressed
+      
       e.preventDefault()
       e.stopPropagation()
 
       const component = components.find((c) => c.id === componentId)
       if (!component) return
 
-      const containerRect = containerRef.current?.getBoundingClientRect()
-      if (!containerRect) return
+      const canvasPos = screenToCanvas(e.clientX, e.clientY)
 
       setIsDragging(componentId)
       setDragOffset({
-        x: e.clientX - (containerRect.left + component.position.x),
-        y: e.clientY - (containerRect.top + component.position.y),
+        x: canvasPos.x - component.position.x,
+        y: canvasPos.y - component.position.y,
       })
     },
-    [components],
+    [components, screenToCanvas, isSpacePressed],
   )
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!isDragging || !containerRef.current) return
+      if (!isDragging) return
 
       e.preventDefault()
 
-      const containerRect = containerRef.current.getBoundingClientRect()
-      const newX = Math.max(0, Math.min(containerRect.width - COMPONENT_WIDTH, e.clientX - containerRect.left - dragOffset.x))
-      const newY = Math.max(0, Math.min(containerRect.height - COMPONENT_HEIGHT, e.clientY - containerRect.top - dragOffset.y))
+      const canvasPos = screenToCanvas(e.clientX, e.clientY)
+      const newX = Math.max(0, canvasPos.x - dragOffset.x)
+      const newY = Math.max(0, canvasPos.y - dragOffset.y)
 
       setComponents((prev) =>
         prev.map((comp) => (comp.id === isDragging ? { ...comp, position: { x: newX, y: newY } } : comp)),
       )
     },
-    [isDragging, dragOffset],
+    [isDragging, dragOffset, screenToCanvas],
   )
 
   const handleMouseUp = useCallback((e: MouseEvent) => {
@@ -465,60 +651,120 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   }
 
   return (
-    <div className="min-h-full bg-black text-white p-4 overflow-hidden">
-      {/* Controls */}
-      {/* <div className="flex items-center gap-4 mb-4">
-        <Button
-          onClick={resetPositions}
-          variant="outline"
-          size="sm"
-          className="bg-gray-900 border-gray-700 text-gray-300 hover:bg-gray-800"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          Reset Layout
-        </Button>
-        
-        <Button
-          onClick={() => setShowDataFlow(!showDataFlow)}
-          variant="outline"
-          size="sm"
-          className={`border-gray-700 ${showDataFlow ? 'bg-cyan-900 text-cyan-300' : 'bg-gray-900 text-gray-300'} hover:bg-gray-800`}
-        >
-          <Activity className="w-4 h-4 mr-2" />
-          {showDataFlow ? 'Hide' : 'Show'} Data Flow
-        </Button>
-
-        {selectedComponent && (
-          <div className="flex items-center gap-2 bg-gray-900/50 px-3 py-1 rounded-lg border border-cyan-500/30">
-            <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
-            <span className="text-sm text-cyan-300">
-              {components.find(c => c.id === selectedComponent)?.title} Selected
-            </span>
+    <div className="min-h-full bg-black text-white overflow-hidden relative">
+      {/* Canvas Controls */}
+      <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+        <div className="bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg p-2 flex items-center gap-2">
+          <Button
+            onClick={zoomOut}
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          
+          <div className="px-2 text-xs text-gray-400 min-w-[50px] text-center">
+            {Math.round(transform.scale * 100)}%
           </div>
-        )}
-      </div> */}
+          
+          <Button
+            onClick={zoomIn}
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+          
+          <div className="w-px h-6 bg-gray-700 mx-1" />
+          
+          <Button
+            onClick={fitToView}
+            variant="ghost"
+            size="sm"
+            className="text-xs text-gray-400 hover:text-white hover:bg-gray-700"
+          >
+            Fit
+          </Button>
+          
+          <Button
+            onClick={resetView}
+            variant="ghost"
+            size="sm"
+            className="text-xs text-gray-400 hover:text-white hover:bg-gray-700"
+          >
+            Reset
+          </Button>
+        </div>
+      </div>
+
+      {/* Canvas Instructions */}
+      <div className={`absolute top-4 right-4 z-50 ${showInstructions ? 'block' : 'hidden'}`}>
+  <div className="bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg p-3 relative">
+    <button onClick={() => setShowInstructions(false)} className="absolute -top-2 -right-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-full p-1 transition-colors">
+      <Cross className="w-3 h-3 text-red-400 rotate-45 hover:text-red-500" />
+    </button>
+    <div className="text-xs text-gray-400 space-y-1">
+      <div className="flex items-center gap-2">
+        <Hand className="w-3 h-3" />
+        <span>Space + Drag to pan</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <MousePointer className="w-3 h-3" />
+        <span>Scroll to zoom</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+      {/* Status Panel */}
+      {selectedComponent && (
+        <div className="absolute bottom-4 left-4 z-50">
+          <div className="bg-gray-900/90 backdrop-blur-sm border border-cyan-500/30 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+              <span className="text-sm text-cyan-300">
+                {components.find(c => c.id === selectedComponent)?.title} Selected
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Interactive Canvas */}
       <div
           ref={containerRef}
-          className="relative overflow-hidden cursor-pointer border border-gray-800 rounded-lg h-full"
+          className="relative w-full h-full overflow-hidden select-none"
           style={{ 
-            height: isFullscreen ? "calc(100vh - 100px)" : "calc(100vh - 170px)", 
-            minHeight: isFullscreen ? "calc(100vh - 100px)" : "calc(100vh - 170px)" 
+            height: isFullscreen ? "100vh" : "calc(100vh - 170px)",
+            cursor: isSpacePressed ? (isPanning ? 'grabbing' : 'grab') : 'default'
           }}
           onClick={handleCanvasClick}
+          onMouseDown={handleCanvasMouseDown}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={handleCanvasMouseUp}
         >
-          {/* Grid Background */}
+                    {/* Canvas Content with Transform */}
           <div
-            className="absolute inset-0 opacity-5"
+            ref={canvasRef}
+            className="absolute inset-0 origin-top-left"
             style={{
-              backgroundImage: `
-                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: "40px 40px",
+              transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+              transformOrigin: '0 0'
             }}
-          />
+          >
+            {/* Grid Background */}
+            <div
+              className="absolute inset-0 opacity-5"
+              style={{
+                backgroundImage: `
+                  linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+                `,
+                backgroundSize: `${40 / transform.scale}px ${40 / transform.scale}px`,
+              }}
+            />
 
           {/* Connection Lines SVG */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
@@ -701,7 +947,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
             return (
               <Card
                 key={component.id}
-                className={`absolute bg-gray-900/95 border transition-all duration-300 select-none z-20 ${
+                className={`absolute bg-gray-900/95 border transition-all duration-300 select-none z-20  ${
                   component.borderColor
                 } ${
                   isSelected
@@ -809,6 +1055,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
               </Card>
             )
           })}
+          </div>
         </div>
 
       {/* CSS for animations */}
