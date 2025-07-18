@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DevilDev",
-  description: "Cooking something wicked...",
+  description: "The First Engineer",
   icons: {
     icon: "/favicon.png",
   },
