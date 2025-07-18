@@ -113,8 +113,8 @@ const DevPage = () => {
     setIsArchitectureLoading(true);
     
     try {
-      const architectureResult = await generateArchitecture(requirement, conversationHistory);
-      
+      const architectureResult = await generateArchitecture(requirement, conversationHistory, architectureData);
+      alert("CHECK")
       // Clean the result to remove markdown code blocks if present
       let cleanedResult = architectureResult;
       if (typeof architectureResult === 'string') {
@@ -170,7 +170,7 @@ const DevPage = () => {
 
     try {
       // Use firstBot function directly instead of API call
-      const assistantResponse = await firstBot(currentInput, isTrue, messages);
+      const assistantResponse = await firstBot(currentInput, isTrue, messages, architectureData);
 
       // Create assistant message with the response
       const assistantMessage: ChatMessage = {

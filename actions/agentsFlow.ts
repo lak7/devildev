@@ -61,7 +61,7 @@ Classification:`
     return result;
 }
 
-export async function firstBot(userInput: string, startOrNot: boolean, conversationHistory: any[] = []) {
+export async function firstBot(userInput: string, startOrNot: boolean, conversationHistory: any[] = [], architectureData: any) {
     const template = `You are DevilDev Assistant, an AI helper for software architecture and development.
 
 RESPONSE STYLE:
@@ -76,6 +76,9 @@ BEHAVIOR BASED ON ARCHITECTURE STATUS:
 
 CONVERSATION CONTEXT:
 Previous conversation history: {conversationHistory}
+
+PREVIOUS ARCHITECTURE:
+{architectureData}
 
 RESPONSE PATTERNS:
 
@@ -135,7 +138,8 @@ Based on the conversation history and current input, provide a helpful response 
     const result = await chain.invoke({
         input: userInput, 
         startOrNot,
-        conversationHistory: formattedHistory
+        conversationHistory: formattedHistory,
+        architectureData: JSON.stringify(architectureData)
     });
     return result;
 }

@@ -37,7 +37,7 @@ export async function retrieveFunc(question: string, conversationHistory: any[] 
 
 }
 
-export async function generateArchitecture(requirement: string, conversationHistory: any[] = []) {
+export async function generateArchitecture(requirement: string, conversationHistory: any[] = [], architectureData: any) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
     const template = `You are **DevilDev**, an expert software architect specializing in building full-stack, scalable, and modern systems. Based on the user’s requirement and the architectural knowledge provided below, generate a complete, production-ready software architecture.
@@ -56,6 +56,9 @@ export async function generateArchitecture(requirement: string, conversationHist
 {requirement}
 
 ---
+
+  ***PREVIOUS ARCHITECTURE***
+  {architectureData}
 
   ANALYSIS FRAMEWORK:
   1. Identify the core functionality and user interactions
@@ -108,6 +111,8 @@ REQUIREMENTS:
 - Consider modern deployment patterns (serverless, containers, edge)
 
 Return ONLY the JSON object, no additional text.`
+console.log("This is the architecture data: ", JSON.stringify(architectureData))
+console.log("This is the template: ", template)
     const prompt = PromptTemplate.fromTemplate(template);
     const context = await retrieveFunc(requirement, conversationHistory);
      // Format conversation history for the prompt
@@ -115,6 +120,6 @@ Return ONLY the JSON object, no additional text.`
       `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
   ).join('\n');
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
-    const result = await chain.invoke({requirement: requirement, conversation_history: formattedHistory, context: context});
+    const result = await chain.invoke({requirement: requirement, conversation_history: formattedHistory, context: context, architectureData: JSON.stringify(architectureData)});
     return result;
 }
