@@ -217,6 +217,10 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   const MIN_SCALE = 0.1
   const MAX_SCALE = 3
 
+  useEffect(() => {
+    console.log("THIS IS IT BITCH: ", architectureData)
+  }, [architectureData])
+
   // Update components when architectureData changes
   useEffect(() => {
     if (architectureData?.components) {
@@ -243,7 +247,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !isSpacePressed) {
-        e.preventDefault()
+        // e.preventDefault()
         setIsSpacePressed(true)
         if (containerRef.current) {
           containerRef.current.style.cursor = 'grab'
@@ -253,7 +257,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
-        e.preventDefault()
+        // e.preventDefault()
         setIsSpacePressed(false)
         setIsPanning(false)
         if (containerRef.current) {

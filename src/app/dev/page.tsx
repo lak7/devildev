@@ -164,10 +164,7 @@ const DevPage = () => {
     const isTrue = isStart.toLowerCase() === "true";
     // alert(isTrue);
 
-    // Generate architecture on first message
-    if (isTrue) {
-      genArchitecture(currentInput, messages);
-    }
+   
     // alert(isStart.toLowerCase());
     // alert(isTrue);
 
@@ -197,6 +194,11 @@ const DevPage = () => {
       
       setMessages(prev => [...prev, errorMessage]);
       setIsLoading(false);
+    }
+
+     // Generate architecture on first message
+     if (isTrue) {
+      genArchitecture(currentInput, messages);
     }
   };
 
