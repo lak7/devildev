@@ -92,6 +92,7 @@ const getIconComponent = (iconName: string | any) => {
   return Monitor; // safe fallback
 }
 
+// Better positioned components for graph layout
 const initialComponents: ComponentData[] = [
   {
     id: "frontend",
@@ -104,8 +105,8 @@ const initialComponents: ComponentData[] = [
       language: "TypeScript",
       styling: "Tailwind CSS",
     },
-    connections: ["backend", "authentication"],
-    position: { x: 50, y: 50 },
+    connections: ["backend"],
+    position: { x: 100, y: 100 },
     dataFlow: {
       sends: ["User Requests", "Form Data", "Auth Tokens", "UI Events"],
       receives: ["API Responses", "User Data", "Auth Status", "Real-time Updates"],
@@ -122,8 +123,8 @@ const initialComponents: ComponentData[] = [
       framework: "Next.js API",
       language: "TypeScript",
     },
-    connections: ["frontend", "database", "authentication"],
-    position: { x: 450, y: 50 },
+    connections: ["database", "authentication"],
+    position: { x: 500, y: 100 },
     dataFlow: {
       sends: ["API Responses", "Database Queries", "Auth Requests", "Processed Data"],
       receives: ["HTTP Requests", "Database Results", "Auth Tokens", "User Input"],
@@ -140,8 +141,8 @@ const initialComponents: ComponentData[] = [
       cache: "Redis",
       orm: "Prisma",
     },
-    connections: ["backend"],
-    position: { x: 450, y: 350 },
+    connections: [],
+    position: { x: 800, y: 100 },
     dataFlow: {
       sends: ["Query Results", "User Records", "Session Data", "Cached Data"],
       receives: ["SQL Queries", "Data Writes", "Cache Requests", "Transactions"],
@@ -158,16 +159,14 @@ const initialComponents: ComponentData[] = [
       tokens: "JWT",
       oauth: "OAuth 2.0",
     },
-    connections: ["frontend", "backend"],
-    position: { x: 50, y: 350 },
+    connections: ["frontend"],
+    position: { x: 300, y: 350 },
     dataFlow: {
       sends: ["Auth Tokens", "User Sessions", "Login Status", "Permissions"],
       receives: ["Login Requests", "Token Validation", "User Credentials", "Logout Events"],
     },
   },
 ]
-
-
 
 export default function Architecture({ architectureData, isLoading = false, isFullscreen = false }: ArchitectureProps) {
   const [components, setComponents] = useState<ComponentData[]>(() => {
@@ -181,9 +180,9 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   const [connectionLabels, setConnectionLabels] = useState<Record<string, string>>(
     architectureData?.connectionLabels || {
       "frontend-backend": "HTTP/API",
-      "frontend-authentication": "Auth Flow",
       "backend-database": "SQL/ORM",
       "backend-authentication": "Session",
+      "authentication-frontend": "Auth Flow",
     }
   )
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
@@ -193,6 +192,10 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 })
   const [animationKey, setAnimationKey] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Component dimensions
+  const COMPONENT_WIDTH = 280
+  const COMPONENT_HEIGHT = 200
 
   // Update components when architectureData changes
   useEffect(() => {
@@ -260,8 +263,8 @@ export default function Architecture({ architectureData, isLoading = false, isFu
       e.preventDefault()
 
       const containerRect = containerRef.current.getBoundingClientRect()
-      const newX = Math.max(0, Math.min(containerRect.width - 280, e.clientX - containerRect.left - dragOffset.x))
-      const newY = Math.max(0, Math.min(containerRect.height - 200, e.clientY - containerRect.top - dragOffset.y))
+      const newX = Math.max(0, Math.min(containerRect.width - COMPONENT_WIDTH, e.clientX - containerRect.left - dragOffset.x))
+      const newY = Math.max(0, Math.min(containerRect.height - COMPONENT_HEIGHT, e.clientY - containerRect.top - dragOffset.y))
 
       setComponents((prev) =>
         prev.map((comp) => (comp.id === isDragging ? { ...comp, position: { x: newX, y: newY } } : comp)),
@@ -297,36 +300,114 @@ export default function Architecture({ architectureData, isLoading = false, isFu
     setSelectedComponent(null)
   }
 
-  const getConnectionPath = (fromId: string, toId: string) => {
+  // Calculate connection points on component edges with orthogonal routing
+  const getConnectionPoints = (fromId: string, toId: string) => {
     const fromComp = components.find((c) => c.id === fromId)
     const toComp = components.find((c) => c.id === toId)
-    if (!fromComp || !toComp) return ""
+    if (!fromComp || !toComp) return null
 
-    const fromCenterX = fromComp.position.x + 140
-    const fromCenterY = fromComp.position.y + 100
-    const toCenterX = toComp.position.x + 140
-    const toCenterY = toComp.position.y + 100
+    const fromRect = {
+      left: fromComp.position.x,
+      right: fromComp.position.x + COMPONENT_WIDTH,
+      top: fromComp.position.y,
+      bottom: fromComp.position.y + COMPONENT_HEIGHT,
+      centerX: fromComp.position.x + COMPONENT_WIDTH / 2,
+      centerY: fromComp.position.y + COMPONENT_HEIGHT / 2,
+    }
 
-    const dx = toCenterX - fromCenterX
-    const dy = toCenterY - fromCenterY
-    const distance = Math.sqrt(dx * dx + dy * dy)
+    const toRect = {
+      left: toComp.position.x,
+      right: toComp.position.x + COMPONENT_WIDTH,
+      top: toComp.position.y,
+      bottom: toComp.position.y + COMPONENT_HEIGHT,
+      centerX: toComp.position.x + COMPONENT_WIDTH / 2,
+      centerY: toComp.position.y + COMPONENT_HEIGHT / 2,
+    }
 
-    if (distance === 0) return ""
+    // Calculate the direction vector
+    const dx = toRect.centerX - fromRect.centerX
+    const dy = toRect.centerY - fromRect.centerY
 
-    const unitX = dx / distance
-    const unitY = dy / distance
+    let fromPoint: Position
+    let toPoint: Position
+    let waypoints: Position[] = []
 
-    const offset = 120
-    const fromX = fromCenterX + unitX * offset
-    const fromY = fromCenterY + unitY * offset
-    const toX = toCenterX - unitX * offset
-    const toY = toCenterY - unitY * offset
+    // Determine connection type and create orthogonal path
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Primarily horizontal connection
+      if (dx > 0) {
+        // Left to right
+        fromPoint = { x: fromRect.right, y: fromRect.centerY }
+        toPoint = { x: toRect.left, y: toRect.centerY }
+        
+        // Add waypoint if components are not horizontally aligned
+        if (Math.abs(dy) > 20) {
+          const midX = fromRect.right + (toRect.left - fromRect.right) / 2
+          waypoints = [
+            { x: midX, y: fromRect.centerY },
+            { x: midX, y: toRect.centerY }
+          ]
+        }
+      } else {
+        // Right to left
+        fromPoint = { x: fromRect.left, y: fromRect.centerY }
+        toPoint = { x: toRect.right, y: toRect.centerY }
+        
+        if (Math.abs(dy) > 20) {
+          const midX = fromRect.left + (toRect.right - fromRect.left) / 2
+          waypoints = [
+            { x: midX, y: fromRect.centerY },
+            { x: midX, y: toRect.centerY }
+          ]
+        }
+      }
+    } else {
+      // Primarily vertical connection
+      if (dy > 0) {
+        // Top to bottom
+        fromPoint = { x: fromRect.centerX, y: fromRect.bottom }
+        toPoint = { x: toRect.centerX, y: toRect.top }
+        
+        // Add waypoint if components are not vertically aligned
+        if (Math.abs(dx) > 20) {
+          const midY = fromRect.bottom + (toRect.top - fromRect.bottom) / 2
+          waypoints = [
+            { x: fromRect.centerX, y: midY },
+            { x: toRect.centerX, y: midY }
+          ]
+        }
+      } else {
+        // Bottom to top
+        fromPoint = { x: fromRect.centerX, y: fromRect.top }
+        toPoint = { x: toRect.centerX, y: toRect.bottom }
+        
+        if (Math.abs(dx) > 20) {
+          const midY = fromRect.top + (toRect.bottom - fromRect.top) / 2
+          waypoints = [
+            { x: fromRect.centerX, y: midY },
+            { x: toRect.centerX, y: midY }
+          ]
+        }
+      }
+    }
 
-    const midX = (fromX + toX) / 2
-    const midY = (fromY + toY) / 2
-    const controlOffset = 50
+    return { fromPoint, toPoint, waypoints }
+  }
 
-    return `M ${fromX} ${fromY} Q ${midX + controlOffset} ${midY - controlOffset} ${toX} ${toY}`
+  // Generate SVG path for orthogonal connections
+  const generateOrthogonalPath = (fromPoint: Position, toPoint: Position, waypoints: Position[]) => {
+    if (waypoints.length === 0) {
+      // Direct line
+      return `M ${fromPoint.x} ${fromPoint.y} L ${toPoint.x} ${toPoint.y}`
+    } else {
+      // Orthogonal path with waypoints
+      let path = `M ${fromPoint.x} ${fromPoint.y}`
+      waypoints.forEach(point => {
+        path += ` L ${point.x} ${point.y}`
+      })
+      path += ` L ${toPoint.x} ${toPoint.y}`
+      return path
+    }
   }
 
   const getConnectionKey = (from: string, to: string) => {
@@ -385,25 +466,57 @@ export default function Architecture({ architectureData, isLoading = false, isFu
 
   return (
     <div className="min-h-full bg-black text-white p-4 overflow-hidden">
+      {/* Controls */}
+      {/* <div className="flex items-center gap-4 mb-4">
+        <Button
+          onClick={resetPositions}
+          variant="outline"
+          size="sm"
+          className="bg-gray-900 border-gray-700 text-gray-300 hover:bg-gray-800"
+        >
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Reset Layout
+        </Button>
+        
+        <Button
+          onClick={() => setShowDataFlow(!showDataFlow)}
+          variant="outline"
+          size="sm"
+          className={`border-gray-700 ${showDataFlow ? 'bg-cyan-900 text-cyan-300' : 'bg-gray-900 text-gray-300'} hover:bg-gray-800`}
+        >
+          <Activity className="w-4 h-4 mr-2" />
+          {showDataFlow ? 'Hide' : 'Show'} Data Flow
+        </Button>
+
+        {selectedComponent && (
+          <div className="flex items-center gap-2 bg-gray-900/50 px-3 py-1 rounded-lg border border-cyan-500/30">
+            <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+            <span className="text-sm text-cyan-300">
+              {components.find(c => c.id === selectedComponent)?.title} Selected
+            </span>
+          </div>
+        )}
+      </div> */}
+
       {/* Interactive Canvas */}
       <div
           ref={containerRef}
-          className="relative overflow-hidden cursor-pointer"
+          className="relative overflow-hidden cursor-pointer border border-gray-800 rounded-lg h-full"
           style={{ 
-            height: isFullscreen ? "calc(100vh - 120px)" : "600px", 
-            minHeight: isFullscreen ? "calc(100vh - 120px)" : "600px" 
+            height: isFullscreen ? "calc(100vh - 100px)" : "calc(100vh - 170px)", 
+            minHeight: isFullscreen ? "calc(100vh - 100px)" : "calc(100vh - 170px)" 
           }}
           onClick={handleCanvasClick}
         >
           {/* Grid Background */}
           <div
-            className="absolute inset-0 opacity-10"
+            className="absolute inset-0 opacity-5"
             style={{
               backgroundImage: `
                 linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
               `,
-              backgroundSize: "20px 20px",
+              backgroundSize: "40px 40px",
             }}
           />
 
@@ -418,7 +531,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
                 refX="9"
                 refY="3.5"
                 orient="auto"
-                className="fill-gray-400"
+                className="fill-gray-500"
               >
                 <polygon points="0 0, 10 3.5, 0 7" />
               </marker>
@@ -451,16 +564,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
 
               {/* Glow Filter */}
               <filter id="glow">
-                <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-                <feMerge>
-                  <feMergeNode in="coloredBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-
-              {/* Pulse Animation */}
-              <filter id="pulse">
-                <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
                 <feMerge>
                   <feMergeNode in="coloredBlur" />
                   <feMergeNode in="SourceGraphic" />
@@ -470,103 +574,118 @@ export default function Architecture({ architectureData, isLoading = false, isFu
 
             {components.map((component) =>
               component.connections.map((targetId) => {
+                const connectionPoints = getConnectionPoints(component.id, targetId)
+                if (!connectionPoints) return null
+
+                const { fromPoint, toPoint, waypoints } = connectionPoints
                 const connectionKey = getConnectionKey(component.id, targetId)
                 const isActive = isConnectionActive(component.id, targetId)
                 const direction = getConnectionDirection(component.id, targetId)
 
-                let strokeColor = "#4b5563"
+                let strokeColor = "#6b7280"
                 let strokeWidth = "2"
                 let markerEnd = "url(#arrowhead)"
                 let filter = ""
                 let dashArray = "none"
-                let dashOffset = "0"
 
                 if (isActive && direction) {
-                  strokeWidth = "4"
+                  strokeWidth = "3"
                   filter = "url(#glow)"
 
                   if (direction === "outgoing") {
                     strokeColor = "#06b6d4" // cyan
                     markerEnd = "url(#arrowhead-outgoing)"
-                    dashArray = "12,8"
-                    dashOffset = "-20"
+                    dashArray = "8,4"
                   } else if (direction === "incoming") {
                     strokeColor = "#10b981" // emerald
                     markerEnd = "url(#arrowhead-incoming)"
-                    dashArray = "8,12"
-                    dashOffset = "20"
+                    dashArray = "8,4"
                   }
                 }
 
-                return (
-                  <g key={`${component.id}-${targetId}-${animationKey}`}>
-                    <path
-                      d={getConnectionPath(component.id, targetId)}
-                      stroke={strokeColor}
-                      strokeWidth={strokeWidth}
-                      fill="none"
-                      strokeDasharray={dashArray}
-                      strokeDashoffset={dashOffset}
-                      className={`transition-all duration-500 ${filter}`}
-                      markerEnd={markerEnd}
-                      style={{
-                        animation: isActive && direction ? "dash-flow 2s linear infinite" : "none",
-                      }}
-                    />
+                // Calculate midpoint for label
+                const midX = (fromPoint.x + toPoint.x) / 2
+                const midY = (fromPoint.y + toPoint.y) / 2
 
-                    {/* Connection Label */}
-                    {isActive && connectionLabels[connectionKey] && (
-                      <g>
-                        <rect
-                          x={
-                            (components.find((c) => c.id === component.id)!.position.x +
-                              140 +
-                              components.find((c) => c.id === targetId)!.position.x +
-                              140) /
-                              2 -
-                            30
-                          }
-                          y={
-                            (components.find((c) => c.id === component.id)!.position.y +
-                              100 +
-                              components.find((c) => c.id === targetId)!.position.y +
-                              100) /
-                              2 -
-                            20
-                          }
-                          width="60"
-                          height="16"
-                          rx="8"
-                          fill="rgba(0,0,0,0.8)"
-                          stroke={direction === "outgoing" ? "#06b6d4" : "#10b981"}
-                          strokeWidth="1"
+                return (
+                                      <g key={`${component.id}-${targetId}-${animationKey}`}>
+                      {/* Main connection path */}
+                      <path
+                        d={generateOrthogonalPath(fromPoint, toPoint, waypoints)}
+                        stroke={strokeColor}
+                        strokeWidth={strokeWidth}
+                        strokeDasharray={dashArray}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={`transition-all duration-300 ${filter}`}
+                        markerEnd={markerEnd}
+                        style={{
+                          animation: isActive && direction ? "dash-flow 2s linear infinite" : "none",
+                        }}
+                      />
+
+                      {/* Connection dots */}
+                      <circle
+                        cx={fromPoint.x}
+                        cy={fromPoint.y}
+                        r="3"
+                        fill={isActive ? strokeColor : "#4b5563"}
+                        className="transition-all duration-300"
+                      />
+                      
+                      {/* Corner dots for waypoints */}
+                      {waypoints.map((waypoint, index) => (
+                        <circle
+                          key={index}
+                          cx={waypoint.x}
+                          cy={waypoint.y}
+                          r="2"
+                          fill={isActive ? strokeColor : "#6b7280"}
+                          className="transition-all duration-300"
                         />
-                        <text
-                          x={
-                            (components.find((c) => c.id === component.id)!.position.x +
-                              140 +
-                              components.find((c) => c.id === targetId)!.position.x +
-                              140) /
-                            2
-                          }
-                          y={
-                            (components.find((c) => c.id === component.id)!.position.y +
-                              100 +
-                              components.find((c) => c.id === targetId)!.position.y +
-                              100) /
-                              2 -
-                            12
-                          }
-                          textAnchor="middle"
-                          className={`text-xs font-medium pointer-events-none ${
-                            direction === "outgoing" ? "fill-cyan-400" : "fill-emerald-400"
-                          }`}
-                        >
-                          {connectionLabels[connectionKey]}
-                        </text>
-                      </g>
-                    )}
-                  </g>
+                      ))}
+
+                      {/* Connection Label - positioned at the middle waypoint or midpoint */}
+                      {isActive && connectionLabels[connectionKey] && (
+                        <g>
+                          {(() => {
+                            // Calculate label position
+                            const labelX = waypoints.length > 0 
+                              ? waypoints[Math.floor(waypoints.length / 2)].x 
+                              : (fromPoint.x + toPoint.x) / 2
+                            const labelY = waypoints.length > 0 
+                              ? waypoints[Math.floor(waypoints.length / 2)].y 
+                              : (fromPoint.y + toPoint.y) / 2
+                            
+                            return (
+                              <>
+                                <rect
+                                  x={labelX - 35}
+                                  y={labelY - 10}
+                                  width="70"
+                                  height="20"
+                                  rx="10"
+                                  fill="rgba(0,0,0,0.9)"
+                                  stroke={direction === "outgoing" ? "#06b6d4" : "#10b981"}
+                                  strokeWidth="1"
+                                />
+                                <text
+                                  x={labelX}
+                                  y={labelY + 4}
+                                  textAnchor="middle"
+                                  className={`text-xs font-medium pointer-events-none ${
+                                    direction === "outgoing" ? "fill-cyan-400" : "fill-emerald-400"
+                                  }`}
+                                >
+                                  {connectionLabels[connectionKey]}
+                                </text>
+                              </>
+                            )
+                          })()}
+                        </g>
+                      )}
+                    </g>
                 )
               }),
             )}
@@ -582,20 +701,20 @@ export default function Architecture({ architectureData, isLoading = false, isFu
             return (
               <Card
                 key={component.id}
-                className={`absolute bg-gray-900/90 border transition-all pb-56 duration-300 select-none z-20 ${
+                className={`absolute bg-gray-900/95 border transition-all duration-300 select-none z-20 ${
                   component.borderColor
                 } ${
                   isSelected
-                    ? "border-opacity-100 scale-110 shadow-2xl ring-2 ring-cyan-500/50"
+                    ? "border-opacity-100 scale-105 shadow-2xl ring-2 ring-cyan-500/50"
                     : isHighlighted
-                      ? "border-opacity-80 scale-105 shadow-xl"
+                      ? "border-opacity-80 scale-102 shadow-xl"
                       : "border-opacity-30 hover:border-opacity-60"
                 } ${isDraggingThis ? "shadow-cyan-500/50 cursor-grabbing" : "cursor-grab"}`}
                 style={{
                   left: `${component.position.x}px`,
                   top: `${component.position.y}px`,
-                  width: isFullscreen ? "320px" : "280px",
-                  height: isFullscreen ? "240px" : "200px",
+                  width: `${COMPONENT_WIDTH}px`,
+                  height: `${COMPONENT_HEIGHT}px`,
                   transform: isDraggingThis ? "scale(1.02)" : "scale(1)",
                   transition: isDraggingThis ? "none" : "all 0.3s ease",
                 }}
@@ -607,7 +726,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
                 {/* Glow Effect */}
                 <div
                   className={`absolute inset-0 bg-gradient-to-r ${component.color} opacity-0 transition-opacity duration-300 rounded-lg ${
-                    isSelected ? "opacity-20" : isHighlighted ? "opacity-10" : "hover:opacity-5"
+                    isSelected ? "opacity-15" : isHighlighted ? "opacity-8" : "hover:opacity-5"
                   }`}
                 />
 
@@ -633,18 +752,6 @@ export default function Architecture({ architectureData, isLoading = false, isFu
                           <Activity className="w-4 h-4 text-cyan-400 animate-pulse" />
                         </div>
                       )}
-                      {isHighlighted && !isSelected && (
-                        <div className="flex items-center gap-1">
-                          {component.connections.map((connId, index) => (
-                            <div
-                              key={index}
-                              className={`w-2 h-2 rounded-full bg-gradient-to-r ${
-                                components.find((c) => c.id === connId)?.color
-                              } animate-pulse`}
-                            />
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -654,7 +761,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
                     }`}
                   >
                     {component.title}
-                    {isSelected && <span className="text-xs text-cyan-400 ml-2">SELECTED</span>}
+                    {isSelected && <span className="text-xs text-cyan-400 ml-2">ACTIVE</span>}
                   </CardTitle>
                 </CardHeader>
 
@@ -686,33 +793,32 @@ export default function Architecture({ architectureData, isLoading = false, isFu
                           isSelected ? "animate-ping" : "animate-pulse"
                         }`}
                       />
-                    </div>
-                    {(isHighlighted || isSelected) && (
-                      <span
-                        className={`text-xs transition-colors duration-300 ${
-                          isSelected ? "text-cyan-400" : "text-gray-400"
-                        }`}
-                      >
-                        {component.connections.length} connection{component.connections.length !== 1 ? "s" : ""}
+                      <span className="text-xs text-gray-400">
+                        {isSelected ? "Selected" : "Ready"}
                       </span>
-                    )}
+                    </div>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isSelected ? "text-cyan-400" : "text-gray-400"
+                      }`}
+                    >
+                      {component.connections.length} connection{component.connections.length !== 1 ? "s" : ""}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
             )
           })}
-
-    
         </div>
 
       {/* CSS for animations */}
       <style jsx>{`
         @keyframes dash-flow {
           0% {
-            stroke-dashoffset: 20px;
+            stroke-dashoffset: 0;
           }
           100% {
-            stroke-dashoffset: -20px;
+            stroke-dashoffset: 24px;
           }
         }
       `}</style>
