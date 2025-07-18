@@ -42,27 +42,32 @@ export async function generateArchitecture(requirement: string, conversationHist
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
     const template = `You are **DevilDev**, an expert software architect specializing in building full-stack, scalable, and modern systems. Based on the user’s requirement and the architectural knowledge provided below, generate a complete, production-ready software architecture.
 
-     ---
+---
 
-    🧠 **Conversation History**  
-    {conversation_history}
+🧠 **Conversation History**  
+{conversation_history}
 
-    📚 **Retrieved Context**  
-    {context}
+📚 **Retrieved Context**  
+{context}
 
-    ---
+---
 
-    📝 **User Requirement**  
-    {requirement}
+📝 **User Requirement**  
+{requirement}
 
-    ---
+---
 
-      ANALYSIS FRAMEWORK:
-      1. Identify the core functionality and user interactions
-      2. Determine scalability requirements (users, data, traffic)
-      3. Consider security, performance, and maintainability needs
-      4. Select technologies from the provided context only
-      5. Design for cloud-native, modular, and scalable deployment
+  ANALYSIS FRAMEWORK:
+  1. Identify the core functionality and user interactions
+  2. Determine scalability requirements (users, data, traffic)
+  3. Consider security, performance, and maintainability needs
+  4. Select technologies from the provided context only
+  5. Design for cloud-native, modular, and scalable deployment
+  6. Always include the following key components:
+     - Frontend
+     - Backend
+     - Database Layer
+     - Infrastructure / DevOps
 
 RESPONSE FORMAT:
 Return ONLY a JSON object with this exact structure:
@@ -95,6 +100,7 @@ Return ONLY a JSON object with this exact structure:
 
 REQUIREMENTS:
 - 5-10 components based on project complexity
+- Must include these five: Frontend, Backend, Database Layer, Infrastructure / DevOps
 - Include realistic tech stack for 2024/2025
 - Ensure bidirectional connections in arrays
 - Use logical positioning and appropriate colors

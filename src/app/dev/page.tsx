@@ -10,7 +10,7 @@ import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
-import { generateArchitecture } from '../../../actions/architecture';
+import { generateArchitecture } from '../../../actions/architecture'; 
 
 export interface ChatMessage {
   id: string;
@@ -115,10 +115,21 @@ const DevPage = () => {
     try {
       const architectureResult = await generateArchitecture(requirement, conversationHistory);
       
-      // Parse the JSON result if it's a string
-      const parsedArchitecture = typeof architectureResult === 'string' 
-        ? JSON.parse(architectureResult) 
-        : architectureResult;
+      // Clean the result to remove markdown code blocks if present
+      let cleanedResult = architectureResult;
+      if (typeof architectureResult === 'string') {
+        // Remove markdown code blocks (```json...``` or ```...```)
+        cleanedResult = architectureResult
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/\s*```\s*$/, '')
+          .trim();
+      }
+      
+      // Parse the JSON result
+      const parsedArchitecture = typeof cleanedResult === 'string' 
+        ? JSON.parse(cleanedResult) 
+        : cleanedResult;
       
       setArchitectureData(parsedArchitecture);
       // setArchitectureGenerated(true);
