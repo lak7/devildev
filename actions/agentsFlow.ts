@@ -5,10 +5,12 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({openAIApiKey: openaiKey})
 
-export async function startOrNot(userInput: string, conversationHistory: any[] = []) {
+export async function startOrNot(userInput: string, conversationHistory: any[] = [], architectureData: any) { 
     const template = `You are an intent classifier for DevilDev, a software architecture platform. Analyze if the user input describes a specific software project they want to build.
 
 CONVERSATION CONTEXT: {conversationHistory}
+
+PREVIOUS ARCHITECTURE: {architectureData}
 
 Return only "true" or "false".
 
@@ -57,7 +59,7 @@ Classification:`
     ).join('\n');
     const prompt = PromptTemplate.fromTemplate(template);
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
-    const result = await chain.invoke({user_input: userInput, conversationHistory: formattedHistory});
+    const result = await chain.invoke({user_input: userInput, conversationHistory: formattedHistory, architectureData: JSON.stringify(architectureData)});
     return result;
 }
 

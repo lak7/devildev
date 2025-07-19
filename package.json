@@ -15,6 +15,8 @@
     "@langchain/openai": "^0.5.18",
     "@prisma/client": "^6.9.0",
     "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-collapsible": "^1.1.11",
+    "@radix-ui/react-scroll-area": "^1.2.9",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/supabase-js": "^2.50.5",
     "@vercel/analytics": "^1.5.0",

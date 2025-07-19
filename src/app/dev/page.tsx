@@ -11,6 +11,7 @@ import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 import { generateArchitecture } from '../../../actions/architecture'; 
+import FileExplorer from '@/components/core/ContextDocs';
 
 export interface ChatMessage {
   id: string;
@@ -34,8 +35,9 @@ const DevPage = () => {
   const [textareaHeight, setTextareaHeight] = useState('60px');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentStartOrNot, setCurrentStartOrNot] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'architecture' | 'phases'>('architecture');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'context'>('architecture');
   const [particles, setParticles] = useState<Particle[]>([]);
   const [architectureData, setArchitectureData] = useState<any>(null);
   const [isArchitectureLoading, setIsArchitectureLoading] = useState(false);
@@ -114,7 +116,7 @@ const DevPage = () => {
     
     try {
       const architectureResult = await generateArchitecture(requirement, conversationHistory, architectureData);
-      alert("CHECK")
+      // alert("CHECK")
       // Clean the result to remove markdown code blocks if present
       let cleanedResult = architectureResult;
       if (typeof architectureResult === 'string') {
@@ -162,6 +164,7 @@ const DevPage = () => {
 
     const isStart = await startOrNot(currentInput, messages);
     const isTrue = isStart.toLowerCase() === "true";
+    setCurrentStartOrNot(isTrue);
     // alert(isTrue);
 
    
@@ -475,10 +478,20 @@ const DevPage = () => {
                 </div>
               </div>
             )}
+            {currentStartOrNot && !isLoading && !isArchitectureLoading && (
+               <div className="flex h-12 ml-12">
+               <button onClick={() => setActiveTab('context')} className=" px-6 py-2 hover:bg-transparent border border-white hover:text-white rounded-lg font-bold cursor-pointer bg-white text-black transition-colors duration-200">
+                 Generate Docs{"->"}
+               </button>
+             </div>
+            )}
+             
             
             {/* Auto-scroll target */}
             <div ref={messagesEndRef} />
           </div>
+
+        
 
           {/* Input Area */}
           <div className="p-0 px-3 pb-3 flex-shrink-0">
@@ -537,7 +550,7 @@ const DevPage = () => {
           className="bg-gray-900/30 border border-gray-600/30 rounded-r-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
           style={{ width: `${100 - leftPanelWidth}%` }}
         >
-          {/* Clean Tab Headers - Like in screenshot */}
+          {/* Clean Tab Headers */}
           <div className="flex items-center justify-between px-4 py-3 rounded-tr-xl border-b border-gray-600/30">
             <div className="flex space-x-1"> 
               <button
@@ -550,15 +563,16 @@ const DevPage = () => {
               >
                 Architecture
               </button>
+              
               <button
-                onClick={() => setActiveTab('phases')}
+                onClick={() => setActiveTab('context')}
                 className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'phases'
+                  activeTab === 'context'
                     ? 'text-white bg-gray-700/50'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                Phases
+                Context Template
               </button>
             </div>
             
@@ -581,11 +595,8 @@ const DevPage = () => {
                 architectureData={architectureData} 
                 isLoading={isArchitectureLoading} 
               />
-            ) : (
-              <div className="p-6 text-gray-300">
-                <h3 className="text-lg font-semibold mb-4">Development Phases</h3>
-                <p className="text-sm">Phase breakdown and timeline will be displayed here.</p>
-              </div>
+            ) : ( 
+              <FileExplorer/> 
             )}
           </div>
         </div>
