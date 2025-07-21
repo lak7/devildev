@@ -43,19 +43,39 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases}: {
  
   React.useEffect(() => {
     // Get content for selected file
+    console.log("Navigating to file:", selectedFile)
     const pathParts = selectedFile.split("/")
     let current: any = fileStructure
 
-    for (const part of pathParts) {
+    for (let i = 0; i < pathParts.length; i++) {
+      const part = pathParts[i]
+      console.log(`Looking for part "${part}" in:`, Object.keys(current))
+      
       if (current[part]) {
         current = current[part]
+        console.log(`Found "${part}":`, current)
+        
+        // If this is not the last part and current is a folder, navigate to its children
+        if (i < pathParts.length - 1 && current.type === "folder" && current.children) {
+          current = current.children
+          console.log(`Navigating to children of "${part}":`, Object.keys(current))
+        }
+      } else {
+        // If we can't find the part, reset content and break
+        console.log(`Could not find part "${part}"`)
+        setSelectedContent("")
+        return
       }
     }
 
     if (current?.content) {
+      console.log("Setting content for:", selectedFile)
       setSelectedContent(current.content)
+    } else {
+      console.log("No content found for:", selectedFile)
+      setSelectedContent("")
     }
-  }, [selectedFile])
+  }, [selectedFile, fileStructure])
 
   React.useEffect(() => {
     console.log("FROM FILE EXPLORER: ", phases);
