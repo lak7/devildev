@@ -90,7 +90,7 @@ export default function FileExplorer({projectRules, plan}: {projectRules: string
   }
 
   return (
-    <div className="h-full bg-black text-white flex">
+    <div className="h-full bg-black text-white flex overflow-x-scroll hide-horizontal-scrollbar">
       {/* File Explorer Sidebar */}
       <div className="w-64 bg-black border-r border-white/20 flex flex-col">
         <div className="p-3 h-11 border-b border-white/20">
@@ -127,7 +127,7 @@ export default function FileExplorer({projectRules, plan}: {projectRules: string
         </div>
 
         {/* Code Editor Area */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden ">
           <ScrollArea className="h-full">
             <div className="flex">
               {/* Line Numbers */}

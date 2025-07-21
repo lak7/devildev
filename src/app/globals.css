@@ -145,3 +145,14 @@ textarea {
   scrollbar-width: thin;
   scrollbar-color: rgba(107, 114, 128, 0.3) transparent;
 }
+
+/* styles/globals.css */
+.hide-horizontal-scrollbar::-webkit-scrollbar:horizontal {
+  display: none;
+}
+
+.hide-horizontal-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
