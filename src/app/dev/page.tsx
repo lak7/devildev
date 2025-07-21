@@ -332,6 +332,8 @@ const DevPage = () => {
           </div>
         </div>
 
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
+
         {/* Corner decorations */}
         <div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
         <div className="absolute top-4 right-4 w-12 h-12 border-r-2 border-t-2 border-red-500/40"></div>
@@ -615,6 +617,8 @@ const DevPage = () => {
           </div>
         </div>
       </div>
+
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
 
       {/* Custom Scrollbar Styles */}
       <style jsx global>{`
