@@ -14,7 +14,7 @@ import {
   Speaker, Battery, Zap, BarChart, PieChart, TrendingUp, TrendingDown,
   DollarSign, CreditCard, ShoppingCart, Package, Truck, MapPin, Calendar,
   Clock, Timer, Play, Pause, SkipBack, SkipForward, Volume,
-  VolumeX, Repeat, Shuffle, Heart, Star, Bookmark, Flag, Tag, Filter,
+  VolumeX, Repeat, Shuffle, Heart, Star, Bookmark, Flag, Tag, Filter, 
   Grid, List, Eye, EyeOff, Edit, Trash, Plus, Minus, X, Check,
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUp, ArrowDown,
   ArrowLeft, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight,
@@ -186,6 +186,8 @@ export default function Architecture({ architectureData, isLoading = false, isFu
       icon: getIconComponent(comp.icon)
     }));
   })
+
+  console.log("THIS IS THE architectureData: ", architectureData)
   const [connectionLabels, setConnectionLabels] = useState<Record<string, string>>(
     architectureData?.connectionLabels || {
       "frontend-backend": "HTTP/API",

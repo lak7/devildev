@@ -12,6 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 import { generateArchitecture } from '../../../actions/architecture'; 
 import FileExplorer from '@/components/core/ContextDocs';
+import { generatePlan, generateProjectRules } from '../../../actions/context';
 
 export interface ChatMessage {
   id: string;
@@ -43,6 +44,8 @@ const DevPage = () => {
   const [isArchitectureLoading, setIsArchitectureLoading] = useState(false);
   const [architectureGenerated, setArchitectureGenerated] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [projectRules, setProjectRules] = useState<string>("");
+  const [plan, setPlan] = useState<string>("");
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30); // 30% default
@@ -162,7 +165,7 @@ const DevPage = () => {
     setInputMessage('');
     setTextareaHeight('60px');
 
-    const isStart = await startOrNot(currentInput, messages);
+    const isStart = await startOrNot(currentInput, messages, architectureData);
     const isTrue = isStart.toLowerCase() === "true";
     setCurrentStartOrNot(isTrue);
     // alert(isTrue);
@@ -204,6 +207,17 @@ const DevPage = () => {
       genArchitecture(currentInput, messages);
     }
   };
+
+  const handleGenerateDocs = async () => {
+    setIsLoading(true);
+    setActiveTab('context');
+    const docs = await generateProjectRules(messages, architectureData);
+    setProjectRules(docs);
+    const plan = await generatePlan(messages, architectureData);
+    setPlan(plan);
+    console.log(docs);
+    setIsLoading(false);
+  }
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
@@ -480,7 +494,7 @@ const DevPage = () => {
             )}
             {currentStartOrNot && !isLoading && !isArchitectureLoading && (
                <div className="flex h-12 ml-12">
-               <button onClick={() => setActiveTab('context')} className=" px-6 py-2 hover:bg-transparent border border-white hover:text-white rounded-lg font-bold cursor-pointer bg-white text-black transition-colors duration-200">
+               <button onClick={handleGenerateDocs} className=" px-6 py-2 hover:bg-transparent border border-white hover:text-white rounded-lg font-bold cursor-pointer bg-white text-black transition-colors duration-200">
                  Generate Docs{"->"}
                </button>
              </div>
@@ -596,7 +610,7 @@ const DevPage = () => {
                 isLoading={isArchitectureLoading} 
               />
             ) : ( 
-              <FileExplorer/> 
+              <FileExplorer projectRules={projectRules} plan={plan} /> 
             )}
           </div>
         </div>
