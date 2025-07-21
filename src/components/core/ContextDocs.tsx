@@ -12,21 +12,21 @@ interface FileNode {
   children?: Record<string, FileNode>
 }
 
-export default function FileExplorer({projectRules, plan, phaseCount}: {projectRules: string, plan: string, phaseCount: number}) {
+export default function FileExplorer({projectRules, plan, phaseCount, phases}: {projectRules: string, plan: string, phaseCount: number, phases: string[]}) {
   // Sample file structure with content
-  const fileStructure: Record<string, FileNode> = {
-    Phases: {
+  const fileStructure: Record<string, FileNode> = { 
+    Phases: { 
       type: "folder" as const,
       children: {
         ...Object.assign(
           {},
-          ...Array.from({ length: phaseCount }, (_, i) => ({
-            [`Phase_${i + 1}`]: {
-              type: "folder" as const,
+          ...phases.map((content, i) => ({
+            [`Phase_${i + 1}.md`]: {
+              type: "file" as const,
+              content,
             },
           }))
         ),
-        // Optional: you don’t need to add Phase_1 to Phase_3 again unless you want to override
       },
     },
     "PROJECT_RULES.md": {
@@ -56,6 +56,11 @@ export default function FileExplorer({projectRules, plan, phaseCount}: {projectR
       setSelectedContent(current.content)
     }
   }, [selectedFile])
+
+  React.useEffect(() => {
+    console.log("FROM FILE EXPLORER: ", phases);
+  }, [phases]);
+
 
   const renderFileTree = (node: Record<string, FileNode>, path = "") => {
     return Object.entries(node).map(([name, item]) => {

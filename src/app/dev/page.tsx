@@ -12,7 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 import { generateArchitecture } from '../../../actions/architecture'; 
 import FileExplorer from '@/components/core/ContextDocs';
-import { generatePlan, generateProjectRules, numberOfPhases } from '../../../actions/context';
+import { generateNthPhase, generatePlan, generateProjectRules, numberOfPhases } from '../../../actions/context';
 
 export interface ChatMessage {
   id: string;
@@ -47,6 +47,7 @@ const DevPage = () => {
   const [projectRules, setProjectRules] = useState<string>("");
   const [plan, setPlan] = useState<string>("");
   const [phaseCount, setPhaseCount] = useState<number>(0);
+  const [phases, setPhase] = useState<string[]>([]);
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30); // 30% default
@@ -212,13 +213,37 @@ const DevPage = () => {
   const handleGenerateDocs = async () => {
     setIsLoading(true);
     setActiveTab('context');
+    const numOfPhase = await numberOfPhases(messages, architectureData);
+    setPhaseCount(Number(numOfPhase));
     const docs = await generateProjectRules(messages, architectureData); 
     setProjectRules(docs);
-    const numOfPhase = await numberOfPhases(messages, architectureData);
-    setPhaseCount(numOfPhase as unknown as number);
+    // alert("Rules Generated");
+    
+    // alert("Phase Count Generated");
     const plan = await generatePlan(messages, architectureData, numOfPhase);
     setPlan(plan);
-    console.log(docs);
+    // alert("Plan Generated");
+
+    const allPhases: string[] = [];
+    alert(numOfPhase)
+    alert(Number(numOfPhase))
+    // alert(phaseCount);
+
+    alert("Now Generating Phases");
+
+    for (let i = 1; i <= Number(numOfPhase); i++) {
+      alert(i);
+      const nthPhase = await generateNthPhase(architectureData, plan, i.toString());
+      console.log(nthPhase);
+      allPhases.push(nthPhase);
+    }
+
+    alert("Phases Generated");
+
+
+    setPhase(allPhases);
+
+    // console.log(phases);
     setIsLoading(false);
   }
 
@@ -615,7 +640,7 @@ const DevPage = () => {
                 isLoading={isArchitectureLoading} 
               />
             ) : ( 
-              <FileExplorer projectRules={projectRules} plan={plan} phaseCount={phaseCount} /> 
+              <FileExplorer projectRules={projectRules} plan={plan} phaseCount={phaseCount} phases={phases} /> 
             )}
           </div>
         </div>

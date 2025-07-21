@@ -281,3 +281,140 @@ Generate the complete PLAN.md content following this structure exactly.`
     const result = await chain.invoke({conversation_history: formattedHistory, projectArchitecture: JSON.stringify(architectureData), numberOfPhases: numOfPhase});
     return result;
 }
+
+export async function generateNthPhase(architectureData: any, plan: string, numOfPhase: string) {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const llm = new ChatOpenAI({openAIApiKey: openaiKey})
+    const template = `You are an expert software development lead creating detailed implementation instructions for an AI coding agent. Based on the provided project plan, architecture data, and target phase number, generate a comprehensive phase execution document.
+
+**Project Plan:**
+{planContent}
+
+**Project Architecture:**
+{architectureData}
+
+**Target Phase Number:**
+{phaseNumber}
+
+Generate a detailed phase execution document in markdown format with the following structure:
+
+# PHASE {phaseNumber} EXECUTION PLAN
+
+## 🎯 Phase Goal
+Provide a comprehensive description of what this phase aims to accomplish:
+- Primary objectives and deliverables
+- Functional requirements to be implemented
+- Technical milestones to be achieved
+- Integration points with previous phases
+
+## 🎁 Expected Outcomes
+List specific, measurable outcomes that will be delivered:
+- Features that will be fully functional
+- Components that will be created or modified
+- APIs or endpoints that will be available
+- Database changes or migrations completed
+- Files and directories that will be created/modified
+- Tests that will be written and passing
+
+## 📋 Prerequisites
+Clearly define what must be completed before starting this phase:
+- Dependencies from previous phases that must be satisfied
+- Required setup or configuration steps
+- External dependencies or third-party integrations needed
+- Environment setup requirements
+- Database schema or data requirements
+
+## ✅ Implementation Tasks
+
+### Core Development Tasks
+Create a comprehensive, ordered checklist of implementation tasks. Each task should be:
+- [ ] Specific and actionable for an AI coding agent
+- [ ] Include exact file paths and component names where applicable
+- [ ] Specify the technology/framework/library to use
+- [ ] Include implementation details and code requirements
+
+**Example task format:**
+- [ ] Create src/components/UserProfile.tsx component with TypeScript props interface for user data display
+- [ ] Implement getUserById API endpoint in pages/api/users/[id].ts using Next.js API routes with TypeScript
+- [ ] Add user authentication middleware to protect /api/users/* routes using JWT validation and TypeScript types
+- [ ] Create database migration for users table with fields: id, email, name, created_at, updated_at using TypeScript schema definitions
+- [ ] Write unit tests for UserProfile component in __tests__/components/UserProfile.test.tsx using Jest and TypeScript
+
+### Configuration & Setup Tasks
+- [ ] [Specific configuration tasks with exact file names and settings]
+- [ ] [Environment variables or config file updates needed with TypeScript typing]
+- [ ] [Package installations or dependency updates required for TypeScript compatibility]
+
+### Database Tasks
+- [ ] [Specific database schema changes, migrations, or seed data with TypeScript models]
+- [ ] [Database connection setup or configuration changes with proper TypeScript types]
+
+### API Development Tasks
+- [ ] [Specific API endpoints with exact file paths and TypeScript functionality]
+- [ ] [Request/response schemas and validation rules using TypeScript interfaces]
+- [ ] [Authentication and authorization implementation with TypeScript types]
+
+### Frontend Development Tasks
+- [ ] [Specific React components with file paths and TypeScript props/state typing]
+- [ ] [State management implementation using TypeScript interfaces]
+- [ ] [UI/UX implementation with specific styling requirements and TypeScript integration]
+
+### Testing Tasks
+- [ ] [Unit tests for specific components/functions with TypeScript test types]
+- [ ] [Integration tests for API endpoints with proper TypeScript mocking]
+- [ ] [End-to-end tests for user workflows with TypeScript test utilities]
+
+### Documentation Tasks
+- [ ] [Code documentation and TypeScript JSDoc comments]
+- [ ] [API documentation updates with TypeScript interface definitions]
+- [ ] [README or setup instruction updates including TypeScript requirements]
+
+## 🔍 Acceptance Criteria
+Define specific criteria that must be met for this phase to be considered complete:
+- Functional requirements that must be working
+- TypeScript compilation with no errors
+- Code quality standards that must be met
+- Test coverage requirements with TypeScript test files
+- Performance benchmarks that must be achieved
+- Documentation that must be updated
+
+## 🚨 Critical Notes for AI Agent
+- **File Structure:** Provide specific file paths and TypeScript naming conventions
+- **Code Standards:** Specify TypeScript coding style, interface definitions, and Next.js best practices
+- **Error Handling:** Include requirements for error handling and validation with proper TypeScript error types
+- **Security:** Highlight any security considerations with TypeScript type safety
+- **Performance:** Note any performance requirements or optimizations needed for Next.js/TypeScript
+- **Dependencies:** List any new packages or libraries that need TypeScript declarations
+
+## 📊 Phase Completion Verification
+Provide a checklist to verify phase completion:
+- [ ] All tasks marked as completed
+- [ ] TypeScript compilation successful with no errors
+- [ ] All tests passing with proper TypeScript coverage
+- [ ] No critical bugs or errors in TypeScript code
+- [ ] Code review completed for TypeScript best practices
+- [ ] Documentation updated with TypeScript examples
+- [ ] Integration with previous phases verified in TypeScript environment
+
+---
+
+Instructions for generating this document:
+1. Extract the specific phase details from the provided PLAN.md
+2. Analyze the architecture data to understand Next.js/TypeScript technical context
+3. Create 15-30 specific, actionable tasks (adjust based on phase complexity)
+4. Ensure all tasks are unchecked (- [ ]) format for tracking
+5. Include exact file paths, component names, and TypeScript specifications
+6. Order tasks logically based on dependencies
+7. Make tasks specific enough for an AI coding agent to execute independently in Next.js/TypeScript
+8. Include error handling, testing, and documentation requirements with TypeScript focus
+9. Ensure tasks align with Next.js architecture and TypeScript best practices
+10. Focus on implementation details rather than high-level concepts
+11. Emphasize TypeScript type safety and Next.js specific patterns
+12. Include proper TypeScript interface definitions and type declarations
+
+Generate the complete phase execution plan following this structure exactly.`
+    const prompt = PromptTemplate.fromTemplate(template);
+    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, phaseNumber: numOfPhase});
+    return result;
+}
