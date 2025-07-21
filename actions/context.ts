@@ -4,6 +4,52 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 
+export async function numberOfPhases(conversationHistory: any[] = [], architectureData: any) {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const llm = new ChatOpenAI({openAIApiKey: openaiKey})
+    const template = `You are a software development project manager with expertise in web application development using Next.js and Node.js.
+
+Your task is to analyze a project and determine the optimal number of development phases needed for completion.
+
+## Input Data:
+Conversation History: {conversation_history}
+Architecture Details: {architecture_data}
+
+## Analysis Criteria:
+Evaluate project complexity based on:
+- Frontend complexity (components, state management, UI/UX requirements)
+- Backend complexity (API endpoints, database operations, authentication)
+- Integration requirements (third-party services, external APIs)
+- Database design and data relationships
+- Testing requirements
+- Security considerations
+
+## Output Requirements:
+- Return ONLY a single integer between 3 and 7
+- Base the number on overall project complexity:
+  * 3-4 phases: Simple projects (basic CRUD, minimal integrations)
+  * 5-6 phases: Medium complexity (multiple features, some integrations)
+  * 7 phases: High complexity (advanced features, multiple integrations, complex architecture)
+
+## Response Format:
+Return only the number. No explanations, no additional text, no formatting.
+
+Example outputs:
+4
+6
+5
+
+Now analyze the provided project data and return the appropriate number of phases.`
+
+const prompt = PromptTemplate.fromTemplate(template);
+const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+const formattedHistory = conversationHistory.map(msg => 
+    `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+).join('\n');
+const result = await chain.invoke({conversation_history: formattedHistory, architecture_data: JSON.stringify(architectureData)});
+return result;
+}
+
 export async function generateProjectRules(conversationHistory: any[] = [], architectureData: any) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
@@ -129,7 +175,7 @@ const result = await chain.invoke({conversation_history: formattedHistory, archi
 return result;
 }
 
-export async function generatePlan(conversationHistory: any[] = [], architectureData: any) {
+export async function generatePlan(conversationHistory: any[] = [], architectureData: any, numOfPhase: string) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
     const template = `You are an expert project manager and technical architect. Based on the provided conversation history and project architecture, create a comprehensive PLAN.md file that will guide the development process.
@@ -139,6 +185,9 @@ export async function generatePlan(conversationHistory: any[] = [], architecture
 
 **Project Architecture:**
 {projectArchitecture}
+
+**Number of Phases:**
+{numberOfPhases}
 
 Generate a detailed PLAN.md file in markdown format with the following structure:
 
@@ -163,24 +212,24 @@ Provide a comprehensive overview of the technical architecture including:
 
 ## 📋 Development Phases
 
-Based on the project complexity, break down the development into 3-7 implementation phases (exclude planning and design phases). For each phase include:
+Create exactly {numberOfPhases} implementation phases (exclude planning and design phases). For each phase include:
 - Phase name and number
 - Overall goal and objectives
 - Key deliverables
 - Dependencies on previous phases
 - Success criteria
 
-**Current Phase Indicator:** Clearly mark which phase is currently active.
+**Current Phase Indicator:** Clearly mark all the phases as NOT_STARTED.
 
 ### Phase 1: [Phase Name]
-**Status:** NOT_STARTED / WORKING / COMPLETED
+**Status:** NOT_STARTED
 - **Goal:** [Detailed description of what this phase aims to achieve]
 - **Deliverables:** [List of specific outputs expected]
 - **Dependencies:** [What needs to be completed first]
 - **Key Activities:** [Main implementation tasks and activities]
 
 ### Phase 2: [Phase Name]
-**Status:** NOT_STARTED / WORKING / COMPLETED
+**Status:** NOT_STARTED
 - **Goal:** [Detailed description]
 - **Deliverables:** [List of outputs]
 - **Dependencies:** [What needs to be completed first]
@@ -211,7 +260,7 @@ Define how success will be measured based on functionality and technical perform
 
 Instructions:
 1. Analyze the conversation history to understand project requirements, discussions, and decisions made
-2. Review the project architecture to understand technical scope and complexity
+2. Create exactly {numberOfPhases} implementation phases - no more, no less
 3. Initially all the phases shoulde be marked with status "NOT_STARTED"
 4. Determine appropriate number of implementation phases between 4 phases to 5 phases based on project complexity
 5. Focus only on implementation phases, skip planning/design phases
@@ -229,6 +278,6 @@ Generate the complete PLAN.md content following this structure exactly.`
     const formattedHistory = conversationHistory.map(msg => 
         `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
     ).join('\n');
-    const result = await chain.invoke({conversation_history: formattedHistory, projectArchitecture: JSON.stringify(architectureData)});
+    const result = await chain.invoke({conversation_history: formattedHistory, projectArchitecture: JSON.stringify(architectureData), numberOfPhases: numOfPhase});
     return result;
 }

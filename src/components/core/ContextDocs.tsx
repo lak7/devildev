@@ -12,21 +12,21 @@ interface FileNode {
   children?: Record<string, FileNode>
 }
 
-export default function FileExplorer({projectRules, plan}: {projectRules: string, plan: string}) {
+export default function FileExplorer({projectRules, plan, phaseCount}: {projectRules: string, plan: string, phaseCount: number}) {
   // Sample file structure with content
   const fileStructure: Record<string, FileNode> = {
     Phases: {
       type: "folder" as const,
       children: {
-        Phase_1: {
-          type: "folder" as const,
-        },
-        Phase_2: {
-          type: "folder" as const,
-        },
-        Phase_3: {
-          type: "folder" as const,
-        },
+        ...Object.assign(
+          {},
+          ...Array.from({ length: phaseCount }, (_, i) => ({
+            [`Phase_${i + 1}`]: {
+              type: "folder" as const,
+            },
+          }))
+        ),
+        // Optional: you don’t need to add Phase_1 to Phase_3 again unless you want to override
       },
     },
     "PROJECT_RULES.md": {

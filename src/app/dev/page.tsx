@@ -12,7 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 import { generateArchitecture } from '../../../actions/architecture'; 
 import FileExplorer from '@/components/core/ContextDocs';
-import { generatePlan, generateProjectRules } from '../../../actions/context';
+import { generatePlan, generateProjectRules, numberOfPhases } from '../../../actions/context';
 
 export interface ChatMessage {
   id: string;
@@ -46,6 +46,7 @@ const DevPage = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [projectRules, setProjectRules] = useState<string>("");
   const [plan, setPlan] = useState<string>("");
+  const [phaseCount, setPhaseCount] = useState<number>(0);
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30); // 30% default
@@ -211,9 +212,11 @@ const DevPage = () => {
   const handleGenerateDocs = async () => {
     setIsLoading(true);
     setActiveTab('context');
-    const docs = await generateProjectRules(messages, architectureData);
+    const docs = await generateProjectRules(messages, architectureData); 
     setProjectRules(docs);
-    const plan = await generatePlan(messages, architectureData);
+    const numOfPhase = await numberOfPhases(messages, architectureData);
+    setPhaseCount(numOfPhase as unknown as number);
+    const plan = await generatePlan(messages, architectureData, numOfPhase);
     setPlan(plan);
     console.log(docs);
     setIsLoading(false);
@@ -400,7 +403,7 @@ const DevPage = () => {
       </nav>
 
       {/* Main Content Area */}
-      <div ref={containerRef} className="flex-1 flex gap-0 p-4 min-h-0 relative">
+      <div ref={containerRef} className="flex-1 flex gap-0 p-5 min-h-0 relative">
         {/* Left Chat Panel - Resizable */}
         <div 
           className="bg-gray-900/30 border border-gray-600/30 rounded-l-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
@@ -612,7 +615,7 @@ const DevPage = () => {
                 isLoading={isArchitectureLoading} 
               />
             ) : ( 
-              <FileExplorer projectRules={projectRules} plan={plan} /> 
+              <FileExplorer projectRules={projectRules} plan={plan} phaseCount={phaseCount} /> 
             )}
           </div>
         </div>
