@@ -207,7 +207,7 @@ export default function ComingSoonPage() {
         {/* Logo */}
         <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
           <Image
-            src="/devildev-logo.png"
+            src="/devildev.png"
             alt="DevilDev Logo"
             width={400}
             height={120}
@@ -221,7 +221,7 @@ export default function ComingSoonPage() {
           <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed px-4">
             We're crafting the{" "}
             <span className="text-red-400 font-semibold">
-              ultimate development experience
+              The First Engineer
             </span>{" "}
             that will revolutionize how you build and ship applications.
           </p>
