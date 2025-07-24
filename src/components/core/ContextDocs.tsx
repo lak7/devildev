@@ -5,6 +5,7 @@ import { ChevronRight, File, Folder, Copy, Download, ExternalLink } from "lucide
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import JSZip from "jszip"
 
 interface FileNode {
   type: "file" | "folder"
@@ -81,6 +82,48 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases}: {
     console.log("FROM FILE EXPLORER: ", phases);
   }, [phases]);
 
+  // Function to add files to zip recursively
+  const addFilesToZip = (zip: any, node: Record<string, FileNode>, currentPath = "") => {
+    Object.entries(node).forEach(([name, item]) => {
+      const fullPath = currentPath ? `${currentPath}/${name}` : name
+
+      if (item.type === "folder" && item.children) {
+        // Create folder and recursively add its contents
+        const folder = zip.folder(fullPath)
+        if (folder) {
+          addFilesToZip(zip, item.children, fullPath)
+        }
+      } else if (item.type === "file" && item.content) {
+        // Add file with its content
+        zip.file(fullPath, item.content)
+      }
+    })
+  }
+
+  // Function to handle download
+  const handleDownload = async () => {
+    try {
+      const zip = new (JSZip as any)()
+      
+      // Add all files from the file structure to the zip
+      addFilesToZip(zip, fileStructure)
+      
+      // Generate the zip file
+      const content = await zip.generateAsync({ type: "blob" })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(content)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = "project-documentation.zip"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Error creating zip file:", error)
+    }
+  }
 
   const renderFileTree = (node: Record<string, FileNode>, path = "") => {
     return Object.entries(node).map(([name, item]) => {
@@ -142,7 +185,12 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases}: {
         <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
           <Copy className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200"
+          onClick={handleDownload}
+        >
           <Download className="w-4 h-4" />
         </Button>
         <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
