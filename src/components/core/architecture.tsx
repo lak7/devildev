@@ -66,6 +66,109 @@ interface ArchitectureProps {
   isFullscreen?: boolean
 }
 
+// Predefined color schemes for components
+const COLOR_SCHEMES = [
+  {
+    gradient: "from-cyan-500 to-blue-500",
+    border: "border-cyan-500/30"
+  },
+  {
+    gradient: "from-emerald-500 to-green-500",
+    border: "border-emerald-500/30"
+  },
+  {
+    gradient: "from-purple-500 to-violet-500",
+    border: "border-purple-500/30"
+  },
+  {
+    gradient: "from-red-500 to-pink-500",
+    border: "border-red-500/30"
+  },
+  {
+    gradient: "from-orange-500 to-amber-500",
+    border: "border-orange-500/30"
+  },
+  {
+    gradient: "from-indigo-500 to-purple-500",
+    border: "border-indigo-500/30"
+  },
+  {
+    gradient: "from-teal-500 to-cyan-500",
+    border: "border-teal-500/30"
+  },
+  {
+    gradient: "from-rose-500 to-red-500",
+    border: "border-rose-500/30"
+  },
+  {
+    gradient: "from-lime-500 to-green-500",
+    border: "border-lime-500/30"
+  },
+  {
+    gradient: "from-yellow-500 to-orange-500",
+    border: "border-yellow-500/30"
+  },
+  {
+    gradient: "from-blue-500 to-indigo-500",
+    border: "border-blue-500/30"
+  },
+  {
+    gradient: "from-pink-500 to-rose-500",
+    border: "border-pink-500/30"
+  },
+  {
+    gradient: "from-slate-500 to-gray-500",
+    border: "border-slate-500/30"
+  },
+  {
+    gradient: "from-fuchsia-500 to-purple-500",
+    border: "border-fuchsia-500/30"
+  },
+  {
+    gradient: "from-sky-500 to-blue-500",
+    border: "border-sky-500/30"
+  }
+]
+
+// Default position layouts based on number of components (3-7)
+const DEFAULT_POSITIONS: Record<number, Position[]> = {
+  3: [
+    { x: 100, y: 150 },
+    { x: 500, y: 100 },
+    { x: 300, y: 350 }
+  ],
+  4: [
+    { x: 100, y: 100 },
+    { x: 500, y: 100 },
+    { x: 600, y: 400 },
+    { x: 250, y: 400 }
+  ],
+  5: [
+    { x: 100, y: 125 },
+    { x: 475, y: 250 },
+    { x: 850, y: 125 },
+    { x: 100, y: 450 },
+    { x: 850, y: 450 }
+  ],
+  6: [
+    { x: 100, y: 100 },
+    { x: 475, y: 225 },
+    { x: 850, y: 100 },
+    { x: 100, y: 450 },
+    { x: 475, y: 575 },
+    { x: 850, y: 400 }
+  ],
+  7: [
+    { x: 100, y: 50 },
+    { x: 510, y: 50 },
+    { x: 900, y: 50 },
+    { x: 300, y: 325 },
+    { x: 700, y: 325 },
+    { x: 250, y: 600 },
+    { x: 750, y: 600 }
+  ]
+}
+
 // Icon mapping for dynamic icon resolution
 const iconMap: Record<string, any> = {
   Monitor, Server, Database, Shield, Move, RotateCcw, Activity, ArrowRight,
@@ -101,21 +204,40 @@ const getIconComponent = (iconName: string | any) => {
   return Monitor; // safe fallback
 }
 
+// Helper function to assign colors and positions to components
+const processComponents = (components: ComponentData[]): ComponentData[] => {
+  const componentCount = Math.min(Math.max(components.length, 3), 7)
+  const positions = DEFAULT_POSITIONS[componentCount] || DEFAULT_POSITIONS[4]
+  
+  return components.map((comp, index) => {
+    const colorScheme = COLOR_SCHEMES[index % COLOR_SCHEMES.length]
+    const position = positions[index] || { x: 100 + (index * 320), y: 100 + (Math.floor(index / 3) * 300) }
+    
+    return {
+      ...comp,
+      icon: getIconComponent(comp.icon),
+      color: colorScheme.gradient,
+      borderColor: colorScheme.border,
+      position: position
+    }
+  })
+}
+
 // Better positioned components for graph layout
 const initialComponents: ComponentData[] = [
   {
     id: "frontend",
     title: "Frontend",
     icon: Monitor,
-    color: "from-cyan-500 to-blue-500",
-    borderColor: "border-cyan-500/30",
+    color: "",
+    borderColor: "",
     technologies: {
       framework: "Next.js 15",
       language: "TypeScript",
       styling: "Tailwind CSS",
     },
     connections: ["backend"],
-    position: { x: 100, y: 100 },
+    position: { x: 0, y: 0 },
     dataFlow: {
       sends: ["User Requests", "Form Data", "Auth Tokens", "UI Events"],
       receives: ["API Responses", "User Data", "Auth Status", "Real-time Updates"],
@@ -125,15 +247,15 @@ const initialComponents: ComponentData[] = [
     id: "backend",
     title: "Backend",
     icon: Server,
-    color: "from-emerald-500 to-green-500",
-    borderColor: "border-emerald-500/30",
+    color: "",
+    borderColor: "",
     technologies: {
       runtime: "Node.js",
       framework: "Next.js API",
       language: "TypeScript",
     },
-    connections: ["database", "authentication"],
-    position: { x: 500, y: 100 },
+    connections: ["database", "authentication", "storage", "monitoring"],
+    position: { x: 0, y: 0 },
     dataFlow: {
       sends: ["API Responses", "Database Queries", "Auth Requests", "Processed Data"],
       receives: ["HTTP Requests", "Database Results", "Auth Tokens", "User Input"],
@@ -143,15 +265,15 @@ const initialComponents: ComponentData[] = [
     id: "database",
     title: "Database",
     icon: Database,
-    color: "from-purple-500 to-violet-500",
-    borderColor: "border-purple-500/30",
+    color: "",
+    borderColor: "",
     technologies: {
       primary: "PostgreSQL",
       cache: "Redis",
       orm: "Prisma",
     },
     connections: [],
-    position: { x: 800, y: 100 },
+    position: { x: 0, y: 0 },
     dataFlow: {
       sends: ["Query Results", "User Records", "Session Data", "Cached Data"],
       receives: ["SQL Queries", "Data Writes", "Cache Requests", "Transactions"],
@@ -161,30 +283,67 @@ const initialComponents: ComponentData[] = [
     id: "authentication",
     title: "Authentication",
     icon: Shield,
-    color: "from-red-500 to-pink-500",
-    borderColor: "border-red-500/30",
+    color: "",
+    borderColor: "",
     technologies: {
       provider: "NextAuth.js",
       tokens: "JWT",
       oauth: "OAuth 2.0",
     },
     connections: ["frontend"],
-    position: { x: 300, y: 350 },
+    position: { x: 0, y: 0 },
     dataFlow: {
       sends: ["Auth Tokens", "User Sessions", "Login Status", "Permissions"],
       receives: ["Login Requests", "Token Validation", "User Credentials", "Logout Events"],
     },
   },
-]
+  {
+    id: "storage",
+    title: "Storage",
+    icon: Cloud, // Replace with appropriate icon
+    color: "",
+    borderColor: "",
+    technologies: {
+      service: "AWS S3",
+      backup: "R2",
+      fileHandling: "Multer",
+    },
+    connections: ["backend"],
+    position: { x: 0, y: 0 },
+    dataFlow: {
+      sends: ["File URLs", "Upload Confirmations", "Backup Status"],
+      receives: ["File Uploads", "Download Requests", "Backup Triggers"],
+    },
+  },
+  {
+    id: "monitoring",
+    title: "Monitoring",
+    icon: Activity, // Replace with appropriate icon like Lucide’s Activity
+    color: "",
+    borderColor: "",
+    technologies: {
+      service: "LogRocket",
+      performance: "Sentry",
+      logging: "Winston",
+    },
+    connections: ["backend"],
+    position: { x: 0, y: 0 },
+    dataFlow: {
+      sends: ["Error Logs", "Performance Metrics", "Crash Reports"],
+      receives: ["Event Hooks", "User Sessions", "App States"],
+    },
+  },
+];
+
+
+
+
 
 export default function Architecture({ architectureData, isLoading = false, isFullscreen = false }: ArchitectureProps) {
   const [components, setComponents] = useState<ComponentData[]>(() => {
-    // Process icons when initializing state
+    // Process components with predefined colors and positions
     const initialData = architectureData?.components || initialComponents;
-    return initialData.map(comp => ({
-      ...comp,
-      icon: getIconComponent(comp.icon)
-    }));
+    return processComponents(initialData);
   })
 
   console.log("THIS IS THE architectureData: ", architectureData)
@@ -226,11 +385,8 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   // Update components when architectureData changes
   useEffect(() => {
     if (architectureData?.components) {
-      // Process icons to convert string names to components
-      const processedComponents = architectureData.components.map(comp => ({
-        ...comp,
-        icon: getIconComponent(comp.icon)
-      }))
+      // Process components with predefined colors and positions
+      const processedComponents = processComponents(architectureData.components)
       setComponents(processedComponents)
     }
     if (architectureData?.connectionLabels) {
@@ -488,7 +644,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   }, [isDragging, handleMouseMove, handleMouseUp])
 
   const resetPositions = () => {
-    setComponents(initialComponents)
+    setComponents(processComponents(initialComponents))
     setSelectedComponent(null)
   }
 
