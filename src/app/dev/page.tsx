@@ -49,6 +49,9 @@ const DevPage = () => {
   const [phaseCount, setPhaseCount] = useState<number>(0);
   const [phases, setPhase] = useState<string[]>([]);
   
+  // Component position persistence
+  const [componentPositions, setComponentPositions] = useState<Record<string, {x: number, y: number}>>({});
+  
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30); // 30% default
   const [isResizing, setIsResizing] = useState(false);
@@ -398,6 +401,8 @@ const DevPage = () => {
               architectureData={architectureData} 
               isLoading={isArchitectureLoading}
               isFullscreen={true}
+              customPositions={componentPositions}
+              onPositionsChange={setComponentPositions}
             />
           </div>
         </div>
@@ -637,7 +642,9 @@ const DevPage = () => {
             {activeTab === 'architecture' ? (
               <Architecture 
                 architectureData={architectureData} 
-                isLoading={isArchitectureLoading} 
+                isLoading={isArchitectureLoading}
+                customPositions={componentPositions}
+                onPositionsChange={setComponentPositions}
               />
             ) : ( 
               <FileExplorer projectRules={projectRules} plan={plan} phaseCount={phaseCount} phases={phases} /> 

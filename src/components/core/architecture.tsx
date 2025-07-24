@@ -64,6 +64,8 @@ interface ArchitectureProps {
   }
   isLoading?: boolean
   isFullscreen?: boolean
+  customPositions?: Record<string, Position>
+  onPositionsChange?: (positions: Record<string, Position>) => void
 }
 
 // Predefined color schemes for components
@@ -205,13 +207,14 @@ const getIconComponent = (iconName: string | any) => {
 }
 
 // Helper function to assign colors and positions to components
-const processComponents = (components: ComponentData[]): ComponentData[] => {
+const processComponents = (components: ComponentData[], customPositions: Record<string, Position> = {}): ComponentData[] => {
   const componentCount = Math.min(Math.max(components.length, 3), 7)
   const positions = DEFAULT_POSITIONS[componentCount] || DEFAULT_POSITIONS[4]
   
   return components.map((comp, index) => {
     const colorScheme = COLOR_SCHEMES[index % COLOR_SCHEMES.length]
-    const position = positions[index] || { x: 100 + (index * 320), y: 100 + (Math.floor(index / 3) * 300) }
+    // Use custom position if available, otherwise use default position
+    const position = customPositions[comp.id] || positions[index] || { x: 100 + (index * 320), y: 100 + (Math.floor(index / 3) * 300) }
     
     return {
       ...comp,
@@ -360,11 +363,17 @@ const initialComponents: ComponentData[] = [
 
 
 
-export default function Architecture({ architectureData, isLoading = false, isFullscreen = false }: ArchitectureProps) {
+export default function Architecture({ 
+  architectureData, 
+  isLoading = false, 
+  isFullscreen = false, 
+  customPositions = {}, 
+  onPositionsChange 
+}: ArchitectureProps) {
   const [components, setComponents] = useState<ComponentData[]>(() => {
     // Process components with predefined colors and positions
     const initialData = architectureData?.components || initialComponents;
-    return processComponents(initialData);
+    return processComponents(initialData, customPositions);
   })
 
   console.log("THIS IS THE architectureData: ", architectureData)
@@ -417,8 +426,8 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   // Update components when architectureData changes
   useEffect(() => {
     if (architectureData?.components) {
-      // Process components with predefined colors and positions
-      const processedComponents = processComponents(architectureData.components)
+      // Process components with predefined colors and positions, preserving custom positions
+      const processedComponents = processComponents(architectureData.components, customPositions)
       setComponents(processedComponents)
       
       // Update transform scale based on component count
@@ -428,7 +437,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
     if (architectureData?.connectionLabels) {
       setConnectionLabels(architectureData.connectionLabels)
     }
-  }, [architectureData])
+  }, [architectureData, customPositions])
 
   // Trigger animation restart when selection changes
   useEffect(() => {
@@ -647,14 +656,26 @@ export default function Architecture({ architectureData, isLoading = false, isFu
       e.preventDefault()
 
       const canvasPos = screenToCanvas(e.clientX, e.clientY)
-      const newX = Math.max(0, canvasPos.x - dragOffset.x)
-      const newY = Math.max(0, canvasPos.y - dragOffset.y)
+      // Allow negative positions for components to be placed anywhere on the large canvas
+      const newX = canvasPos.x - dragOffset.x
+      const newY = canvasPos.y - dragOffset.y
 
+      const newPosition = { x: newX, y: newY }
+
+      // Update components state
       setComponents((prev) =>
-        prev.map((comp) => (comp.id === isDragging ? { ...comp, position: { x: newX, y: newY } } : comp)),
+        prev.map((comp) => (comp.id === isDragging ? { ...comp, position: newPosition } : comp)),
       )
+
+      // Store custom position
+      if (onPositionsChange) {
+        onPositionsChange({
+          ...customPositions,
+          [isDragging]: newPosition
+        })
+      }
     },
-    [isDragging, dragOffset, screenToCanvas],
+    [isDragging, dragOffset, screenToCanvas, customPositions, onPositionsChange],
   )
 
   const handleMouseUp = useCallback((e: MouseEvent) => {
@@ -680,7 +701,10 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   }, [isDragging, handleMouseMove, handleMouseUp])
 
   const resetPositions = () => {
-    setComponents(processComponents(initialComponents))
+    if (onPositionsChange) {
+      onPositionsChange({}) // Clear custom positions
+    }
+    setComponents(processComponents(initialComponents, {}))
     setSelectedComponent(null)
   }
 
@@ -946,16 +970,22 @@ export default function Architecture({ architectureData, isLoading = false, isFu
                     {/* Canvas Content with Transform */}
           <div
             ref={canvasRef}
-            className="absolute inset-0 origin-top-left"
+            className="absolute origin-top-left"
             style={{
               transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-              transformOrigin: '0 0'
+              transformOrigin: '0 0',
+              width: '10000px',
+              height: '10000px'
             }}
           >
             {/* Grid Background */}
             <div
-              className="absolute inset-0 opacity-5"
+              className="absolute opacity-5"
               style={{
+                width: '10000px',
+                height: '10000px',
+                left: '0px',
+                top: '0px',
                 backgroundImage: `
                   linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
                   linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
@@ -965,7 +995,7 @@ export default function Architecture({ architectureData, isLoading = false, isFu
             />
 
           {/* Connection Lines SVG */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
+          <svg className="absolute pointer-events-none z-10" style={{ width: '10000px', height: '10000px', left: '0px', top: '0px' }}>
             <defs>
               {/* Standard Arrow */}
               <marker
