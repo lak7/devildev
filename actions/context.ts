@@ -245,6 +245,7 @@ export async function generatePlan(conversationHistory: any[] = [], architecture
 - Code passes quality gates
 - Application is deployable and functional
 
+**Target users:** [Who will use this]
 
 ## 🏗️ Technical Architecture
 
@@ -265,9 +266,14 @@ export async function generatePlan(conversationHistory: any[] = [], architecture
 
 ## 📋 Implementation Phases
 
-### Phase 1: [Foundation/Setup]
+**IMPORTANT:** Generate exactly {numberOfPhases} phases below. Do not skip any phases or limit to 4 phases.
+
+[For each phase from 1 to {numberOfPhases}, generate the following structure:]
+
+### Phase [N]: [Phase Name Based on Content]
 **Status:** NOT_STARTED
 **Goal:** [What gets built in this phase]
+**Dependencies:** [Phase N-1 completion, or "None" for Phase 1]
 **Deliverables:**
 - [Specific deliverable 1]
 - [Specific deliverable 2]
@@ -276,40 +282,7 @@ export async function generatePlan(conversationHistory: any[] = [], architecture
 - [Testable criterion 1]
 - [Testable criterion 2]
 
-### Phase 2: [Core Features]
-**Status:** NOT_STARTED
-**Goal:** [What gets built in this phase]
-**Dependencies:** Phase 1 completion
-**Deliverables:**
-- [Specific deliverable 1]
-- [Specific deliverable 2]
-**Success Criteria:**
-- [Testable criterion 1]
-- [Testable criterion 2]
-
-### Phase 3: [Advanced Features]
-**Status:** NOT_STARTED
-**Goal:** [What gets built in this phase]
-**Dependencies:** Phase 2 completion
-**Deliverables:**
-- [Specific deliverable 1]
-- [Specific deliverable 2]
-**Success Criteria:**
-- [Testable criterion 1]
-- [Testable criterion 2]
-
-### Phase 4: [Integration & Polish]
-**Status:** NOT_STARTED
-**Goal:** [What gets built in this phase]
-**Dependencies:** Phase 3 completion
-**Deliverables:**
-- [Specific deliverable 1]
-- [Specific deliverable 2]
-**Success Criteria:**
-- [Testable criterion 1]
-- [Testable criterion 2]
-
-[Include Phase 5 only if numberOfPhases is 5]
+[Repeat this structure for ALL {numberOfPhases} phases - whether it's 3, 4, 5, 6, or 7 phases]
 
 ## 🧪 Quality Requirements
 **Testing:** Unit tests for core functions, integration tests for APIs
@@ -320,17 +293,19 @@ export async function generatePlan(conversationHistory: any[] = [], architecture
 ---
 
 **INSTRUCTIONS:**
-1. **Phase Focus:** Create exactly {numberOfPhases} phases focused purely on building features and functionality
-2. **Phase Types:** 
+1. **Phase Count:** Generate exactly {numberOfPhases} phases - no more, no less. Count carefully and include all requested phases.
+2. **Dynamic Generation:** If numberOfPhases is 3, generate 3 phases. If it's 7, generate 7 phases. Always match the exact number.
+3. **Phase Types:** 
    - Phase 1: Always project setup, basic structure, core infrastructure
-   - Phase 2-3: Core feature implementation 
+   - Middle Phases: Core and advanced feature implementation 
    - Final Phase: Always integration, testing, and polish
-3. **Deliverables:** Make them specific and measurable (e.g., "User authentication API with login/register endpoints" not "Authentication system")
-4. **Success Criteria:** Make them testable (e.g., "Login API returns JWT token on valid credentials" not "Users can log in")
-5. **Dependencies:** Each phase should build logically on the previous one
-6. **Exclude:** No deployment, DevOps, monitoring, or infrastructure phases - focus only on application development
-7. **Language:** Use technical language suitable for coding assistants
-8. **Specificity:** Reference exact technologies from the architecture, not generic terms
+4. **Phase Distribution:** Spread features logically across all {numberOfPhases} phases
+5. **Deliverables:** Make them specific and measurable (e.g., "User authentication API with login/register endpoints" not "Authentication system")
+6. **Success Criteria:** Make them testable (e.g., "Login API returns JWT token on valid credentials" not "Users can log in")
+7. **Dependencies:** Each phase should build logically on the previous one
+8. **Exclude:** No deployment, DevOps, monitoring, or infrastructure phases - focus only on application development
+9. **Language:** Use technical language suitable for coding assistants
+10. **Specificity:** Reference exact technologies from the architecture, not generic terms
 
 Generate the complete PLAN.md content now.`
     const prompt = PromptTemplate.fromTemplate(template);
