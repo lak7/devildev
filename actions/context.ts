@@ -53,116 +53,157 @@ return result;
 export async function generateProjectRules(conversationHistory: any[] = [], architectureData: any) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
-    const template = `You are an expert software architect and prompt engineer specializing in web application development. Your task is to generate a comprehensive PROJECT_RULES.md file tailored specifically for web applications based on the provided conversation history and architecture data.
+    const template = `You are an expert software architect creating PROJECT_RULES.md - the master control file that guides AI coding assistants through the entire development process.
 
-## Input Variables:
-- {conversation_history}: The discussion context about the project requirements, decisions made, and development approach
-- {architecture_data}: Technical details about the web app including framework, database, deployment strategy, API design, etc.
+**INPUTS:**
+- Conversation History: {conversation_history}
+- Architecture Data: {architecture_data}
 
-## Instructions:
+**CONTEXT:** This is the first file any AI assistant will read. It must provide complete project context and clear workflow instructions.
 
-Analyze the conversation history and architecture data to understand:
-1. **Frontend Framework**: React, Vue, Angular, vanilla JS, or other
-2. **Backend Technology**: Node.js/Express, Python/FastAPI, Ruby/Rails, PHP, etc.
-3. **Database**: PostgreSQL, MongoDB, MySQL, SQLite, or other
-4. **State Management**: Redux, Zustand, Context API, Pinia, etc.
-5. **Styling Approach**: CSS modules, Tailwind, Styled Components, SASS, etc.
-6. **Testing Framework**: Jest, Vitest, Cypress, Playwright, etc.
-7. **Build Tools**: Vite, Webpack, Parcel, etc.
-8. **Deployment**: Vercel, Netlify, AWS, Docker, etc.
-9. **API Design**: REST, GraphQL, tRPC, etc.
-10. **Authentication**: JWT, OAuth, NextAuth, etc.
+**OUTPUT FORMAT:**
 
-Based on this analysis, generate a PROJECT_RULES.md file that includes:
+---
 
-### Core Sections to Include:
+# PROJECT RULES
 
-1. **🔄 Project Awareness & Context**
-   - Reference to PLAN.md and project architecture
-   - Task management with TASK.md
-   - Consistent patterns for the specific tech stack
+## 🎯 Project Overview
+**Project Name:** [Extract from conversation]
+**Description:** [2-3 sentence project summary]
+**Tech Stack:** [Primary technologies from architecture]
+**Target Users:** [Who will use this application]
 
-2. **🧱 Code Structure & Modularity**
-   - File size limits (adjusted for web apps - typically 300-400 lines)
-   - Component/module organization patterns
-   - Import conventions for the chosen framework
-   - Environment variable handling
+## 🔄 Current Development Status
+**Current Phase:** NOT_STARTED
+**Last Updated:** [Current date and time]
+**Next Action:** Read PLAN.md and begin Phase 1
 
-3. **🎨 Frontend Architecture Rules** (when applicable)
-   - Component structure and naming
-   - State management patterns
-   - Styling conventions
-   - Asset organization
-   - Responsive design requirements
+## 🧠 AI Assistant Workflow Instructions
 
-4. **🔌 Backend Architecture Rules** (when applicable)
-   - API route organization
-   - Middleware patterns
-   - Database schema management
-   - Error handling conventions
-   - Security best practices
+### 📖 Getting Started (CRITICAL - READ FIRST)
+1. **Read PLAN.md** - Understand the complete project structure and phase breakdown
+2. **Update Phase Status** - Change "Current Phase" above from NOT_STARTED to 1 
+3. **Update PLAN.md** - Change target phase status from NOT_STARTED to IN_PROGRESS
+4. **Navigate to phases/PHASE_1.md** - Begin executing the detailed todo list
+5. **Check off todos** as you complete them in the PHASE_N.md file
+6. **Update phase status** to COMPLETED when all todos are checked and criteria met
 
-5. **🌐 Full-Stack Integration**
-   - API communication patterns
-   - Data flow conventions
-   - Error boundary handling
-   - Loading state management
+### 🔄 Phase Transition Protocol
+**When completing any phase:**
+1. Verify all todos in phases/PHASE_N.md are checked (✅)
+2. Confirm all acceptance criteria are met
+3. Update current phase status in this file: NOT_STARTED → 1 → 2 → 3 → 4 → COMPLETED
+4. Update corresponding phase status in PLAN.md: NOT_STARTED → IN_PROGRESS → COMPLETED
+5. Move to next phases/PHASE_N.md file
+6. Begin new phase todo list
 
-6. **🧪 Testing & Quality**
-   - Unit testing for components/functions
-   - Integration testing for APIs
-   - E2E testing approach
-   - Performance testing guidelines
+### 📋 Todo Management Rules
+- **ALWAYS** work from phases/PHASE_N.md todo lists
+- **NEVER** skip todos - complete them in order
+- **CHECK OFF** each todo as you complete it: "- [ ] becomes ""- [x]""
+- **VALIDATE** each todo works before checking it off
+- **ASK** for clarification if any todo is unclear
 
-7. **📦 Dependencies & Package Management**
-   - Package.json management
-   - Dependency update policies
-   - Bundle size considerations
+## 🏗️ Architecture Guidelines
 
-8. **🚀 Build & Deployment**
-   - Build process requirements
-   - Environment-specific configurations
-   - CI/CD pipeline rules
+### Frontend Rules ([Extract framework from architecture])
+- **Component Structure:** [Specific to chosen framework]
+- **File Organization:** [Based on architecture decisions]
+- **State Management:** [Based on chosen solution]
+- **Styling:** [Based on chosen approach]
+- **TypeScript:** Strict mode enabled, proper interfaces for all props/state
 
-9. **✅ Task & Project Management**
-   - Task completion protocols
-   - Documentation updates
-   - Code review requirements
+### Backend Rules ([Extract backend from architecture])
+- **API Structure:** [REST/GraphQL/tRPC based on architecture]
+- **Database:** [Specific to chosen database and ORM]
+- **Authentication:** [Based on chosen auth solution]
+- **Error Handling:** Consistent error responses with proper HTTP codes
+- **Validation:** Input validation on all endpoints
 
-10. **📚 Documentation Standards**
-    - Code commenting for web apps
-    - API documentation
-    - Component documentation
-    - README maintenance
+### Code Quality Standards
+- **File Size Limit:** Maximum 300 lines per component/module
+- **Function Size:** Maximum 50 lines per function
+- **TypeScript:** No "any" types, strict compilation
+- **Testing:** Unit tests for all business logic
+- **Error Handling:** Proper try/catch blocks and user-friendly error messages
 
-11. **🧠 AI Development Guidelines**
-    - Framework-specific best practices
-    - Common pitfalls to avoid
-    - Performance considerations
-    - Security awareness
+## 🧪 Testing Requirements
+- **Unit Tests:** Jest/Vitest for components and utilities
+- **Integration Tests:** API endpoint testing
+- **E2E Tests:** Critical user flows
+- **Coverage:** Minimum 80% code coverage
+- **TypeScript:** All test files properly typed
 
-## Output Requirements:
+## 📦 Development Environment
+**Required Tools:**
+- Node.js [version based on architecture]
+- [Package manager based on architecture]
+- [Database based on architecture]
+- [Additional tools from architecture]
 
-Generate a complete PROJECT_RULES.md file that:
-- Uses the exact formatting style of the provided example
-- Includes specific rules for the identified tech stack
-- Adapts general principles to web application development
-- Maintains consistency with the conversation context
-- Provides actionable, specific guidelines rather than generic advice
-- Uses appropriate emojis for section headers
-- Includes code examples relevant to the chosen technologies
+**Setup Commands:**
+bash
+npm install
+npm run dev
+npm run test
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+or any other for some other language/framework
 
-## Important Considerations:
 
-- **Framework-Specific**: Tailor rules to the specific frontend/backend frameworks identified
-- **Scalability**: Include rules that support growth from small to large applications  
-- **Performance**: Emphasize web-specific performance considerations (bundle size, loading times, SEO)
-- **Security**: Include web security best practices (XSS, CSRF, authentication)
-- **Accessibility**: Mention WCAG compliance and inclusive design where relevant
-- **SEO**: Include SEO considerations for client-side applications
-- **Mobile-First**: Emphasize responsive design and mobile considerations
+## 🚀 Deployment Rules
+- **Environment:** [Based on architecture - Vercel/Netlify/etc.]
+- **Build Process:** [Specific build commands]
+- **Environment Variables:** [List required env vars from architecture]
+- **Database:** [Production database setup]
 
-The generated PROJECT_RULES.md should serve as a comprehensive guide that any developer can follow to maintain consistency and quality while working on this specific web application project.`
+## 📚 Documentation Standards
+- **README:** Keep updated with setup instructions
+- **API Docs:** Document all endpoints with TypeScript types
+- **Component Docs:** JSDoc comments for complex components
+- **Phase Progress:** Update this file when transitioning phases
+
+## ⚠️ Critical AI Assistant Rules
+1. **NEVER SKIP PHASES** - Always follow the sequential phase order
+2. **ALWAYS UPDATE STATUS** - Keep phase tracking current in both files
+3. **COMPLETE ALL TODOS** - Every checkbox must be checked before phase completion
+4. **VALIDATE FUNCTIONALITY** - Test that features work before marking complete
+5. **FOLLOW ARCHITECTURE** - Stick to the chosen tech stack and patterns
+6. **TYPE SAFETY** - All TypeScript code must compile without errors
+7. **ERROR HANDLING** - Implement proper error boundaries and user feedback
+
+## 🎯 Success Metrics
+- All phases completed with todos checked off
+- Application builds and runs without errors
+- All tests passing
+- TypeScript compilation successful
+- Core functionality working as specified in PLAN.md
+
+---
+
+**NEXT STEPS FOR AI ASSISTANT:**
+1. Open and read PLAN.md thoroughly
+2. Update "Current Phase" above to "1"
+3. Open phases/PHASE_1.md
+4. Begin working through the todo list systematically
+5. Check off each todo as completed
+6. Move to next phase when current phase is 100% complete
+
+---
+
+**GENERATION INSTRUCTIONS:**
+
+1. **Extract Tech Stack:** Identify specific technologies from architecture_data
+2. **Customize Rules:** Tailor all sections to the chosen tech stack
+3. **Phase Management:** Emphasize the phase workflow and status tracking
+4. **Todo Emphasis:** Make it clear that todo lists are the primary work source
+5. **Validation Focus:** Stress testing and validation at each step
+6. **Update Protocols:** Clear instructions for status updates
+7. **AI-Specific:** Include rules specifically for AI assistant behavior
+8. **Sequential Workflow:** Emphasize the importance of following phases in order
+
+Generate the complete PROJECT_RULES.md following this structure exactly.`
 
 
 const prompt = PromptTemplate.fromTemplate(template);
@@ -178,101 +219,120 @@ return result;
 export async function generatePlan(conversationHistory: any[] = [], architectureData: any, numOfPhase: string) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
-    const template = `You are an expert project manager and technical architect. Based on the provided conversation history and project architecture, create a comprehensive PLAN.md file that will guide the development process.
+    const template = `You are an expert technical project manager. Create a comprehensive PLAN.md that will guide a coding assistant through the entire development process.
 
-**Conversation History:**
-{conversation_history}
+**INPUTS:**
+- Conversation History: {conversation_history}
+- Project Architecture: {projectArchitecture}
+- Number of Phases: {numberOfPhases}
 
-**Project Architecture:**
-{projectArchitecture}
+**OUTPUT:** Generate a complete PLAN.md file following this exact structure:
 
-**Number of Phases:**
-{numberOfPhases}
-
-Generate a detailed PLAN.md file in markdown format with the following structure:
+---
 
 # PROJECT PLAN
 
-## 🎯 Project Goal
-Write a clear, concise statement of what this project aims to achieve. Include:
-- Primary objectives
-- Expected functionality outcomes
-- Success criteria based solely on software functionality and features working correctly
-- Target users/stakeholders
+## 🎯 Project Overview
+**What we're building:** [1-2 sentence description]
 
-## 🏗️ Project Architecture
-Provide a comprehensive overview of the technical architecture including:
+**Core functionality:** 
+- [Key feature 1]
+- [Key feature 2] 
+- [Key feature 3]
 
-**Architecture Details:**
-- System components and their relationships
-- Technology stack
-- Data flow and architecture patterns
-- Integration points
-- Deployment architecture
+**Success criteria:**
+- All features work as specified
+- Code passes quality gates
+- Application is deployable and functional
 
-## 📋 Development Phases
 
-Create exactly {numberOfPhases} implementation phases (exclude planning and design phases). For each phase include:
-- Phase name and number
-- Overall goal and objectives
-- Key deliverables
-- Dependencies on previous phases
-- Success criteria
+## 🏗️ Technical Architecture
 
-**Current Phase Indicator:** Clearly mark all the phases as NOT_STARTED.
+**System Components:**
+- [Component 1]: [Technology] - [Purpose]
+- [Component 2]: [Technology] - [Purpose]
+- [Component 3]: [Technology] - [Purpose]
 
-### Phase 1: [Phase Name]
+**Technology Stack:**
+- Frontend: [Specific technologies]
+- Backend: [Specific technologies] 
+- Database: [Specific technologies]
+- [Other]: [Specific technologies]
+
+**Key Integrations:**
+- [Integration 1]: [Purpose and protocol]
+- [Integration 2]: [Purpose and protocol]
+
+## 📋 Implementation Phases
+
+### Phase 1: [Foundation/Setup]
 **Status:** NOT_STARTED
-- **Goal:** [Detailed description of what this phase aims to achieve]
-- **Deliverables:** [List of specific outputs expected]
-- **Dependencies:** [What needs to be completed first]
-- **Key Activities:** [Main implementation tasks and activities]
+**Goal:** [What gets built in this phase]
+**Deliverables:**
+- [Specific deliverable 1]
+- [Specific deliverable 2]
+- [Specific deliverable 3]
+**Success Criteria:**
+- [Testable criterion 1]
+- [Testable criterion 2]
 
-### Phase 2: [Phase Name]
+### Phase 2: [Core Features]
 **Status:** NOT_STARTED
-- **Goal:** [Detailed description]
-- **Deliverables:** [List of outputs]
-- **Dependencies:** [What needs to be completed first]
-- **Key Activities:** [Main implementation tasks and activities]
+**Goal:** [What gets built in this phase]
+**Dependencies:** Phase 1 completion
+**Deliverables:**
+- [Specific deliverable 1]
+- [Specific deliverable 2]
+**Success Criteria:**
+- [Testable criterion 1]
+- [Testable criterion 2]
 
-[Continue for all phases...]
+### Phase 3: [Advanced Features]
+**Status:** NOT_STARTED
+**Goal:** [What gets built in this phase]
+**Dependencies:** Phase 2 completion
+**Deliverables:**
+- [Specific deliverable 1]
+- [Specific deliverable 2]
+**Success Criteria:**
+- [Testable criterion 1]
+- [Testable criterion 2]
 
-## 🔧 Additional Requirements
-Include any supplementary requirements or considerations:
-- Testing strategy and requirements
-- Documentation requirements
-- Code review and quality assurance processes
-- Deployment and DevOps considerations
-- Maintenance and support requirements
-- Risk mitigation strategies
+### Phase 4: [Integration & Polish]
+**Status:** NOT_STARTED
+**Goal:** [What gets built in this phase]
+**Dependencies:** Phase 3 completion
+**Deliverables:**
+- [Specific deliverable 1]
+- [Specific deliverable 2]
+**Success Criteria:**
+- [Testable criterion 1]
+- [Testable criterion 2]
 
-## 📊 Success Metrics
-Define how success will be measured based on functionality and technical performance:
-- Feature completion and functionality metrics
-- Code quality metrics
-- Performance benchmarks
-- Bug/defect rates
-- Test coverage percentages
-- System reliability and uptime metrics
+[Include Phase 5 only if numberOfPhases is 5]
+
+## 🧪 Quality Requirements
+**Testing:** Unit tests for core functions, integration tests for APIs
+**Code Quality:** TypeScript strict mode, ESLint passing, proper error handling
+**Documentation:** README with setup instructions, API documentation
+**Performance:** [Specific performance requirements based on project type]
 
 ---
-*This plan should be treated as a living document and updated as the project evolves.*
 
-Instructions:
-1. Analyze the conversation history to understand project requirements, discussions, and decisions made
-2. Create exactly {numberOfPhases} implementation phases - no more, no less
-3. Initially all the phases shoulde be marked with status "NOT_STARTED"
-4. Determine appropriate number of implementation phases between 4 phases to 5 phases based on project complexity
-5. Focus only on implementation phases, skip planning/design phases
-6. Be specific and actionable in phase descriptions
-7. Ensure phases have logical dependencies and flow
-8. Address technical risks and constraints proactively
-9. Make the plan comprehensive yet readable
-10. Focus success criteria on functionality, not business metrics
-11. Use clear, technical language suitable for development teams
-12. Don't include any Deployment/Infrastructure/DevOps/CI/CD/Monitoring/Logging/Alerting/etc phases.
+**INSTRUCTIONS:**
+1. **Phase Focus:** Create exactly {numberOfPhases} phases focused purely on building features and functionality
+2. **Phase Types:** 
+   - Phase 1: Always project setup, basic structure, core infrastructure
+   - Phase 2-3: Core feature implementation 
+   - Final Phase: Always integration, testing, and polish
+3. **Deliverables:** Make them specific and measurable (e.g., "User authentication API with login/register endpoints" not "Authentication system")
+4. **Success Criteria:** Make them testable (e.g., "Login API returns JWT token on valid credentials" not "Users can log in")
+5. **Dependencies:** Each phase should build logically on the previous one
+6. **Exclude:** No deployment, DevOps, monitoring, or infrastructure phases - focus only on application development
+7. **Language:** Use technical language suitable for coding assistants
+8. **Specificity:** Reference exact technologies from the architecture, not generic terms
 
-Generate the complete PLAN.md content following this structure exactly.`
+Generate the complete PLAN.md content now.`
     const prompt = PromptTemplate.fromTemplate(template);
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
     const formattedHistory = conversationHistory.map(msg => 
@@ -285,134 +345,111 @@ Generate the complete PLAN.md content following this structure exactly.`
 export async function generateNthPhase(architectureData: any, plan: string, numOfPhase: string) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
-    const template = `You are an expert software development lead creating detailed implementation instructions for an AI coding agent. Based on the provided project plan, architecture data, and target phase number, generate a comprehensive phase execution document.
+    const template = `You are an expert software development lead creating actionable todo lists for AI coding agents. Generate a focused phase execution plan that an AI can follow step-by-step.
 
-**Project Plan:**
-{planContent}
+**INPUTS:**
+- Project Plan: {planContent}
+- Project Architecture: {architectureData}  
+- Target Phase: {phaseNumber}
 
-**Project Architecture:**
-{architectureData}
-
-**Target Phase Number:**
-{phaseNumber}
-
-Generate a detailed phase execution document in markdown format with the following structure:
-
-# PHASE {phaseNumber} EXECUTION PLAN
-
-## 🎯 Phase Goal
-Provide a comprehensive description of what this phase aims to accomplish:
-- Primary objectives and deliverables
-- Functional requirements to be implemented
-- Technical milestones to be achieved
-- Integration points with previous phases
-
-## 🎁 Expected Outcomes
-List specific, measurable outcomes that will be delivered:
-- Features that will be fully functional
-- Components that will be created or modified
-- APIs or endpoints that will be available
-- Database changes or migrations completed
-- Files and directories that will be created/modified
-- Tests that will be written and passing
-
-## 📋 Prerequisites
-Clearly define what must be completed before starting this phase:
-- Dependencies from previous phases that must be satisfied
-- Required setup or configuration steps
-- External dependencies or third-party integrations needed
-- Environment setup requirements
-- Database schema or data requirements
-
-## ✅ Implementation Tasks
-
-### Core Development Tasks
-Create a comprehensive, ordered checklist of implementation tasks. Each task should be:
-- [ ] Specific and actionable for an AI coding agent
-- [ ] Include exact file paths and component names where applicable
-- [ ] Specify the technology/framework/library to use
-- [ ] Include implementation details and code requirements
-
-**Example task format:**
-- [ ] Create src/components/UserProfile.tsx component with TypeScript props interface for user data display
-- [ ] Implement getUserById API endpoint in pages/api/users/[id].ts using Next.js API routes with TypeScript
-- [ ] Add user authentication middleware to protect /api/users/* routes using JWT validation and TypeScript types
-- [ ] Create database migration for users table with fields: id, email, name, created_at, updated_at using TypeScript schema definitions
-- [ ] Write unit tests for UserProfile component in __tests__/components/UserProfile.test.tsx using Jest and TypeScript
-
-### Configuration & Setup Tasks
-- [ ] [Specific configuration tasks with exact file names and settings]
-- [ ] [Environment variables or config file updates needed with TypeScript typing]
-- [ ] [Package installations or dependency updates required for TypeScript compatibility]
-
-### Database Tasks
-- [ ] [Specific database schema changes, migrations, or seed data with TypeScript models]
-- [ ] [Database connection setup or configuration changes with proper TypeScript types]
-
-### API Development Tasks
-- [ ] [Specific API endpoints with exact file paths and TypeScript functionality]
-- [ ] [Request/response schemas and validation rules using TypeScript interfaces]
-- [ ] [Authentication and authorization implementation with TypeScript types]
-
-### Frontend Development Tasks
-- [ ] [Specific React components with file paths and TypeScript props/state typing]
-- [ ] [State management implementation using TypeScript interfaces]
-- [ ] [UI/UX implementation with specific styling requirements and TypeScript integration]
-
-### Testing Tasks
-- [ ] [Unit tests for specific components/functions with TypeScript test types]
-- [ ] [Integration tests for API endpoints with proper TypeScript mocking]
-- [ ] [End-to-end tests for user workflows with TypeScript test utilities]
-
-### Documentation Tasks
-- [ ] [Code documentation and TypeScript JSDoc comments]
-- [ ] [API documentation updates with TypeScript interface definitions]
-- [ ] [README or setup instruction updates including TypeScript requirements]
-
-## 🔍 Acceptance Criteria
-Define specific criteria that must be met for this phase to be considered complete:
-- Functional requirements that must be working
-- TypeScript compilation with no errors
-- Code quality standards that must be met
-- Test coverage requirements with TypeScript test files
-- Performance benchmarks that must be achieved
-- Documentation that must be updated
-
-## 🚨 Critical Notes for AI Agent
-- **File Structure:** Provide specific file paths and TypeScript naming conventions
-- **Code Standards:** Specify TypeScript coding style, interface definitions, and Next.js best practices
-- **Error Handling:** Include requirements for error handling and validation with proper TypeScript error types
-- **Security:** Highlight any security considerations with TypeScript type safety
-- **Performance:** Note any performance requirements or optimizations needed for Next.js/TypeScript
-- **Dependencies:** List any new packages or libraries that need TypeScript declarations
-
-## 📊 Phase Completion Verification
-Provide a checklist to verify phase completion:
-- [ ] All tasks marked as completed
-- [ ] TypeScript compilation successful with no errors
-- [ ] All tests passing with proper TypeScript coverage
-- [ ] No critical bugs or errors in TypeScript code
-- [ ] Code review completed for TypeScript best practices
-- [ ] Documentation updated with TypeScript examples
-- [ ] Integration with previous phases verified in TypeScript environment
+**OUTPUT FORMAT:**
 
 ---
 
-Instructions for generating this document:
-1. Extract the specific phase details from the provided PLAN.md
-2. Analyze the architecture data to understand Next.js/TypeScript technical context
-3. Create 15-30 specific, actionable tasks (adjust based on phase complexity)
-4. Ensure all tasks are unchecked (- [ ]) format for tracking
-5. Include exact file paths, component names, and TypeScript specifications
-6. Order tasks logically based on dependencies
-7. Make tasks specific enough for an AI coding agent to execute independently in Next.js/TypeScript
-8. Include error handling, testing, and documentation requirements with TypeScript focus
-9. Ensure tasks align with Next.js architecture and TypeScript best practices
-10. Focus on implementation details rather than high-level concepts
-11. Emphasize TypeScript type safety and Next.js specific patterns
-12. Include proper TypeScript interface definitions and type declarations
+# PHASE {phaseNumber} EXECUTION
 
-Generate the complete phase execution plan following this structure exactly.`
+## 🎯 Phase Goal
+[Extract the specific goal from the project plan for this phase - 2-3 sentences max]
+
+## 🎁 Deliverables
+[List 3-5 specific, measurable outcomes that will exist after this phase:]
+- [Specific feature/component that will work]
+- [Specific API/endpoint that will be functional]
+- [Specific file/directory that will be created]
+
+## 📋 Prerequisites  
+**Must be completed before starting:**
+- [ ] [Specific prerequisite from previous phase]
+- [ ] [Required setup or dependency]
+- [ ] [Environment configuration needed]
+
+## ✅ Implementation Todo List
+
+### Setup & Configuration
+- [ ] [Specific config file creation with exact path]
+- [ ] [Package installation with exact command]
+- [ ] [Environment variable setup with TypeScript types]
+
+### Database & Schema
+- [ ] [Create specific table/model with exact fields and TypeScript interface]
+- [ ] [Database migration with exact file path and TypeScript types]
+- [ ] [Seed data creation with TypeScript type definitions]
+
+### Backend Development  
+- [ ] [Create specific API endpoint: POST /api/users with TypeScript request/response types]
+- [ ] [Implement specific function in exact file path with TypeScript signature]
+- [ ] [Add authentication middleware to specific routes with TypeScript types]
+
+### Frontend Development
+- [ ] [Create specific React component: src/components/UserProfile.tsx with TypeScript props]
+- [ ] [Implement specific page: pages/dashboard.tsx with TypeScript and Next.js patterns]
+- [ ] [Add specific state management with TypeScript interfaces]
+
+### Integration & Testing
+- [ ] [Write unit test for specific component with TypeScript test types]
+- [ ] [Create integration test for specific API with TypeScript mocking]
+- [ ] [Test specific user flow end-to-end with TypeScript utilities]
+
+### Styling & UI
+- [ ] [Style specific component with Tailwind classes]
+- [ ] [Implement responsive design for specific pages]
+- [ ] [Add specific animations/interactions]
+
+### Documentation
+- [ ] [Update README with specific setup instructions including TypeScript]
+- [ ] [Document API endpoints with TypeScript interface examples]
+- [ ] [Add JSDoc comments to specific functions with TypeScript annotations]
+
+## 🏁 Phase Completion Criteria
+**This phase is complete when:**
+- [ ] All todo items above are checked off
+- [ ] TypeScript compiles with zero errors
+- [ ] All tests pass with proper TypeScript coverage
+- [ ] [Specific functional requirement works (e.g., "User can login and see dashboard")]
+- [ ] [Specific technical requirement met (e.g., "API returns proper JSON responses")]
+
+---
+
+**GENERATION INSTRUCTIONS:**
+
+1. **Todo Specificity:** Each todo must include:
+   - Exact file paths (e.g., ""src/components/UserProfile.tsx"")
+   - Specific function/component names with TypeScript signatures
+   - Exact API endpoints with HTTP methods and TypeScript types
+   - Specific technologies to use (Next.js, TypeScript, Tailwind, etc.)
+
+2. **Todo Formatting:** 
+   - ALL todos must start with - [ ] (unchecked)
+   - Use imperative verbs (Create, Implement, Add, Write, Style)
+   - Include TypeScript specifications for all code tasks
+   - One specific action per todo item
+
+3. **Todo Count:** Generate 5-15 todos based on phase complexity
+
+4. **Logical Ordering:** 
+   - Setup tasks first
+   - Database/backend before frontend
+   - Core functionality before styling
+   - Testing after implementation
+
+5. **TypeScript Focus:** Every code-related todo must specify TypeScript requirements
+
+6. **AI-Friendly Language:** 
+   - Use exact technical terms
+   - Reference specific Next.js patterns
+   - Include implementation hints when needed
+
+Generate the complete phase execution plan now.`
     const prompt = PromptTemplate.fromTemplate(template);
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
     const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, phaseNumber: numOfPhase});

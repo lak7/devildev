@@ -228,20 +228,13 @@ const DevPage = () => {
     // alert("Plan Generated");
 
     const allPhases: string[] = [];
-    alert(numOfPhase)
-    alert(Number(numOfPhase))
-    // alert(phaseCount);
 
-    alert("Now Generating Phases");
 
     for (let i = 1; i <= Number(numOfPhase); i++) {
-      alert(i);
       const nthPhase = await generateNthPhase(architectureData, plan, i.toString());
       console.log(nthPhase);
       allPhases.push(nthPhase);
     }
-
-    alert("Phases Generated");
 
 
     setPhase(allPhases);
