@@ -254,7 +254,7 @@ const initialComponents: ComponentData[] = [
       framework: "Next.js API",
       language: "TypeScript",
     },
-    connections: ["database", "authentication", "storage", "monitoring"],
+    connections: ["database", "authentication", "storage", "monitoring", "notifications"],
     position: { x: 0, y: 0 },
     dataFlow: {
       sends: ["API Responses", "Database Queries", "Auth Requests", "Processed Data"],
@@ -318,7 +318,7 @@ const initialComponents: ComponentData[] = [
   {
     id: "monitoring",
     title: "Monitoring",
-    icon: Activity, // Replace with appropriate icon like Lucide’s Activity
+    icon: Activity, // Replace with appropriate icon
     color: "",
     borderColor: "",
     technologies: {
@@ -333,7 +333,28 @@ const initialComponents: ComponentData[] = [
       receives: ["Event Hooks", "User Sessions", "App States"],
     },
   },
+  {
+    id: "notifications",
+    title: "Notifications",
+    icon: Bell, // Replace with your icon set if needed
+    color: "",
+    borderColor: "",
+    technologies: {
+      email: "Resend",
+      sms: "Twilio",
+      inApp: "OneSignal",
+    },
+    connections: ["backend"],
+    position: { x: 0, y: 0 },
+    dataFlow: {
+      sends: ["Email Alerts", "SMS Codes", "Push Notifications"],
+      receives: ["Trigger Events", "User Settings", "Notification Templates"],
+    },
+  },
 ];
+
+
+
 
 
 
@@ -363,7 +384,18 @@ export default function Architecture({ architectureData, isLoading = false, isFu
   const [animationKey, setAnimationKey] = useState(0)
   
   // Canvas transform state
-  const [transform, setTransform] = useState<ViewportTransform>({ x: 0, y: 0, scale: 1 })
+  const getInitialScale = (componentCount: number) => {
+    if (componentCount < 5) return 1
+    if (componentCount === 5 || componentCount === 6) return 0.83
+    if (componentCount === 7) return 0.75
+    return 1 // fallback
+  }
+  
+  const [transform, setTransform] = useState<ViewportTransform>(() => {
+    const initialData = architectureData?.components || initialComponents;
+    const scale = getInitialScale(initialData.length);
+    return { x: 0, y: 0, scale };
+  })
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 })
   const [isSpacePressed, setIsSpacePressed] = useState(false)
@@ -388,6 +420,10 @@ export default function Architecture({ architectureData, isLoading = false, isFu
       // Process components with predefined colors and positions
       const processedComponents = processComponents(architectureData.components)
       setComponents(processedComponents)
+      
+      // Update transform scale based on component count
+      const newScale = getInitialScale(architectureData.components.length)
+      setTransform(prev => ({ ...prev, scale: newScale }))
     }
     if (architectureData?.connectionLabels) {
       setConnectionLabels(architectureData.connectionLabels)
