@@ -115,70 +115,100 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases}: {
   }
 
   return (
-    <div className="h-full bg-black text-white flex overflow-x-scroll hide-horizontal-scrollbar">
-      {/* File Explorer Sidebar */}
-      <div className="w-64 bg-black border-r border-white/20 flex flex-col">
-        <div className="p-3 h-11 border-b border-white/20">
-          <h2 className="text-sm font-medium text-white tracking-wider">EXPLORER</h2>
-        </div>
-        <ScrollArea className="flex-1">
-          <div className="p-2">{renderFileTree(fileStructure)}</div>
-        </ScrollArea>
-      </div>
+    <div className="h-full bg-black text-white flex">
+  {/* File Explorer Sidebar */}
+  <div className="w-64 bg-black border-r border-white/20 flex flex-col">
+    <div className="p-3 h-11 border-b border-white/20">
+      <h2 className="text-sm font-medium text-white tracking-wider">EXPLORER</h2>
+    </div>
+    <ScrollArea className="flex-1">
+      <div className="p-2">{renderFileTree(fileStructure)}</div>
+    </ScrollArea>
+  </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Breadcrumb Header */}
-        <div className="h-11 bg-black border-b border-white/20 flex items-center px-4 justify-between">
-          <div className="flex items-center gap-2 text-sm text-white/80">
-            {getBreadcrumbs().map((crumb, index) => (
-              <React.Fragment key={index}>
-                {index > 0 && <ChevronRight className="w-3 h-3 text-white/60" />}
-                <span className={index === getBreadcrumbs().length - 1 ? "text-white font-medium" : "text-white/60"}>{crumb}</span>
-              </React.Fragment>
+  {/* Main Content Area */}
+  <div className="flex-1 flex flex-col min-w-0"> 
+    {/* Breadcrumb Header */}
+    <div className="h-11 bg-black border-b border-white/20 flex items-center px-4 justify-between flex-shrink-0"> {/* Added flex-shrink-0 */}
+      <div className="flex items-center gap-2 text-sm text-white/80">
+        {getBreadcrumbs().map((crumb, index) => (
+          <React.Fragment key={index}>
+            {index > 0 && <ChevronRight className="w-3 h-3 text-white/60" />}
+            <span className={index === getBreadcrumbs().length - 1 ? "text-white font-medium" : "text-white/60"}>{crumb}</span>
+          </React.Fragment>
+        ))}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
+          <Copy className="w-4 h-4" />
+        </Button>
+        <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
+          <Download className="w-4 h-4" />
+        </Button>
+        <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
+          <ExternalLink className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+
+    {/* Code Editor Area */}
+    <div className="flex-1 relative overflow-hidden min-w-0"> {/* Added min-w-0 */}
+      <div 
+        className="h-full overflow-auto"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
+        }}
+      > 
+        <style jsx>{`
+          div::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+          }
+          
+          div::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          
+          div::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            border: none;
+          }
+          
+          div::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+          }
+          
+          div::-webkit-scrollbar-corner {
+            background: transparent;
+          }
+        `}</style>
+        <div className="flex min-w-max"> {/* Added min-w-max to allow horizontal expansion */}
+          {/* Line Numbers */}
+          <div className="bg-black px-4 py-4 text-white/40 text-sm font-mono select-none border-r border-white/10 min-w-[60px] flex-shrink-0"> {/* Added flex-shrink-0 */}
+            {selectedContent.split("\n").map((_, index) => (
+              <div key={index} className="leading-6 text-right hover:text-white/80 transition-colors duration-200">
+                {index + 1}
+              </div>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
-              <Copy className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
-              <Download className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
-              <ExternalLink className="w-4 h-4" />
-            </Button>
+
+          {/* Code Content */}
+          <div className="bg-black p-4 min-w-0"> {/* Removed flex-1, added min-w-0 */}
+            <pre className="text-sm font-mono leading-6 text-white/90 whitespace-pre"> {/* Added whitespace-pre */}
+              <code
+                dangerouslySetInnerHTML={{
+                  __html: highlightCode(selectedContent, getFileExtension(selectedFile.split("/").pop() || "")),
+                }}
+              />
+            </pre>
           </div>
-        </div>
-
-        {/* Code Editor Area */}
-        <div className="flex-1 relative overflow-hidden ">
-          <ScrollArea className="h-full">
-            <div className="flex">
-              {/* Line Numbers */}
-              <div className="bg-black px-4 py-4 text-white/40 text-sm font-mono select-none border-r border-white/10 min-w-[60px]">
-                {selectedContent.split("\n").map((_, index) => (
-                  <div key={index} className="leading-6 text-right hover:text-white/80 transition-colors duration-200">
-                    {index + 1}
-                  </div>
-                ))}
-              </div>
-
-              {/* Code Content */}
-              <div className="flex-1 bg-black p-4">
-                <pre className="text-sm font-mono leading-6 text-white/90">
-                  <code
-                    dangerouslySetInnerHTML={{
-                      __html: highlightCode(selectedContent, getFileExtension(selectedFile.split("/").pop() || "")),
-                    }}
-                  />
-                </pre>
-              </div>
-            </div>
-          </ScrollArea>
         </div>
       </div>
     </div>
+  </div>
+  </div>
   )
 }
 
