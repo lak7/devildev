@@ -3,7 +3,23 @@ import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { ChatOpenAI } from "@langchain/openai";
 import { retriever } from "./retriever";
+import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
+import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { ChatMessage } from "@/app/dev/page";
+import { z } from "zod";
+import { aimlComponentsTool } from "./architecture/aimlComponents";
+import { analyticsComponentsTool } from "./architecture/analyticsComponents";
+import { authComponentsTool } from "./architecture/authComponents";
+import { blockchainComponentsTool } from "./architecture/blockchainComponents";
+import { DynamicStructuredTool } from "langchain/tools";
+import { databaseComponentsTool } from "./architecture/databaseComponents";
+import { mobileComponentsTool } from "./architecture/mobileComponents";
+import { notificationComponentsTool } from "./architecture/notificationComponents";
+import { paymentComponentsTool } from "./architecture/paymentComponents";
+import { realtimeComponentsTool } from "./architecture/realtimeComponents";
+import { basicWebComponentsTool } from "./architecture/webComponents";
+
+
 
 
 export async function retrieveFunc(question: string, conversationHistory: any[] = []){
@@ -35,7 +51,7 @@ export async function retrieveFunc(question: string, conversationHistory: any[] 
   
   return response;
 
-}
+} 
 
 export async function generateArchitecture(requirement: string, conversationHistory: any[] = [], architectureData: any) {
     const openaiKey = process.env.OPENAI_API_KEY;
@@ -355,7 +371,7 @@ Generate ONLY this JSON:
      const formattedHistory = conversationHistory.map(msg => 
       `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
   ).join('\n');
-
+ 
 
   const chain1 = prompt1.pipe(llm).pipe(new StringOutputParser());
   const chain2 = prompt2.pipe(llm).pipe(new StringOutputParser());
@@ -372,3 +388,111 @@ Generate ONLY this JSON:
     const result = await chain3.invoke({componentPlan: JSON.stringify(componentPlan), techStack: JSON.stringify(techStack), requirement: requirement, conversation_history: formattedHistory, architectureData: JSON.stringify(architectureData)});
     return result;
 }
+
+export async function generateArchitectureWithToolCalling(requirement: string, conversationHistory: any[] = [], architectureData: any){
+  // Format conversation history for the prompt
+  const formattedHistory = conversationHistory.map(msg => 
+    `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+).join('\n');
+
+const llm = new ChatOpenAI({openAIApiKey: process.env.OPENAI_API_KEY, model: "gpt-4o"});
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ["system", `You are DevilDev, an expert software architect specializing in modern, production-ready systems. Your job is to analyze software requirements and use ONLY the appropriate tools to generate comprehensive architecture components, then return a structured JSON response.
+
+AVAILABLE TOOLS:
+- webComponents: For web applications (CRUD, SaaS, admin panels, dashboards) - includes Frontend, Backend, Database, Authentication
+- mobileComponents: For mobile applications (iOS, Android, React Native, Flutter) - includes Mobile App, Push Notifications, Offline Sync
+- aiml_components: For AI/ML applications - includes LLM Integration, Vector Database, Model Training, etc.
+- database_components: For data storage needs - includes Primary Database, Cache Layer, File Storage, etc.
+- auth_components: For authentication systems - includes User Management, OAuth, Session Management, etc.
+- payment_components: For payment processing - includes Payment Gateway, Subscription Management, etc.
+- realtime_components: For real-time features - includes WebSocket Server, Live Chat, Broadcasting, etc.
+- blockchain_components: For Web3/blockchain apps - includes Smart Contracts, Wallet Integration, Token Management
+- analytics_components: For analytics and monitoring - includes Data Analytics, User Tracking, Performance Monitoring
+- notification_components: For notification systems - includes Email Service, Push Notifications, SMS Service
+
+CRITICAL INSTRUCTIONS:
+1. ONLY use components returned by the tools - DO NOT create your own components
+2. Call ONLY the tools that are necessary based on the user's specific requirements
+3. Choose between webComponents OR mobileComponents based on the platform specified:
+   - Use webComponents for: web apps, websites, dashboards, admin panels, SaaS applications
+   - Use mobileComponents for: mobile apps, iOS apps, Android apps, cross-platform mobile solutions
+   - If both web and mobile are mentioned, use both tools
+4. DO NOT call all tools by default - be selective and efficient
+
+TOOL SELECTION LOGIC:
+- webComponents OR mobileComponents: Choose based on target platform (required for most apps)
+- aiml_components: ONLY if AI/ML features are explicitly mentioned (chatbots, ML models, AI processing)
+- blockchain_components: ONLY if Web3/blockchain features are mentioned (NFTs, tokens, smart contracts, DeFi)
+- auth_components: ONLY if user authentication/authorization is specifically required
+- payment_components: ONLY if payment processing, e-commerce, or subscriptions are mentioned
+- realtime_components: ONLY if real-time features are needed (live chat, real-time updates, collaboration)
+- database_components: ONLY if complex/specialized data storage beyond basic needs is required
+- analytics_components: ONLY if analytics, tracking, or monitoring is specifically mentioned
+- notification_components: ONLY if email, SMS, or push notifications are explicitly needed
+
+RESPONSE FORMAT:
+After using the necessary tools, return your response in this EXACT JSON format:
+{{
+  "components": [
+    {{
+      "name": "Component Name From Tool",
+      "technologies": ["Technology1", "Technology2"],
+      "description": "Brief description of what this component does"
+    }}
+  ],
+  "architecture_summary": "Brief overview of the complete architecture"
+}}
+
+IMPORTANT RULES:
+- Use MINIMAL necessary tools - don't over-engineer
+- Component names and technologies must come from the tools only
+- Analyze the requirement carefully to determine the actual platform and features needed
+- If the requirement is unclear about platform, ask for clarification before proceeding`],
+  ["human", `Software Requirement: {requirement}
+
+Conversation History:
+{conversation_history}
+
+Previous Architecture (if any):
+{architecture_data}
+
+Analyze this requirement and use ONLY the necessary tools to generate the required architecture components. Be selective and efficient - don't call unnecessary tools.`],
+  new MessagesPlaceholder("agent_scratchpad")
+]);
+
+const tools = [basicWebComponentsTool, aimlComponentsTool, analyticsComponentsTool, authComponentsTool, blockchainComponentsTool, databaseComponentsTool, mobileComponentsTool, notificationComponentsTool, paymentComponentsTool, realtimeComponentsTool];
+
+const agent = await createToolCallingAgent({
+  llm,
+  tools,
+  prompt,
+});
+
+const agentExecutor = new AgentExecutor({
+  agent,
+  tools,
+  verbose: true,
+  maxIterations: 10, // Allow multiple tool calls
+});
+
+try {
+  const result = await agentExecutor.invoke({
+    requirement: requirement,
+    conversation_history: formattedHistory,
+    architecture_data: JSON.stringify(architectureData)
+  });
+  
+  console.log("Result: ", result);
+  return result.output;
+
+} catch (error) {
+  console.error("Error in generateArchitectureWithToolCalling:", error);
+  throw error;
+}
+}
+
+
+
+

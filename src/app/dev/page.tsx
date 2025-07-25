@@ -10,7 +10,7 @@ import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
-import { generateArchitecture } from '../../../actions/architecture'; 
+import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../actions/architecture'; 
 import FileExplorer from '@/components/core/ContextDocs';
 import { generateNthPhase, generatePlan, generateProjectRules, numberOfPhases } from '../../../actions/context';
 
@@ -123,25 +123,27 @@ const DevPage = () => {
     setIsArchitectureLoading(true);
     
     try {
-      const architectureResult = await generateArchitecture(requirement, conversationHistory, architectureData);
+      const architectureResult = await generateArchitectureWithToolCalling(requirement, conversationHistory, architectureData);
+      console.log("Architecture Result: ", architectureResult);
+      // const architectureResult = await generateArchitecture(requirement, conversationHistory, architectureData);
       // alert("CHECK")
       // Clean the result to remove markdown code blocks if present
-      let cleanedResult = architectureResult;
-      if (typeof architectureResult === 'string') {
-        // Remove markdown code blocks (```json...``` or ```...```)
-        cleanedResult = architectureResult
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '')
-          .replace(/\s*```\s*$/, '')
-          .trim();
-      }
+      // let cleanedResult = architectureResult;
+      // if (typeof architectureResult === 'string') {
+      //   // Remove markdown code blocks (```json...``` or ```...```)
+      //   cleanedResult = architectureResult
+      //     .replace(/^```json\s*/i, '')
+      //     .replace(/^```\s*/, '')
+      //     .replace(/\s*```\s*$/, '')
+      //     .trim();
+      // }
       
-      // Parse the JSON result
-      const parsedArchitecture = typeof cleanedResult === 'string' 
-        ? JSON.parse(cleanedResult) 
-        : cleanedResult;
+      // // Parse the JSON result
+      // const parsedArchitecture = typeof cleanedResult === 'string' 
+      //   ? JSON.parse(cleanedResult) 
+      //   : cleanedResult;
       
-      setArchitectureData(parsedArchitecture);
+      // setArchitectureData(parsedArchitecture);
       // setArchitectureGenerated(true);
     } catch (error) {
       console.error('Error generating architecture:', error);
