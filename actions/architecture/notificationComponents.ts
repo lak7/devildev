@@ -11,46 +11,111 @@ const llm = new ChatOpenAI({
 });
 
 const prompt = PromptTemplate.fromTemplate(`
-You are a senior notification systems architect.
-
-Given:
-- 🧠 Conversation history: {conversation_history}
-- 📝 Requirement: {requirement}
-- 📦 Previous architecture data: {architectureData}
-
-Your job is to return ONLY notification and messaging components suitable for modern applications.
-
-List only these possible components:
-- Email Service
-- SMS Service
-- Push Notifications
-- In-App Notifications
-- Notification Queue
-- Template Engine
-- Delivery Tracking (optional)
-- Unsubscribe Management (optional)
-- A/B Testing (optional)
-
-For each component, suggest the best 2024-2025 notification technology stack using this format:
-
-{{
-  "components": [
-    {{
-      "name": "Email Service",
-      "type": "core",
-      "purpose": "Transactional and marketing email delivery system",
-      "technologies": {{
-        "primary": "Resend",
-        "framework": "React Email",
-        "additional": "SendGrid, Postmark, AWS SES"
+  You are a senior notification systems architect. Analyze the requirement and return ONLY notification components with appropriate technology stacks.
+  
+  REQUIREMENT ANALYSIS:
+  - 🧠 Conversation history: {conversation_history}
+  - 📝 Current requirement: {requirement}
+  - 📦 Previous architecture: {architectureData}
+  
+  **🌟 IDEAL NOTIFICATION STACK (USE BY DEFAULT):**
+  - Email: Resend (modern, TypeScript-native, Next.js friendly)
+  - SMS: Twilio (reliable, global reach, great SDKs)
+  - Push: Firebase Cloud Messaging (free, scalable, web + mobile)
+  
+  **COMPONENT SELECTION RULES:**
+  Include ONLY components that are explicitly mentioned or strongly implied:
+  - "email" or "transactional" → Email Service
+  - "SMS" or "text message" → SMS Service  
+  - "push notification" or "mobile notification" or "mobile app" → Push Notifications
+  - "in-app" or "notification center" → In-App Notifications
+  - If general "notifications" mentioned without specifics → Include Email Service only
+  - If no notification type specified → Include Email Service only (most common need)
+  
+  **TECHNOLOGY SELECTION:**
+  
+  **Email Services:**
+  - If requirement mentions "SendGrid" → Use SendGrid
+  - If requirement mentions "Postmark" → Use Postmark
+  - If requirement mentions "Mailgun" → Use Mailgun
+  - Otherwise → Use Resend (ideal choice)
+  
+  **SMS Services:**
+  - If requirement mentions "MessageBird" → Use MessageBird
+  - If requirement mentions "Nexmo" or "Vonage" → Use Nexmo/Vonage
+  - Otherwise → Use Twilio (ideal choice)
+  
+  **Push Notifications:**
+  - If requirement mentions "OneSignal" → Use OneSignal
+  - If requirement mentions "Pusher Beams" → Use Pusher Beams
+  - Otherwise → Use Firebase Cloud Messaging (ideal choice)
+  
+  **AVAILABLE NOTIFICATION TOOLS:**
+  
+  **Email Services:**
+  **Resend** (DEFAULT) - Modern, TypeScript-first, developer-friendly
+  **SendGrid** - Cloud-based, great for transactional emails
+  **Postmark** - Fast and reliable transactional email delivery
+  **Mailgun** - Powerful APIs for sending, receiving, tracking emails
+  
+  **SMS Services:**
+  **Twilio SMS** (DEFAULT) - Most popular, global SMS API
+  **MessageBird** - European alternative, SMS + voice + chat
+  **Nexmo (Vonage)** - SMS and voice messaging, developer-friendly
+  
+  **Push Notification Services:**
+  **Firebase Cloud Messaging** (DEFAULT) - Free, web + mobile support
+  **OneSignal** - Multi-platform with email/SMS add-ons
+  **Pusher Beams** - Real-time and push notifications for mobile
+  
+  **OUTPUT FORMAT:**
+  {{
+    "components": [
+      {{
+        "name": "Email Service",
+        "type": "notification",
+        "purpose": "Transactional and marketing email delivery",
+        "technologies": {{
+          "primary": "Selected Email Service",
+          "integration": "API/SDK method",
+          "features": "Key capabilities",
+          "platform": "web|mobile|cross-platform"
+        }}
+      }},
+      {{
+        "name": "SMS Service", 
+        "type": "notification",
+        "purpose": "Text message notifications and alerts",
+        "technologies": {{
+          "primary": "Selected SMS Service",
+          "integration": "API/SDK method", 
+          "features": "Key capabilities",
+          "platform": "global|regional"
+        }}
+      }},
+      {{
+        "name": "Push Notifications",
+        "type": "notification", 
+        "purpose": "Mobile and web push notifications",
+        "technologies": {{
+          "primary": "Selected Push Service",
+          "integration": "SDK/API method",
+          "features": "Key capabilities", 
+          "platform": "web|mobile|cross-platform"
+        }}
       }}
-    }},
-    ...
-  ]
-}}
-
-Only return this JSON. Don't explain anything.
-`);
+    ]
+  }}
+  
+  **ANALYSIS INSTRUCTIONS:**
+  1. **Check for explicit notification types** mentioned in requirement
+  2. **Include only the notification types** that are specifically needed
+  3. **If NO specific services mentioned → Use ideal stack** for selected types
+  4. **Default to Email Service only** if just "notifications" mentioned generally
+  5. **Consider platform compatibility** (web vs mobile vs both)
+  
+  Return only the JSON with the specifically needed notification components.
+  `);
 
 const outputParser = new StringOutputParser();
 
