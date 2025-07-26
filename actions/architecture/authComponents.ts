@@ -11,46 +11,69 @@ const llm = new ChatOpenAI({
 });
 
 const prompt = PromptTemplate.fromTemplate(`
-You are a senior security and authentication architect.
-
-Given:
-- 🧠 Conversation history: {conversation_history}
-- 📝 Requirement: {requirement}
-- 📦 Previous architecture data: {architectureData}
-
-Your job is to return ONLY authentication and security components suitable for modern applications.
-
-List only these possible components:
-- Identity Provider
-- Session Management
-- Multi-Factor Authentication
-- Authorization Service
-- Password Management
-- OAuth Integration
-- API Security (optional)
-- User Management (optional)
-- Audit Logging (optional)
-
-For each component, suggest the best 2024-2025 authentication technology stack using this format:
-
-{{
-  "components": [
-    {{
-      "name": "Identity Provider",
-      "type": "core",
-      "purpose": "Centralized user authentication and identity management",
-      "technologies": {{
-        "primary": "Auth0",
-        "framework": "NextAuth.js",
-        "additional": "Clerk, Supabase Auth, Firebase Auth"
+  You are a senior authentication architect. Analyze the requirement and return ONLY the authentication tool/service to use.
+  
+  REQUIREMENT ANALYSIS:
+  - 🧠 Conversation history: {conversation_history}
+  - 📝 Current requirement: {requirement}
+  - 📦 Previous architecture: {architectureData}
+  
+  **🌟 DEFAULT AUTH TOOL: CLERK (unless explicitly mentioned otherwise)**
+  
+  **AUTH TOOL SELECTION:**
+  - If requirement mentions "Firebase" → Use Firebase Auth
+  - If requirement mentions "Supabase" → Use Supabase Auth  
+  - If requirement mentions "Auth0" → Use Auth0
+  - If requirement mentions "Stytch" → Use Stytch
+  - If requirement mentions "passwordless" → Use Stytch
+  - If requirement mentions "enterprise" → Use Auth0
+  - Otherwise → Use Clerk (default)
+  
+  **AVAILABLE AUTH TOOLS:**
+  
+  **Clerk** (DEFAULT)
+  - Features: Email/password, OAuth, MFA, user management UI
+  - Platform: Web + Mobile (React Native)
+  - Best for: Modern apps with great UX
+  
+  **Firebase Auth**
+  - Features: Email/password, phone, OAuth, anonymous auth
+  - Platform: Web + Mobile seamlessly
+  - Best for: Google ecosystem apps
+  
+  **Supabase Auth**
+  - Features: Email/password, magic links, OAuth, phone auth
+  - Platform: Cross-platform support
+  - Best for: Full-stack Supabase projects
+  
+  **Stytch**
+  - Features: Passwordless, magic links, OTP, OAuth
+  - Platform: Web + Mobile
+  - Best for: Passwordless authentication
+  
+  **Auth0**
+  - Features: Enterprise OAuth2, SAML, SSO, advanced rules
+  - Platform: All platforms
+  - Best for: Enterprise applications
+  
+  **OUTPUT FORMAT:**
+  {{
+    "components": [
+      {{
+        "name": "Authentication Service",
+        "type": "auth",
+        "purpose": "User authentication and management", 
+        "technologies": {{
+          "primary": "Selected Auth Tool",
+          "features": "List of key features",
+          "integration": "SDK/Library used"
+        }}
       }}
-    }},
-    ...
-  ]
-}}
-
-Only return this JSON. Don't explain anything.
-`);
+    ]
+  }}
+  
+  Return only the JSON with the selected auth tool.
+  `);
 
 const outputParser = new StringOutputParser();
 

@@ -11,46 +11,92 @@ const llm = new ChatOpenAI({
 });
 
 const prompt = PromptTemplate.fromTemplate(`
-You are a senior database and storage architect.
-
-Given:
-- 🧠 Conversation history: {conversation_history}
-- 📝 Requirement: {requirement}
-- 📦 Previous architecture data: {architectureData}
-
-Your job is to return ONLY database and storage components suitable for modern applications.
-
-List only these possible components:
-- Primary Database
-- Cache Layer
-- File Storage
-- Search Engine
-- Data Backup
-- Database Migration
-- Connection Pooling (optional)
-- Read Replicas (optional)
-- CDN (optional)
-
-For each component, suggest the best 2024-2025 database technology stack using this format:
-
-{{
-  "components": [
-    {{
-      "name": "Primary Database",
-      "type": "core",
-      "purpose": "Main data persistence layer for application data",
-      "technologies": {{
-        "primary": "PostgreSQL",
-        "framework": "Prisma",
-        "additional": "PlanetScale, Supabase, Neon"
-      }}
-    }},
-    ...
-  ]
+  You are a senior database architect. Analyze the requirement and return ONLY database and storage components with appropriate technology stacks.
+  
+  REQUIREMENT ANALYSIS:
+  - 🧠 Conversation history: {conversation_history}
+  - 📝 Current requirement: {requirement}
+  - 📦 Previous architecture: {architectureData}
+  
+  **🌟 IDEAL DATABASE STACK (USE BY DEFAULT):**
+  - Database: Supabase (PostgreSQL)
+  - ORM: Prisma
+  - Features: Real-time, auth integration, type-safe queries
+  
+  **DATABASE SELECTION RULES:**
+  - If requirement mentions "Firebase" → Use Firebase Firestore
+  - If requirement mentions "real-time" only → Use Firebase Realtime DB
+  - If requirement mentions "MongoDB" → Use MongoDB Atlas
+  - If requirement mentions "SQLite" or "embedded" → Use SQLite
+  - If requirement mentions "mobile offline" → Use Realm or WatermelonDB
+  - If requirement mentions "lightweight" → Use SQLite
+  - Otherwise → Use Supabase + Prisma (ideal stack)
+  
+  **AVAILABLE DATABASES:**
+  
+  **Cross-Platform (Web + Mobile):**
+  **Supabase (PostgreSQL)** (DEFAULT)
+  - Features: Real-time via WAL, auth integration, SQL-based
+  - Best for: Full-stack apps with real-time needs
+  
+  **Firebase Firestore**
+  - Features: Document NoSQL, offline-first, real-time updates
+  - Best for: Firebase ecosystem apps
+  
+  **Firebase Realtime DB**
+  - Features: NoSQL, real-time updates, Firebase integration
+  - Best for: Simple real-time applications
+  
+  **MongoDB Atlas**
+  - Features: Cloud MongoDB, works with Realm for offline sync
+  - Best for: Document-heavy applications
+  
+  **SQLite**
+  - Features: Lightweight, file-based, embedded
+  - Best for: Simple local storage needs
+  
+  **Mobile-Focused (Offline-First):**
+  **Realm (MongoDB)**
+  - Features: Object-oriented, offline sync, mobile-optimized
+  - Best for: Complex mobile apps with offline needs
+  
+  **WatermelonDB**
+  - Features: Optimized for React Native, lazy-loading, SQLite-based
+  - Best for: Large-scale React Native applications
+  
+  **COMPONENT SELECTION:**
+  Include only components mentioned or implied in requirements:
+  - Primary Database (always include)
+  - Cache Layer (if "cache", "Redis", "performance" mentioned)
+  - File Storage (if "files", "images", "uploads" mentioned)
+  - Search Engine (if "search", "Elasticsearch" mentioned)
+  
+  **OUTPUT FORMAT:**
+  {{
+    "components": [
+      {{
+        "name": "Primary Database",
+        "type": "core",
+        "purpose": "Main data persistence and real-time features",
+        "technologies": {{
+          "primary": "Selected Database",
+          "orm": "ORM/SDK if applicable",
+          "features": "Key database features",
+          "additional": "Related tools/services"
 }}
-
-Only return this JSON. Don't explain anything.
-`);
+      }}
+    ]
+  }}
+  
+  **ANALYSIS INSTRUCTIONS:**
+  1. **Check for explicit database mentions** in requirement
+  2. **If NO specific database mentioned → Use Supabase + Prisma**
+  3. **Consider platform needs** (web-only vs mobile vs both)
+  4. **Include only necessary components** based on requirement
+  5. **Match database to use case** (real-time, offline, etc.)
+  
+  Return only the JSON with selected database components.
+  `);
 
 const outputParser = new StringOutputParser();
 

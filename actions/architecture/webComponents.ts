@@ -78,19 +78,19 @@ const prompt = PromptTemplate.fromTemplate(`
         "name": "Frontend",
         "type": "core",
         "purpose": "User interface and client-side logic",
-        "technologies": {
+        "technologies": {{
           "primary": "Selected Framework",
           "language": "TypeScript/JavaScript",
           "styling": "Tailwind CSS",
           "additional": "Relevant additional tools"
-        },
+        }},
         "reasoning": "Brief explanation for framework choice"
       }},
       {{
         "name": "Backend",
         "type": "core", 
         "purpose": "Server-side logic and API endpoints",
-        "technologies": {
+        "technologies": {{
           "primary": "Selected Framework",
           "language": "TypeScript/JavaScript/Python/Java",
           "runtime": "Node.js/Python/JVM",

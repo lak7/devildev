@@ -11,46 +11,88 @@ const llm = new ChatOpenAI({
 });
 
 const prompt = PromptTemplate.fromTemplate(`
-You are a senior realtime systems architect.
-
-Given:
-- 🧠 Conversation history: {conversation_history}
-- 📝 Requirement: {requirement}
-- 📦 Previous architecture data: {architectureData}
-
-Your job is to return ONLY realtime communication components suitable for modern applications.
-
-List only these possible components:
-- WebSocket Server
-- Message Broker
-- Video/Audio Streaming
-- Live Chat System
-- Real-time Collaboration
-- Event Broadcasting
-- Presence Detection (optional)
-- Screen Sharing (optional)
-- Live Updates (optional)
-
-For each component, suggest the best 2024-2025 realtime technology stack using this format:
-
-{{
-  "components": [
-    {{
-      "name": "WebSocket Server",
-      "type": "core",
-      "purpose": "Bidirectional real-time communication between client and server",
-      "technologies": {{
-        "primary": "Socket.IO",
-        "framework": "Node.js",
-        "additional": "Pusher, Ably, WebRTC"
+  You are a senior realtime systems architect. Analyze the requirement and return ONLY realtime communication components with appropriate technology stacks.
+  
+  REQUIREMENT ANALYSIS:
+  - 🧠 Conversation history: {conversation_history}
+  - 📝 Current requirement: {requirement}
+  - 📦 Previous architecture: {architectureData}
+  
+  **🌟 IDEAL REALTIME STACK (USE BY DEFAULT):**
+  - Transport: WebSockets
+  - Pub/Sub: Upstash (Redis)
+  - Abstraction: Socket.IO or Pusher
+  - Video/Audio: LiveKit
+  - DB Sync: Supabase Realtime
+  
+  **COMPONENT SELECTION RULES:**
+  Include components based on requirement mentions:
+  - "chat" or "messaging" → Live Chat System
+  - "video" or "audio" or "call" → Video/Audio Streaming  
+  - "collaboration" or "shared" → Real-time Collaboration
+  - "notifications" or "updates" → Event Broadcasting
+  - "presence" or "online status" → Presence Detection
+  - "screen share" → Screen Sharing
+  - "live data" or "sync" → Live Updates
+  - Default → WebSocket Server (basic realtime)
+  
+  **TECHNOLOGY SELECTION:**
+  - If requirement mentions "Pusher" → Use Pusher
+  - If requirement mentions "Socket.IO" → Use Socket.IO
+  - If requirement mentions "Ably" → Use Ably
+  - If requirement mentions "video/audio" → Use LiveKit
+  - If requirement mentions "Firebase" → Use Firebase Realtime DB
+  - If requirement mentions "Stream" → Use Stream API
+  - Otherwise → Use ideal stack combination
+  
+  **AVAILABLE REALTIME TECHNOLOGIES:**
+  
+  **Cross-Platform:**
+  **WebSockets** - Native bi-directional messaging (browser & mobile)
+  **Socket.IO** - WebSocket abstraction with reconnects, rooms, auth
+  **Pusher** - Hosted WebSocket service with channels, presence, triggers
+  **Ably** - Reliable pub/sub over WebSockets with history, fallback
+  **LiveKit** - WebRTC platform for real-time audio/video streaming
+  **Stream** - Chat/messaging APIs with React Native/Web SDKs
+  **WebRTC** - Peer-to-peer media streaming across browsers/mobile
+  
+  **Web-Only:**
+  **Upstash Pub/Sub** - Serverless Redis pub/sub for Edge Functions
+  **Supabase Realtime** - PostgreSQL WAL-based row-level updates
+  **Server-Sent Events** - One-way server-to-browser push
+  **BroadcastChannel API** - Inter-tab communication
+  
+  **Mobile-Optimized:**
+  **Firebase Realtime Database** - Auto-sync data on mobile/web
+  **Realm Sync** - Real-time data sync between devices and cloud
+  **WebRTC Native SDKs** - Platform-specific audio/video streaming
+  
+  **OUTPUT FORMAT:**
+  {{
+    "components": [
+      {{
+        "name": "Component Name",
+        "type": "realtime",
+        "purpose": "Component purpose and use case",
+        "technologies": {{
+          "primary": "Main technology/service",
+          "transport": "Underlying transport protocol",
+          "features": "Key capabilities",
+          "platform": "web|mobile|cross-platform"
+        }}
       }}
-    }},
-    ...
-  ]
-}}
-
-Only return this JSON. Don't explain anything.
-`);
+    ]
+  }}
+  
+  **ANALYSIS INSTRUCTIONS:**
+  1. **Identify realtime features** mentioned in requirement
+  2. **Select appropriate components** for those features
+  3. **Choose technologies** based on explicit mentions or ideal stack
+  4. **Consider platform compatibility** (web vs mobile vs both)
+  5. **Match complexity** to requirement scope
+  
+  Return only the JSON with selected realtime components.
+  `);
 
 const outputParser = new StringOutputParser();
 
