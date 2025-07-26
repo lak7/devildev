@@ -11,46 +11,110 @@ const llm = new ChatOpenAI({
 });
 
 const prompt = PromptTemplate.fromTemplate(`
-You are a senior AI/ML architect.
+  You are a senior AI/ML architect. Analyze the requirement and return ONLY AI/ML components with appropriate technology stacks.
+  
+  REQUIREMENT ANALYSIS:
+  - 🧠 Conversation history: {conversation_history}
+  - 📝 Current requirement: {requirement}
+  - 📦 Previous architecture: {architectureData}
 
-Given:
-- 🧠 Conversation history: {conversation_history}
-- 📝 Requirement: {requirement}
-- 📦 Previous architecture data: {architectureData}
-
-Your job is to return ONLY AI/ML components suitable for modern AI applications.
-
-List only these possible components:
-- LLM Integration
-- Vector Database
-- Model Training Pipeline
-- Data Processing
-- ML Inference API
-- Model Monitoring
-- Feature Store (optional)
-- MLOps Pipeline (optional)
-- AI Gateway (optional)
-
-For each component, suggest the best 2024-2025 AI/ML technology stack using this format:
-
-{{
-  "components": [
-    {{
-      "name": "LLM Integration",
-      "type": "core",
-      "purpose": "Integration with large language models for AI capabilities",
-      "technologies": {{
-        "primary": "OpenAI GPT-4",
-        "framework": "LangChain",
-        "additional": "Anthropic Claude, Together AI, Vercel AI SDK"
-      }}
-    }},
-    ...
-  ]
-}}
-
-Only return this JSON. Don't explain anything.
-`);
+  
+  **COMPONENT SELECTION RULES:**
+  Select components based on the requirement and the conversation history:
+  - "chatbot" or "chat" or "LLM" → LLM Integration
+  - "search" or "RAG" or "documents" → Vector Database + Embeddings
+  - "voice" or "speech" → Speech Processing
+  - "vision" or "image" → Vision Processing  
+  - "agents" or "tools" → Agent Framework
+  - "training" or "fine-tuning" → Model Training
+  - If general "AI" mentioned → Include LLM Integration only
+  
+  **TECHNOLOGY SELECTION:**  
+  
+  **LLM Providers:**
+  - If requirement mentions "OpenAI" or "ChatGPT" → Use OpenAI GPT-4o
+  - If requirement mentions "Claude" or "Anthropic" → Use Anthropic Claude
+  - If requirement mentions "Gemini" or "Google" → Use Google Gemini
+  - If requirement mentions "open source" → Use Mistral/Mixtral
+  - If requirement mentions "enterprise" → Use Cohere
+  - Otherwise → Use OpenAI GPT-4o (ideal choice)
+  
+  **AI Frameworks:**
+  - If requirement mentions "LangChain" → Use LangChain
+  - If requirement mentions "LangGraph" → Use LangGraph
+  - If requirement mentions "LlamaIndex" → Use LlamaIndex
+  - If requirement mentions "RAG" or "documents" → Use LlamaIndex
+  - If requirement mentions "agents" → Use CrewAI or LangChain Agents
+  - Otherwise → Use LangChain (ideal choice)
+  
+  **Vector Databases:**
+  - If requirement mentions "Pinecone" → Use Pinecone
+  - If requirement mentions "Weaviate" → Use Weaviate
+  - If requirement mentions "Qdrant" → Use Qdrant
+  - If requirement mentions "local" or "development" → Use Chroma
+  - If requirement mentions "Supabase" → Use Supabase Vector
+  - Otherwise → Use Supabase Vector (ideal choice)
+  
+  **Embedding Models:**
+  - If requirement mentions "OpenAI" → Use OpenAI Embeddings
+  - If requirement mentions "Cohere" → Use Cohere Embed
+  - If requirement mentions "open source" → Use Hugging Face Embeddings
+  - Otherwise → Use OpenAI Embeddings (ideal choice)
+  
+  **AVAILABLE AI/ML TECHNOLOGIES:**
+  
+  **LLM Providers:**
+  **OpenAI GPT-4o** (DEFAULT) - Industry standard, chat, vision, function calling
+  **Anthropic Claude** - Privacy-focused, strong reasoning, long context
+  **Google Gemini** - Multimodal, Google ecosystem integration
+  **Mistral/Mixtral** - Open-weight models, OSS communities
+  **Cohere** - Enterprise focus, Canadian provider
+  
+  **AI Frameworks:**
+  **LangChain** (DEFAULT) - Modular framework for LLM chains, tools, memory
+  **LangGraph** - Graph-based LLM orchestration on LangChain
+  **LlamaIndex** - Document loaders, indexes, RAG-focused
+  **Haystack** - Python RAG and search pipelines
+  **CrewAI** - Multi-agent task collaboration
+  
+  **Vector Databases:**
+  **Pinecone** (DEFAULT) - Fully managed, real-time, scalable
+  **Weaviate** - Open-source, great semantic search
+  **Qdrant** - Rust-based, fast and efficient
+  **Chroma** - Local-first, development-friendly
+  **Supabase Vector** - Postgres extension for vectors
+  
+  **Specialized AI Tools:**
+  **Speech**: OpenAI Whisper, Deepgram, AssemblyAI, ElevenLabs
+  **Vision**: GPT-4o Vision, Gemini Vision, Claude 3.5 Vision
+  **Agents**: OpenAI Function Calling, LangChain Agents, AutoGPT
+  
+  **OUTPUT FORMAT:**
+  {{
+    "components": [
+      {{
+        "name": "Component Name",
+        "type": "ai",
+        "purpose": "Component purpose and AI capability",
+        "technologies": {{
+          "primary": "Selected AI Service/Framework",
+          "integration": "SDK/API method",
+          "features": "Key AI capabilities",
+          "additional": "Supporting tools if needed"
+        }}
+      }}  
+    ]
+  }}
+  
+  **ANALYSIS INSTRUCTIONS:**
+  1. **Check for explicit AI features** mentioned in requirement
+  2. **Include only AI components** that are specifically needed
+  3. **Choose technologies** based on explicit mentions or ideal stack
+  4. **Consider use case complexity** (simple chat vs complex RAG)
+  5. **Match AI capabilities** to requirement needs
+  
+  Return only the JSON with the specifically needed AI/ML components.
+  `);
 
 const outputParser = new StringOutputParser();
 
