@@ -11,46 +11,109 @@ const llm = new ChatOpenAI({
 });
 
 const prompt = PromptTemplate.fromTemplate(`
-You are a senior mobile app architect.
-
-Given:
-- 🧠 Conversation history: {conversation_history}
-- 📝 Requirement: {requirement}
-- 📦 Previous architecture data: {architectureData}
-
-Your job is to return ONLY mobile app components suitable for modern mobile development.
-
-List only these possible components:
-- Mobile Frontend
-- Backend API
-- Push Notifications
-- Authentication
-- Local Storage
-- App Store Services
-- Analytics (optional)
-- Payment Integration (optional)
-- Offline Sync (optional)
-
-For each component, suggest the best 2024-2025 mobile technology stack using this format:
-
-{{
-  "components": [
-    {{
-      "name": "Mobile Frontend",
-      "type": "core",
-      "purpose": "Cross-platform mobile application interface",
-      "technologies": {{
-        "primary": "React Native",
-        "framework": "Expo",
-        "additional": "TypeScript, React Navigation, Zustand"
+  You are a senior mobile app architect. Analyze the requirement and return ONLY mobile app components with appropriate technology stacks.
+  
+  REQUIREMENT ANALYSIS:
+  - 🧠 Conversation history: {conversation_history}
+  - 📝 Current requirement: {requirement}
+  - 📦 Previous architecture: {architectureData}
+  
+  **🌟 IDEAL MOBILE STACK (USE BY DEFAULT):**
+  - Framework: Flutter (fast, beautiful, performant)
+  - Language: Dart
+  - Backend: RESTful APIs
+  - State Management: Provider/Riverpod (Flutter) or Zustand (React Native)
+  
+  **FRAMEWORK SELECTION RULES:**
+  - If requirement mentions "Flutter" → Use Flutter + Dart
+  - If requirement mentions "React Native" → Use React Native + TypeScript
+  - If requirement mentions "Expo" → Use Expo + React Native + TypeScript
+  - If requirement mentions "native performance" or "low-level features" → Use Native (SwiftUI + Jetpack Compose)
+  - If requirement mentions "web-first" or "PWA" → Use Capacitor + Ionic
+  - If requirement mentions "iOS only" → Use SwiftUI + Swift
+  - If requirement mentions "Android only" → Use Jetpack Compose + Kotlin
+  - If requirement mentions "AR", "Camera", "Bluetooth", "NFC" → Use Native frameworks
+  - Otherwise → Use Flutter + Dart (ideal choice)
+  
+  **COMPONENT SELECTION RULES:**
+  Include components based on requirement and conversation history:
+  - Always include "Mobile Frontend" (core component)
+  - "API" or "backend" → Backend API
+  - "notifications" or "push" → Push Notifications
+  - "auth" or "login" → Authentication
+  - "offline" or "local data" → Local Storage
+  - "store" or "deployment" → App Store Services
+  - "analytics" or "tracking" → Analytics
+  - "payment" or "purchase" → Payment Integration
+  - "sync" or "real-time" → Offline Sync
+  
+  **AVAILABLE MOBILE TECHNOLOGIES:**
+  
+  **Cross-Platform Frameworks:**
+  **Flutter** (DEFAULT) - Google's toolkit, fast, beautiful, performant (Dart)
+  **React Native** - Meta-backed, huge ecosystem, native-like (JavaScript/TypeScript)
+  **Expo** - Built on React Native, easy setup, great dev experience (JavaScript/TypeScript)
+  **Capacitor + Ionic** - Web-first apps packaged for mobile, ideal for PWAs
+  
+  **Native Frameworks:**
+  **iOS: SwiftUI** - Modern declarative UI framework (Swift)
+  **Android: Jetpack Compose** - Modern declarative UI toolkit (Kotlin)
+  
+  **State Management:**
+  **Flutter**: Provider, Riverpod, Bloc
+  **React Native**: Zustand, Redux Toolkit, Context API
+  
+  **TECHNOLOGY COMBINATIONS:**
+  
+  **Flutter Stack:**
+  - Framework: Flutter + Dart
+  - State: Provider or Riverpod
+  - Navigation: GoRouter
+  - HTTP: Dio or http package
+  
+  **React Native Stack:**
+  - Framework: React Native + TypeScript
+  - State: Zustand or Redux Toolkit
+  - Navigation: React Navigation
+  - HTTP: Axios or fetch
+  
+  **Expo Stack:**
+  - Framework: Expo + React Native + TypeScript
+  - State: Zustand
+  - Navigation: Expo Router
+  - Services: Expo services (notifications, auth, etc.)
+  
+  **Native Stack:**
+  - iOS: SwiftUI + Swift + Combine
+  - Android: Jetpack Compose + Kotlin + Coroutines
+  
+  **OUTPUT FORMAT:**
+  {{
+    "components": [
+      {{
+        "name": "Mobile Frontend",
+        "type": "core",
+        "purpose": "Cross-platform mobile application interface",
+        "technologies": {{
+          "primary": "Selected Framework",
+          "language": "Programming Language",
+          "state_management": "State management solution",
+          "navigation": "Navigation library",
+          "additional": "Supporting tools and packages"
+        }}
       }}
-    }},
-    ...
-  ]
-}}
-
-Only return this JSON. Don't explain anything.
-`);
+    ]
+  }}
+  
+  **ANALYSIS INSTRUCTIONS:**
+  1. **Check for explicit framework mentions** in requirement
+  2. **Consider performance requirements** (high performance → Native, standard → Flutter)
+  3. **Include only mobile components** that are specifically needed
+  4. **Choose framework** based on explicit mentions or Flutter default
+  5. **Match technology stack** to selected framework
+  
+  Return only the JSON with the specifically needed mobile components.
+  `);
 
 const outputParser = new StringOutputParser();
 
