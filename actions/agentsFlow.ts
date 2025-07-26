@@ -54,7 +54,6 @@ You are a balanced but moderately strict evaluator. You should approve requests 
 
 ## Response Format
 Return ONLY a valid JSON object in this exact format:
-json
 {{
   "canStart": true/false,
   "reason": "explanation why false, empty string if true"

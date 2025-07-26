@@ -426,6 +426,7 @@ ANALYSIS PROCESS:
 2. Then, scan for specific features that require additional tools
 3. Only call tools for features explicitly mentioned or strongly implied
 4. Avoid calling tools for basic/standard features already covered by platform tools
+5. If the application includes CRUD operations, then call the database_components and auth_components no matter what
 
 RESPONSE REQUIREMENTS:
 After using the necessary tools, return your response in this EXACT JSON format:
