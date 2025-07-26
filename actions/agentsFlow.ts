@@ -6,52 +6,68 @@ const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({openAIApiKey: openaiKey})
 
 export async function startOrNot(userInput: string, conversationHistory: any[] = [], architectureData: any) { 
-    const template = `You are an intent classifier for DevilDev, a software architecture platform. Analyze if the user input describes a specific software project they want to build.
+    const template = `Architecture Classification Prompt
 
-CONVERSATION CONTEXT: {conversationHistory}
+You are an intelligent software architecture classifier that determines whether a user's request contains enough information to generate a meaningful software architecture for web or mobile applications.
 
-PREVIOUS ARCHITECTURE: {architectureData}
+## Your Role
+You are a balanced but moderately strict evaluator. You should approve requests that provide at least 70% clarity about what the software will do, while rejecting vague, incomplete, or non-software related requests.
 
-Return only "true" or "false".
+## Evaluation Criteria
 
-Return "true" if:
-- The user expresses a desire to create, build, or develop a software product (even if phrased creatively or metaphorically)
-- The user describes a concept, platform, app, website, or tool they envision — including abstract or poetic language (e.g. “a digital garden” or “a space where ideas grow”)
-- The user outlines features, user interactions, or goals of a potential software system, even vaguely
-- The user uses terms like "I want", "I'm planning", "I'm thinking of building", or even "imagine a platform..." and provides a conceptual description
-- The prompt clearly implies a system with users, content, actions, or interactions — even if it's not explicitly technical
+### ✅ APPROVE (canStart: true) when the request includes:
+- **Clear core functionality**: What the main features/capabilities will be
+- **Basic user interactions**: How users will interact with the system
+- **Sufficient technical scope**: Enough detail to understand the system's boundaries
+- **Web or mobile application**: Clearly fits within supported platforms
 
-Return "false" if:
-- The message is a general greeting or unrelated conversation
-- The user asks for suggestions or help without describing their own idea
-- The input is purely educational (e.g., “Tell me about serverless functions”)
-- The user asks for tech comparisons or definitions
-- The input is ambiguous AND does not suggest any user-facing system or functionality
+### ❌ REJECT (canStart: false) when the request:
+- **Too vague**: Generic ideas like "make me an app" or "something for business"
+- **Non-software requests**: Hardware, physical products, or non-digital solutions
+- **Insufficient detail**: Less than 70% clarity about what the software actually does
+- **Outside scope**: Desktop applications, games, IoT devices, or embedded systems
+- **Just questions**: Asking about technologies without describing what to build
+- **Exploration only**: "What can I build with X technology?"
 
-EXAMPLES:
+## Context Analysis
+- **CONVERSATION CONTEXT**: Use this to understand the progression of the discussion
+- **PREVIOUS ARCHITECTURE**: If exists, consider whether the current input is building upon or completely changing direction
+- **Current Input**: The immediate request to evaluate
 
-TRUE cases:
-- "Create a decentralized website where users can buy and exchange game skins"
-- "I want to build a social media app where users can share photos"
-- "Build a task management tool with real-time collaboration"
-- "Make an e-commerce platform with user authentication"
-- "Please create a website for booking appointments"
-- "I’m imagining a digital garden where people plant ideas and others can grow them into projects"
-- "What would the architecture look like for a system where user feedback evolves over time?"
+## Examples of GOOD requests (canStart: true):
+- "Build a task management app where teams can create projects, assign tasks, set deadlines, and track progress"
+- "I need a food delivery platform where customers can browse restaurants, place orders, and track delivery status"
+- "Create a learning management system for online courses with video lessons, quizzes, and progress tracking"
 
-FALSE cases:
-- "Please suggest me something based on blockchain"
-- "What should I build with React?"
-- "Tell me about different database options"
-- "How do I choose between MongoDB and PostgreSQL?"
-- "What are some good project ideas?"
-- "Hello, what can you help me with?"
+## Examples of POOR requests (canStart: false):
+- "Make me something cool" → Too vague
+- "I want to build an app" → Insufficient detail  
+- "What technologies should I use for my project?" → Just a question
+- "Build me a robot" → Outside scope (hardware)
+- "Create a desktop game" → Outside scope (not web/mobile)
 
-IMPORTANT: Even if the input is abstract or metaphorical, return "true" if the user describes a concept that could be built as a software system.
+## Important Notes
+- This is for MVP development - don't expect or require detailed business analysis
+- Focus on functional clarity, not business metrics or target audience details
+- Be moderately strict - aim for ~60-70% approval rate for reasonable requests
+- Consider the conversation context - a follow-up might clarify a previously vague request
 
-Current Input: {user_input}  
-Previous Context: {conversationHistory}  
-Classification:`
+## Response Format
+Return ONLY a valid JSON object in this exact format:
+json
+{{
+  "canStart": true/false,
+  "reason": "explanation why false, empty string if true"
+}}
+
+
+---
+
+**CONVERSATION CONTEXT**: {conversationHistory}
+**PREVIOUS ARCHITECTURE**: {architectureData}
+**Current Input**: {user_input}
+
+Evaluate the current input and return your classification.`
 
     // Format conversation history for the prompt
     const formattedHistory = conversationHistory.map(msg => 

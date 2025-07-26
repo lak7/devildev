@@ -124,7 +124,7 @@ const DevPage = () => {
     
     try {
       const architectureResult = await generateArchitectureWithToolCalling(requirement, conversationHistory, architectureData);
-      console.log("Architecture Result: ", architectureResult);
+      // console.log("Architecture Result: ", architectureResult);
       // const architectureResult = await generateArchitecture(requirement, conversationHistory, architectureData);
       // alert("CHECK")
       // Clean the result to remove markdown code blocks if present
@@ -171,10 +171,29 @@ const DevPage = () => {
     const currentInput = inputMessage;
     setInputMessage('');
     setTextareaHeight('60px');
-
+ 
     const isStart = await startOrNot(currentInput, messages, architectureData);
-    const isTrue = isStart.toLowerCase() === "true";
-    setCurrentStartOrNot(isTrue);
+     let cleanedIsStart = isStart;
+      if (typeof isStart === 'string') {
+        // Remove markdown code blocks (```json...``` or ```...```)
+        cleanedIsStart = isStart
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/\s*```\s*$/, '')
+          .trim();
+      }
+      
+      // Parse the JSON result
+      const parsedClassifier = typeof cleanedIsStart === 'string' 
+        ? JSON.parse(cleanedIsStart) 
+        : cleanedIsStart;
+
+      const isParsedTrue = parsedClassifier.canStart;
+
+    const isTrue = isParsedTrue;
+    setCurrentStartOrNot(parsedClassifier.canStart);
+    alert(parsedClassifier.canStart);
+    console.log("This is the classifier: ", parsedClassifier);
     // alert(isTrue);
 
    

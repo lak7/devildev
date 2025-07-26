@@ -376,7 +376,6 @@ export default function Architecture({
     return processComponents(initialData, customPositions);
   })
 
-  console.log("THIS IS THE architectureData: ", architectureData)
   const [connectionLabels, setConnectionLabels] = useState<Record<string, string>>(
     architectureData?.connectionLabels || {
       "frontend-backend": "HTTP/API",
