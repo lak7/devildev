@@ -7,7 +7,7 @@ import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { ChatMessage } from "@/app/dev/page";
 import { z } from "zod";
-import { aimlComponentsTool } from "./architecture/aimlComponents";
+import { aimlComponentsTool } from "./architecture/aimlComponents"; 
 import { analyticsComponentsTool } from "./architecture/analyticsComponents";
 import { authComponentsTool } from "./architecture/authComponents";
 import { blockchainComponentsTool } from "./architecture/blockchainComponents";
@@ -477,6 +477,124 @@ Focus on creating a practical, production-ready architecture that directly addre
   new MessagesPlaceholder("agent_scratchpad")
 ]);
 
+const finalPrompt = PromptTemplate.fromTemplate(`
+  You are an expert Software Architecture Synthesizer. Your job is to take individual technology components and create a cohesive, well-structured architecture diagram with proper connections, positioning, and data flow.
+  
+  INPUT ANALYSIS:
+  - 📝 Requirement: {requirement}
+  - 🧠 Conversation History: {conversation_history}
+  - 📦 Previous Architecture: {architectureData}
+  - 🔧 Required Technology Stacks: {list_of_required_stacks}
+  
+  **ARCHITECTURE SYNTHESIS RULES:**
+  
+  **1. COMPONENT PROCESSING:**
+  - Transform each component from the required stacks into a visual architecture element
+  - Assign appropriate icons, colors, and positions based on component type
+  - Create logical connections between related components
+  - Define clear data flow patterns
+  
+  **2. COMPONENT CATEGORIZATION & STYLING:**
+  
+  **Frontend Components:**
+  - Icons: "monitor" (web), "smartphone" (mobile), "globe" (public web)
+  
+  **Backend Components:**
+  - Icons: "server" (API), "cpu" (processing), "database" (data layer)
+  
+  **Database Components:**
+  - Icons: "database" (primary DB), "hard-drive" (storage)
+  
+  **AI/ML Components:**
+  - Icons: "brain" (LLM), "zap" (processing), "eye" (vision)
+  
+  **Authentication Components:**
+  - Icons: "shield" (auth service), "key" (tokens), "lock" (security)
+  
+  **Blockchain Components:**
+  - Icons: "link" (contracts), "coins" (tokens), "wallet" (wallets)
+  
+  **Realtime Components:**
+  - Icons: "radio" (websockets), "satellite" (broadcasting), "message-circle" (chat)
+  
+  **Payment Components:**
+  - Icons: "credit-card" (payments), "banknote" (billing), "shopping-cart" (ecommerce)
+  
+  **4. CONNECTION PROTOCOLS:**
+  - Frontend ↔ Backend: "REST API", "GraphQL", "tRPC"
+  - Backend ↔ Database: "Database queries", "ORM"
+  - Real-time: "WebSocket", "Server-Sent Events"
+  - External APIs: "HTTP requests", "API calls"
+  - Auth Flow: "OAuth flow", "JWT tokens"
+  - Payment Flow: "Payment API", "Webhook"
+  - AI Services: "API calls", "Streaming"
+  
+  **5. DATA FLOW PATTERNS:**
+  - **Frontend** sends: ["user input", "form data", "API requests"]
+  - **Frontend** receives: ["UI data", "API responses", "real-time updates"]
+  - **Backend** sends: ["API responses", "database queries", "external requests"]
+  - **Backend** receives: ["API requests", "database results", "webhook data"]
+  - **Database** sends: ["query results", "real-time updates"]
+  - **Database** receives: ["data writes", "queries"]
+  
+  **6. ID GENERATION:**
+  Convert component names to kebab-case:
+  - "Frontend" → "frontend"
+  - "Backend API" → "backend-api"
+  - "User Authentication" → "user-authentication"
+  - "Payment Gateway" → "payment-gateway"
+  
+  **OUTPUT FORMAT:**
+  {{
+    "components": [
+      {{
+        "id": "kebab-case-id",
+        "title": "Exact Component Name",
+        "icon": "lucide-icon-name",
+        "color": "any random color",
+        "borderColor": "any random color",
+        "technologies": {{
+          "primary": "Primary technology from input",
+          "framework": "Framework/library if applicable",
+          "additional": "Supporting tools and libraries"
+        }},
+        "connections": ["array-of-connected-component-ids"],
+        "position": {{ "x": random number, "y": random number }},
+        "dataFlow": {{
+          "sends": ["specific data types this component sends"],
+          "receives": ["specific data types this component receives"]
+        }},
+        "purpose": "Clear, detailed explanation of component's role in the architecture"
+      }}
+    ],
+      "connectionLabels": {{
+      "component1-id-component2-id": "Connection protocol/method"
+    }},
+    "architectureRationale": "2-3 sentence explanation of why this architecture is well-designed for the given requirements, highlighting key benefits and design decisions"
+  }}
+  
+  **SYNTHESIS INSTRUCTIONS:**
+  1. **Parse the required stacks JSON** to identify all components and their technologies
+  2. **Assign visual properties** (icon) based on component type
+  3. **Create logical connections** between components that interact with each other
+  4. **Define data flow** based on typical architecture patterns
+  5. **Generate connection labels** describing how components communicate
+  6. **Position components** in a logical flow from user-facing to data storage
+  7. **Write architecture rationale** explaining the overall design benefits
+  
+  **QUALITY CHECKLIST:**
+  - All components from input are included in output
+  - Each component has appropriate icon and color for its type
+  - Connections form a logical architecture flow
+  - Data flow makes sense for each component type
+  - Positions create a clean, readable diagram layout
+  - Technologies match exactly with input data
+  - Architecture rationale explains the design benefits
+  
+  Return only the JSON architecture structure.
+  `);
+const finalChain = finalPrompt.pipe(llm).pipe(new StringOutputParser());
+
 const tools = [basicWebComponentsTool, aimlComponentsTool, analyticsComponentsTool, authComponentsTool, blockchainComponentsTool, databaseComponentsTool, mobileComponentsTool, notificationComponentsTool, paymentComponentsTool, realtimeComponentsTool];
 
 const agent = await createToolCallingAgent({
@@ -499,9 +617,11 @@ try {
     architecture_data: JSON.stringify(architectureData)
   });
   
-  console.log("Result: ", result);
-  return result.output;
-
+  console.log("Result: ", typeof(result.output), result.output);
+  const finalResult = await finalChain.invoke({requirement: requirement, conversation_history: formattedHistory, architectureData: JSON.stringify(architectureData), list_of_required_stacks: JSON.stringify(result.output)});
+  console.log("Final Result: ", typeof(finalResult), finalResult);
+  return finalResult;
+ 
 } catch (error) {
   console.error("Error in generateArchitectureWithToolCalling:", error);
   throw error;

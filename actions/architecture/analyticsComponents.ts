@@ -13,7 +13,7 @@ const llm = new ChatOpenAI({
 const prompt = PromptTemplate.fromTemplate(`
 You are a senior analytics and data architect.
 
-Given:
+Given: 
 - 🧠 Conversation history: {conversation_history}
 - 📝 Requirement: {requirement}
 - 📦 Previous architecture data: {architectureData}

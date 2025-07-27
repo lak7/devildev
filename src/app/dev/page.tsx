@@ -14,7 +14,7 @@ import { generateArchitecture, generateArchitectureWithToolCalling } from '../..
 import FileExplorer from '@/components/core/ContextDocs';
 import { generateNthPhase, generatePlan, generateProjectRules, numberOfPhases } from '../../../actions/context';
 
-export interface ChatMessage {
+export interface ChatMessage { 
   id: string;
   type: 'user' | 'assistant';
   content: string;
@@ -128,23 +128,23 @@ const DevPage = () => {
       // const architectureResult = await generateArchitecture(requirement, conversationHistory, architectureData);
       // alert("CHECK")
       // Clean the result to remove markdown code blocks if present
-      // let cleanedResult = architectureResult;
-      // if (typeof architectureResult === 'string') {
-      //   // Remove markdown code blocks (```json...``` or ```...```)
-      //   cleanedResult = architectureResult
-      //     .replace(/^```json\s*/i, '')
-      //     .replace(/^```\s*/, '')
-      //     .replace(/\s*```\s*$/, '')
-      //     .trim();
-      // }
+      let cleanedResult = architectureResult;
+      if (typeof architectureResult === 'string') {
+        // Remove markdown code blocks (```json...``` or ```...```)
+        cleanedResult = architectureResult
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/\s*```\s*$/, '')
+          .trim();
+      }
       
       // // Parse the JSON result
-      // const parsedArchitecture = typeof cleanedResult === 'string' 
-      //   ? JSON.parse(cleanedResult) 
-      //   : cleanedResult;
+      const parsedArchitecture = typeof cleanedResult === 'string' 
+        ? JSON.parse(cleanedResult) 
+        : cleanedResult;
       
-      // setArchitectureData(parsedArchitecture);
-      // setArchitectureGenerated(true);
+      setArchitectureData(parsedArchitecture);
+      setArchitectureGenerated(true);
     } catch (error) {
       console.error('Error generating architecture:', error);
     } finally {
@@ -192,7 +192,7 @@ const DevPage = () => {
 
     const isTrue = isParsedTrue;
     setCurrentStartOrNot(parsedClassifier.canStart);
-    alert(parsedClassifier.canStart);
+    // alert(parsedClassifier.canStart);
     console.log("This is the classifier: ", parsedClassifier);
     // alert(isTrue);
 
@@ -202,7 +202,7 @@ const DevPage = () => {
 
     try {
       // Use firstBot function directly instead of API call
-      const assistantResponse = await firstBot(currentInput, isTrue, messages, architectureData);
+      const assistantResponse = await firstBot(currentInput, isTrue, messages, architectureData, parsedClassifier.reason);
 
       // Create assistant message with the response
       const assistantMessage: ChatMessage = {
