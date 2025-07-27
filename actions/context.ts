@@ -7,39 +7,127 @@ import { ChatOpenAI } from "@langchain/openai";
 export async function numberOfPhases(conversationHistory: any[] = [], architectureData: any) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
-    const template = `You are a software development project manager with expertise in web application development using Next.js and Node.js.
-
-Your task is to analyze a project and determine the optimal number of development phases needed for completion.
+    const template = `
+You are an expert software development project manager specializing in breaking down projects into optimal development phases. Your task is to analyze a project's architecture and determine the appropriate number of phases (1-10) with meaningful phase names based on the actual components and their complexity.
 
 ## Input Data:
-Conversation History: {conversation_history}
-Architecture Details: {architecture_data}
+- Conversation History: {conversation_history}
+- Architecture Details: {architecture_data}
 
-## Analysis Criteria:
-Evaluate project complexity based on:
-- Frontend complexity (components, state management, UI/UX requirements)
-- Backend complexity (API endpoints, database operations, authentication)
-- Integration requirements (third-party services, external APIs)
-- Database design and data relationships
-- Testing requirements
-- Security considerations
+## Analysis Instructions:
+
+### Step 1: Analyze Architecture Components
+Examine each component in the architecture_data to understand:
+- **Component complexity**: Simple UI vs complex blockchain integration
+- **Dependencies**: Which components depend on others
+- **Technology stack**: Familiar vs cutting-edge technologies
+- **Integration requirements**: External APIs, third-party services
+- **Development sequence**: Logical order of implementation
+
+### Step 2: Complexity Scoring (1-10 scale)
+
+**Score factors:**
+- **Component Count & Diversity** (0-2 points): More diverse components = higher complexity
+- **Technology Complexity** (0-2 points): Blockchain, AI, real-time features = higher scores
+- **Integration Complexity** (0-2 points): Multiple external services, complex data flows
+- **Infrastructure Requirements** (0-2 points): Advanced deployment, monitoring, security
+- **Development Dependencies** (0-2 points): Sequential vs parallel development needs
+
+**Scoring Guidelines:**
+- 1-2: Single component, basic functionality
+- 3-4: 2-3 components, standard web tech
+- 5-6: 4-5 components, some advanced features
+- 7-8: 6-7 components, multiple integrations, advanced tech
+- 9-10: 8+ components, cutting-edge tech, complex integrations
+
+### Step 3: Phase Generation Strategy
+
+**Analyze the architecture to identify natural phases based on:**
+
+1. **Foundation Requirements**: What core infrastructure needs to be built first?
+2. **Functional Groupings**: Group components that serve the same business function
+3. **Technical Dependencies**: Components that must be built together (not separately)
+4. **Integration Logical Units**: Combine external services with the features that use them
+5. **Development Efficiency**: Avoid splitting tightly coupled functionality
+
+**Critical Rules for Logical Phases:**
+- **Never separate a feature from its required integration**
+- **Group interdependent components** in the same phase
+- **Combine backend APIs with their external service integrations**
+- **Don't create phases for components that can't function independently**
+- **Merge phases that would be developed by the same developer simultaneously**
+
+### Step 4: Phase Naming Guidelines
+
+Create meaningful phase names that reflect:
+- **Complete functional deliverable** (not just technical components)
+- **End-to-end feature implementation** including all required integrations
+- **Business value or user capability** delivered in that phase
+- **Logical milestone** that can be tested and demonstrated
+
+**Phase Naming Patterns:**
+- "Core Feature + Required Integration" (e.g., "Text Summarization with AI Processing")
+- "Complete User Flow" (e.g., "User Registration & Authentication System") 
+- "End-to-End Functionality" (e.g., "Payment Processing & Transaction Management")
+- "Infrastructure + Foundation" (e.g., "Database Setup & API Foundation")
+
+**Avoid These Naming Patterns:**
+- Separating features from their required services
+- Generic names like "Backend Development" or "Frontend Development"  
+- Technical component names without business context
+- Names that suggest incomplete functionality
+
+### Step 5: Validation Rules
+
+Ensure phases follow logical development flow:
+- Early phases: Infrastructure, core backend, databases
+- Middle phases: Feature development, integrations
+- Later phases: Testing, optimization, deployment
+- Each phase should represent meaningful progress
+- Avoid phases that are too granular or too broad
 
 ## Output Requirements:
-- Return ONLY a single integer between 3 and 7
-- Base the number on overall project complexity:
-  * 3-4 phases: Simple projects (basic CRUD, minimal integrations)
-  * 5-6 phases: Medium complexity (multiple features, some integrations)
-  * 7 phases: High complexity (advanced features, multiple integrations, complex architecture)
 
-## Response Format:
-Return only the number. No explanations, no additional text, no formatting.
+Return ONLY a valid JSON object in this exact format:
 
-Example outputs:
-4
-6
-5
 
-Now analyze the provided project data and return the appropriate number of phases.`
+{{
+  "numberOfPhases": "X",
+  "phases": {{
+    "Phase 1": "Phase name describing the goal",
+    "Phase 2": "Phase name describing the goal",
+    "Phase X": "Phase name describing the goal"
+  }}
+}}
+
+
+## Analysis Process:
+
+1. **Read and understand** all components in architecture_data
+2. **Identify tightly coupled components** that must be developed together
+3. **Group functional units** - don't separate features from their required integrations
+4. **Map technical dependencies** to ensure logical development sequence  
+5. **Determine complexity score** based on overall system complexity
+6. **Create consolidated phases** that represent complete, testable functionality
+7. **Generate meaningful phase names** that reflect the complete feature being delivered
+8. **Validate logical coherence** - ensure each phase delivers working functionality
+
+**Phase Consolidation Rules:**
+- If Component A cannot work without Component B, they belong in the same phase
+- External service integrations should be grouped with the features that use them
+- API endpoints should be grouped with their frontend implementations when tightly coupled
+- Don't create separate phases for incremental additions to the same core functionality
+
+**Examples of Good Phase Logic:**
+- ✅ "Text Summarization with OpenAI Integration" (combines feature + required service)
+- ✅ "User Authentication & Profile Management" (complete user system)
+- ✅ "Payment Processing & Stripe Integration" (complete payment flow)
+- ❌ "Backend API Development" + "OpenAI Integration" (artificially separated)
+- ❌ "Frontend UI" + "Backend Integration" (should be feature-based grouping)
+
+**Important**: Do not use generic templates. Generate phases specifically based on the actual architecture components, their technologies, connections, and purposes as described in the architecture_data.
+
+Now analyze the provided project data and return the appropriate JSON response.`
 
 const prompt = PromptTemplate.fromTemplate(template);
 const chain = prompt.pipe(llm).pipe(new StringOutputParser());
@@ -315,6 +403,165 @@ Generate the complete PLAN.md content now.`
     ).join('\n');
     const result = await chain.invoke({conversation_history: formattedHistory, projectArchitecture: JSON.stringify(architectureData), numberOfPhases: numOfPhase});
     return result;
+}
+
+export async function generatePRD(conversationHistory: any[] = [], architectureData: any, numOfPhase: string, phaseDetails: string) {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const llm = new ChatOpenAI({openAIApiKey: openaiKey})
+    const template = `
+    # Product Requirements Document (PRD) Generation Agent
+
+You are an expert product manager specializing in creating comprehensive Product Requirements Documents for software products. Your task is to analyze the project conversation, architecture, and development phases to generate a detailed, professional PRD that serves as the complete specification for developers and stakeholders.
+
+## Input Data:
+- **Conversation History:** {conversation_history}
+- **Architecture Details:** {architecture_data}
+- **Number of Phases:** {numberOfPhases}
+- **Phase Details:** {phaseDetails}
+
+## Analysis Instructions:
+
+### Step 1: Extract Core Product Information
+From the conversation history and architecture, identify:
+- **Product concept and main purpose**
+- **Target users and their primary needs**
+- **Core value proposition**
+- **Key business objectives**
+- **Technical platform (web app/mobile app)**
+- **Essential vs nice-to-have features**
+
+### Step 2: Architecture Analysis
+From the architecture_data, understand:
+- **Technology stack and components**
+- **System complexity and integrations**
+- **Data flow and storage requirements**
+- **Third-party service dependencies**
+- **Security and performance considerations**
+
+### Step 3: Phase Integration
+Use the numberOfPhases and phaseDetails to:
+- **Map features to development phases**
+- **Create realistic timeline estimates**
+- **Identify phase dependencies and milestones**
+- **Structure feature priorities based on phase sequence**
+
+## PRD Generation Guidelines:
+
+### Content Quality Standards:
+- **Be Specific:** Avoid generic placeholders - use actual project details
+- **Be Actionable:** Every requirement should be implementable
+- **Be Measurable:** Include specific acceptance criteria and success metrics
+- **Be Complete:** Cover all aspects needed for development
+- **Be Realistic:** Align with the project's actual scope and complexity
+
+### Platform-Specific Considerations:
+**For Web Applications:**
+- Focus on browser compatibility, responsive design, and web performance
+- Include SEO considerations if applicable
+- Address Progressive Web App features if relevant
+
+**For Mobile Applications:**
+- Specify iOS/Android requirements and versions
+- Include app store guidelines and approval processes
+- Address offline functionality and device-specific features
+
+### Technical Accuracy:
+- **Technology Stack:** Use actual technologies from architecture_data
+- **Integration Details:** Reference specific APIs and services mentioned
+- **Performance Requirements:** Set realistic metrics based on app complexity
+- **Security Requirements:** Match the sensitivity of data being handled
+
+## PRD Structure Requirements:
+
+Follow the provided template structure exactly, but fill with project-specific content:
+
+1. **Document Information:** Use actual product name and current date
+2. **Executive Summary:** Write compelling, specific overview of the product
+3. **MVP Vision & Strategy:** Define clear problem statement and solution
+4. **User Assumptions:** Create realistic user profiles based on product concept
+5. **Platform Specifications:** Detailed technical requirements for chosen platform
+6. **MVP Functional Requirements:** Comprehensive feature specifications with acceptance criteria
+7. **Technical Architecture:** Detailed system design based on architecture_data
+8. **User Experience & Design:** Specific UX/UI requirements for the product type
+9. **Analytics & Success Metrics:** Measurable KPIs for product validation
+10. **Timeline & Milestones:** Development schedule with exact phases from phaseDetails, including status tracking
+
+## Critical Timeline Requirements:
+
+### MVP Development Phases Table:
+**MUST include this exact table structure:**
+
+| Phase  | Key Deliverables | Success Criteria | Status |
+|-------|----------|------------------|------------------|--------|
+| [Use exact phase names from phaseDetails] | [Specific deliverables] | [Measurable criteria] | NOT STARTED |
+
+
+**Requirements:**
+- **Use exact phase names** from the phaseDetails input (e.g., "Phase 1: Project Foundation & Backend Setup")
+- **Include Status column** with "NOT STARTED" for all phases initially  
+- **Key Deliverables** must be specific, actionable outcomes for each phase
+- **Success Criteria** must be measurable and testable
+- **Cover all phases** provided in numberOfPhases and phaseDetails
+
+### Section Critical MVP Milestones:
+- Create milestone dates based on phase durations
+- Include phase completion milestones
+- Use actual dates (calculate from current date + phase durations)
+
+### Section Dependencies & Assumptions:
+- Reference specific architecture components that create dependencies
+- Include third-party service dependencies from architecture_data
+- Mention technical risks based on chosen technology stack
+
+### Feature Documentation:
+- **Write detailed user stories** for each core feature
+- **Include specific acceptance criteria** that developers can implement
+- **Map features to development phases** for logical progression
+- **Prioritize features** as Must-Have, Nice-to-Have, or Out-of-Scope
+
+### Technical Specifications:
+- **Use actual technology names** from the architecture
+- **Include specific integration requirements** for third-party services
+- **Define data models and relationships** based on app functionality
+- **Specify performance and security requirements** appropriate for the product
+
+### Timeline Integration:
+- **Use exact phase names and count** from the provided phaseDetails
+- **Create realistic duration estimates** based on feature complexity (typically 1-4 weeks per phase)
+- **Define clear milestones and deliverables** for each phase
+- **Include "NOT STARTED" status** for all phases initially
+- **Map specific features** from architecture to appropriate phases
+- **Include dependencies and risk factors** that could impact timeline
+
+## Output Requirements:
+
+Generate a complete PRD document that:
+- **Follows the exact template structure** provided
+- **Contains no placeholder text** - all sections filled with project-specific content
+- **Is immediately actionable** for developers and stakeholders
+- **Accurately reflects** the conversation history and technical architecture
+- **Integrates seamlessly** with the defined development phases
+- **Provides clear guidance** for successful product development
+
+## Quality Validation:
+
+Before generating the PRD, ensure:
+- All technical details match the architecture_data
+- User stories align with the product concept from conversation
+- Timeline and phases are logically sequenced
+- Success metrics are measurable and relevant
+- Feature requirements are complete and testable
+- Platform specifications match the intended deployment
+
+Generate a comprehensive, professional PRD that serves as the definitive guide for building this specific product, incorporating all provided context and technical details.`
+    const prompt = PromptTemplate.fromTemplate(template);
+    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const formattedHistory = conversationHistory.map(msg => 
+        `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+    ).join('\n');
+    const result = await chain.invoke({conversation_history: formattedHistory, architecture_data: JSON.stringify(architectureData), numberOfPhases: numOfPhase, phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails});
+    return result;
+    
 }
 
 export async function generateNthPhase(architectureData: any, plan: string, numOfPhase: string) {

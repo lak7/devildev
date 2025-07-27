@@ -11,11 +11,28 @@ interface FileNode {
   type: "file" | "folder"
   content?: string
   children?: Record<string, FileNode>
-}
+} 
 
-export default function FileExplorer({projectRules, plan, phaseCount, phases}: {projectRules: string, plan: string, phaseCount: number, phases: string[]}) {
+export default function FileExplorer({projectRules, plan, phaseCount, phases, prd}: {projectRules: string, plan: string, phaseCount: number, phases: string[], prd: string}) {
   // Sample file structure with content
   const fileStructure: Record<string, FileNode> = { 
+    Docs: {
+      type: "folder" as const,
+      children: {
+        "Bug_Tracking.md": {
+          type: "file" as const,
+          content: "Bug Tracking System",
+        },
+        "Project_Structure.md": {
+          type: "file" as const,
+          content: "Project Structure",
+        },
+        "UI_UX.md": {
+          type: "file" as const,
+          content: "UI/UX and User Flow Documentation",
+        },
+      },
+    },
     Phases: { 
       type: "folder" as const,
       children: {
@@ -34,9 +51,13 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases}: {
           type: "file" as const,
           content: projectRules,
         },
-        "PLAN.md": {
+    "PLAN.md": {
           type: "file" as const,
           content: plan,
+        },
+    "PRD.md": {
+          type: "file" as const,
+          content: prd,
         },
   }
   const [selectedFile, setSelectedFile] = React.useState<string>("PROJECT_RULES.md")
@@ -44,43 +65,33 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases}: {
  
   React.useEffect(() => {
     // Get content for selected file
-    console.log("Navigating to file:", selectedFile)
     const pathParts = selectedFile.split("/")
     let current: any = fileStructure
 
     for (let i = 0; i < pathParts.length; i++) {
       const part = pathParts[i]
-      console.log(`Looking for part "${part}" in:`, Object.keys(current))
       
       if (current[part]) {
         current = current[part]
-        console.log(`Found "${part}":`, current)
         
         // If this is not the last part and current is a folder, navigate to its children
         if (i < pathParts.length - 1 && current.type === "folder" && current.children) {
           current = current.children
-          console.log(`Navigating to children of "${part}":`, Object.keys(current))
         }
       } else {
         // If we can't find the part, reset content and break
-        console.log(`Could not find part "${part}"`)
         setSelectedContent("")
         return
       }
     }
 
     if (current?.content) {
-      console.log("Setting content for:", selectedFile)
       setSelectedContent(current.content)
     } else {
-      console.log("No content found for:", selectedFile)
       setSelectedContent("")
     }
   }, [selectedFile, fileStructure])
 
-  React.useEffect(() => {
-    console.log("FROM FILE EXPLORER: ", phases);
-  }, [phases]);
 
   // Function to add files to zip recursively
   const addFilesToZip = (zip: any, node: Record<string, FileNode>, currentPath = "") => {

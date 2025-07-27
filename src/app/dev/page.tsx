@@ -12,7 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../actions/architecture'; 
 import FileExplorer from '@/components/core/ContextDocs';
-import { generateNthPhase, generatePlan, generateProjectRules, numberOfPhases } from '../../../actions/context';
+import { generateNthPhase, generatePlan, generateProjectRules, numberOfPhases, generatePRD } from '../../../actions/context';
 
 export interface ChatMessage { 
   id: string;
@@ -46,7 +46,8 @@ const DevPage = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [projectRules, setProjectRules] = useState<string>("");
   const [plan, setPlan] = useState<string>("");
-  const [phaseCount, setPhaseCount] = useState<number>(0);
+  const [prd, setPrd] = useState<string>("");
+  const [phaseCount, setPhaseCount] = useState<any>();
   const [phases, setPhase] = useState<string[]>([]);
   
   // Component position persistence
@@ -237,25 +238,45 @@ const DevPage = () => {
   const handleGenerateDocs = async () => {
     setIsLoading(true);
     setActiveTab('context');
-    const numOfPhase = await numberOfPhases(messages, architectureData);
-    setPhaseCount(Number(numOfPhase));
-    const docs = await generateProjectRules(messages, architectureData); 
-    setProjectRules(docs);
+    const numOfPhase = await numberOfPhases(messages, architectureData); 
+    let cleanedNumOfPhase = numOfPhase;
+      if (typeof numOfPhase === 'string') {
+        // Remove markdown code blocks (```json...``` or ```...```)
+        cleanedNumOfPhase = numOfPhase
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/\s*```\s*$/, '')
+          .trim();
+      }
+      
+      // Parse the JSON result
+      const parsedPhasesDetails = typeof cleanedNumOfPhase === 'string' 
+        ? JSON.parse(cleanedNumOfPhase) 
+        : cleanedNumOfPhase;
+    const finalNumberOfPhases = Number(parsedPhasesDetails.numberOfPhases);
+    alert(finalNumberOfPhases);
+    setPhaseCount(finalNumberOfPhases);
+    alert(phaseCount);
+    console.log("Phases Details: ", parsedPhasesDetails);
+    // const docs = await generateProjectRules(messages, architectureData); 
+    // setProjectRules(docs);
     // alert("Rules Generated");
     
     // alert("Phase Count Generated");
-    const plan = await generatePlan(messages, architectureData, numOfPhase);
-    setPlan(plan);
+    // const plan = await generatePlan(messages, architectureData, parsedPhasesDetails.numberOfPhases);
+    // setPlan(plan);
+    const prd = await generatePRD(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases);
+    setPrd(prd);
     // alert("Plan Generated");
 
     const allPhases: string[] = [];
 
 
-    for (let i = 1; i <= Number(numOfPhase); i++) {
-      const nthPhase = await generateNthPhase(architectureData, plan, i.toString());
-      console.log(nthPhase);
-      allPhases.push(nthPhase);
-    }
+    // for (let i = 1; i <= Number(parsedPhasesDetails.numberOfPhases); i++) {
+    //   const nthPhase = await generateNthPhase(architectureData, plan, i.toString());
+    //   console.log(nthPhase);
+    //   allPhases.push(nthPhase);
+    // }
 
 
     setPhase(allPhases);
@@ -635,7 +656,7 @@ const DevPage = () => {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                Context Template
+                Contextual Docs
               </button>
             </div>
             
@@ -661,7 +682,7 @@ const DevPage = () => {
                 onPositionsChange={setComponentPositions}
               />
             ) : ( 
-              <FileExplorer projectRules={projectRules} plan={plan} phaseCount={phaseCount} phases={phases} /> 
+              <FileExplorer projectRules={projectRules} plan={plan} phaseCount={phaseCount} phases={phases} prd={prd} /> 
             )}
           </div>
         </div>
