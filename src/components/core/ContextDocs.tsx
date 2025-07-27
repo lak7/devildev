@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, File, Folder, Copy, Download, ExternalLink } from "lucide-react"
+import { ChevronRight, File, Folder, Copy, Download, ExternalLink, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -62,6 +62,7 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases, pr
   }
   const [selectedFile, setSelectedFile] = React.useState<string>("PROJECT_RULES.md")
   const [selectedContent, setSelectedContent] = React.useState<string>("")
+  const [isCopied, setIsCopied] = React.useState<boolean>(false)
  
   React.useEffect(() => {
     // Get content for selected file
@@ -109,6 +110,21 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases, pr
         zip.file(fullPath, item.content)
       }
     })
+  }
+
+  // Function to handle copy
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(selectedContent)
+      setIsCopied(true)
+      
+      // Reset the copy state after 1.5 seconds
+      setTimeout(() => {
+        setIsCopied(false)
+      }, 1500)
+    } catch (error) {
+      console.error("Failed to copy content:", error)
+    }
   }
 
   // Function to handle download
@@ -193,8 +209,13 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases, pr
         ))}
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200">
-          <Copy className="w-4 h-4" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200"
+          onClick={handleCopy}
+        >
+          {isCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
         </Button>
         <Button 
           variant="ghost" 
