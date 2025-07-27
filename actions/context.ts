@@ -596,115 +596,677 @@ Generate a comprehensive, professional PRD that serves as the definitive guide f
 export async function generateNthPhase(architectureData: any, plan: string, numOfPhase: string, phaseDetails: string, prd: string) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
-    const template = `You are an expert software development lead creating actionable todo lists for AI coding agents. Generate a focused phase execution plan that an AI can follow step-by-step.
+    const template = `# Phase Execution Plan Generator
 
-**INPUTS:**
-- Project Plan: {planContent}
-- Project Architecture: {architectureData}  
-- Target Phase: {phaseNumber}
-- Phase Details: {phaseDetails}
-- PRD: {prd}
+You are an expert software development lead creating actionable execution plans for AI coding agents. Generate a focused phase execution document with a comprehensive todo list tailored specifically to the current phase requirements.
 
-**OUTPUT FORMAT:**
+## INPUT DATA:
+- **Project Plan:** {planContent}
+- **Project Architecture:** {architectureData}  
+- **Target Phase:** {phaseNumber}
+- **Phase Details:** {phaseDetails}
+- **PRD:** {prd}
+
+## ANALYSIS INSTRUCTIONS:
+
+### Step 1: Phase Analysis
+- Extract the specific objectives and scope for this phase from phaseDetails
+- Identify which architecture components are being built in this phase
+- Understand what features/functionality this phase delivers
+- Determine the platform (web app/mobile app) and relevant technologies
+
+### Step 2: Task Generation Strategy
+- Break down the phase objective into specific, actionable implementation tasks
+- Generate tasks based on the actual technologies and components in architectureData
+- Ensure tasks are appropriate for the platform (web/mobile) and tech stack
+- Order tasks logically based on dependencies and development workflow
+- Make each task granular enough for AI agents to execute independently
+
+### Step 3: Platform and Technology Adaptation
+- Generate tasks specific to the chosen platform and technology stack
+- Include appropriate file paths, naming conventions, and patterns for the tech stack
+- Reference actual components, APIs, and integrations from the architecture
+- Ensure tasks reflect real development work needed for this specific phase
+
+## OUTPUT FORMAT:
+
+
+---
+# PHASE {phaseNumber}: [Extract exact phase name from phaseDetails]
+
+**STATUS:** NOT_STARTED
 
 ---
 
-# PHASE {phaseNumber} EXECUTION
+## 🎯 Phase Objective
+[Extract the specific goal of this phase from phaseDetails - what exactly needs to be accomplished]
 
-## 🎯 Phase Goal
-[Extract the specific goal from the project plan for this phase - 2-3 sentences max]
+## 🎁 Key Deliverables
+[Based on phase objective and architecture components, list 3-6 specific things that will be working after this phase:]
+- [Specific feature/component that will be functional]
+- [Specific API/service that will be operational]  
+- [Specific user capability that will be enabled]
+- [Specific integration that will be completed]
 
-## 🎁 Deliverables
-[List 3-5 specific, measurable outcomes that will exist after this phase:]
-- [Specific feature/component that will work]
-- [Specific API/endpoint that will be functional]
-- [Specific file/directory that will be created]
-
-## 📋 Prerequisites  
+## 📋 Prerequisites
 **Must be completed before starting:**
-- [ ] [Specific prerequisite from previous phase]
-- [ ] [Required setup or dependency]
-- [ ] [Environment configuration needed]
+- [ ] [Specific prerequisite from previous phase or setup requirement]
+- [ ] [Required dependency or configuration needed]
 
-## ✅ Implementation Todo List
+## ✅ Implementation Tasks
 
-### Setup & Configuration
-- [ ] [Specific config file creation with exact path]
-- [ ] [Package installation with exact command]
-- [ ] [Environment variable setup with TypeScript types]
+[Generate 8-20 specific, actionable tasks based on the phase requirements. Each task should:]
+[- Start with - [ ] (unchecked)]
+[- Include exact file paths appropriate for the technology stack]
+[- Reference specific technologies from architectureData]
+[- Be granular enough for AI agent execution]
+[- Follow logical development sequence]
+[- Include proper typing/interface specifications for typed languages]
 
-### Database & Schema
-- [ ] [Create specific table/model with exact fields and TypeScript interface]
-- [ ] [Database migration with exact file path and TypeScript types]
-- [ ] [Seed data creation with TypeScript type definitions]
-
-### Backend Development  
-- [ ] [Create specific API endpoint: POST /api/users with TypeScript request/response types]
-- [ ] [Implement specific function in exact file path with TypeScript signature]
-- [ ] [Add authentication middleware to specific routes with TypeScript types]
-
-### Frontend Development
-- [ ] [Create specific React component: src/components/UserProfile.tsx with TypeScript props]
-- [ ] [Implement specific page: pages/dashboard.tsx with TypeScript and Next.js patterns]
-- [ ] [Add specific state management with TypeScript interfaces]
-
-### Integration & Testing
-- [ ] [Write unit test for specific component with TypeScript test types]
-- [ ] [Create integration test for specific API with TypeScript mocking]
-- [ ] [Test specific user flow end-to-end with TypeScript utilities]
-
-### Styling & UI
-- [ ] [Style specific component with Tailwind classes]
-- [ ] [Implement responsive design for specific pages]
-- [ ] [Add specific animations/interactions]
-
-### Documentation
-- [ ] [Update README with specific setup instructions including TypeScript]
-- [ ] [Document API endpoints with TypeScript interface examples]
-- [ ] [Add JSDoc comments to specific functions with TypeScript annotations]
+- [ ] [Specific task with exact file path and technology details]
+- [ ] [Another specific task with implementation details]
+- [ ] [Continue with all necessary tasks for this phase...]
 
 ## 🏁 Phase Completion Criteria
 **This phase is complete when:**
-- [ ] All todo items above are checked off
-- [ ] TypeScript compiles with zero errors
-- [ ] All tests pass with proper TypeScript coverage
-- [ ] [Specific functional requirement works (e.g., "User can login and see dashboard")]
-- [ ] [Specific technical requirement met (e.g., "API returns proper JSON responses")]
+- [ ] All implementation tasks above are checked off
+- [ ] [Specific functional requirement works based on phase objective]
+- [ ] [Specific technical requirement is met based on architecture]
+- [ ] [Specific validation criteria based on deliverables]
 
 ---
+**COMPLETION STATUS:** NOT_STARTED
+---
+## TASK GENERATION REQUIREMENTS:
 
-**GENERATION INSTRUCTIONS:**
+### Task Quality Standards:
+- **Technology Specific:** Use actual technologies, frameworks, and tools from architectureData
+- **Platform Appropriate:** Generate web-specific tasks for web apps, mobile-specific for mobile apps
+- **Phase Focused:** Only include tasks necessary to complete THIS specific phase
+- **Actionable:** Each task should be a specific action an AI can take
+- **Granular:** Tasks should be completable in 15-30 minutes each
+- **Sequential:** Order tasks logically based on development dependencies
 
-1. **Todo Specificity:** Each todo must include:
-   - Exact file paths (e.g., ""src/components/UserProfile.tsx"")
-   - Specific function/component names with TypeScript signatures
-   - Exact API endpoints with HTTP methods and TypeScript types
-   - Specific technologies to use (Next.js, TypeScript, Tailwind, etc.)
+### Task Content Requirements:
+- **Exact File Paths:** Include precise file locations appropriate for the project structure
+- **Specific Function/Component Names:** Reference actual names that will be created
+- **Technology Integration:** Include framework-specific patterns and best practices
+- **Type Specifications:** For typed languages, include interface/type requirements
+- **API Specifications:** Include exact endpoint paths and method details where relevant
 
-2. **Todo Formatting:** 
-   - ALL todos must start with - [ ] (unchecked)
-   - Use imperative verbs (Create, Implement, Add, Write, Style)
-   - Include TypeScript specifications for all code tasks
-   - One specific action per todo item
+### Avoid These Patterns:
+- Generic category headers like "Setup & Configuration" or "Frontend Development"
+- Hardcoded quality standards that may not apply to all projects
+- Platform assumptions (don't assume web if it's mobile, or vice versa)
+- Technology assumptions not present in the architectureData
+- Tasks unrelated to the specific phase objective
 
-3. **Todo Count:** Generate 5-15 todos based on phase complexity
+## GENERATION PROCESS:
 
-4. **Logical Ordering:** 
-   - Setup tasks first
-   - Database/backend before frontend
-   - Core functionality before styling
-   - Testing after implementation
+1. **Read phaseDetails** to understand exactly what this phase should accomplish
+2. **Analyze architectureData** to identify relevant components and technologies
+3. **Determine platform type** (web/mobile) and generate appropriate tasks
+4. **Create specific tasks** that directly contribute to the phase objective
+5. **Order tasks logically** following natural development workflow
+6. **Validate task relevance** - ensure every task is necessary for this phase
 
-5. **TypeScript Focus:** Every code-related todo must specify TypeScript requirements
-
-6. **AI-Friendly Language:** 
-   - Use exact technical terms
-   - Reference specific Next.js patterns
-   - Include implementation hints when needed
-
-Generate the complete phase execution plan now.`
+Generate the complete phase execution plan now, ensuring all tasks are specific to this phase, platform, and technology stack.`
     const prompt = PromptTemplate.fromTemplate(template);
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
     const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, phaseNumber: numOfPhase, phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails, prd: prd});
     return result;
+}
+
+export async function generateProjectStructure(architectureData: any, plan: string, prd: string) {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const llm = new ChatOpenAI({openAIApiKey: openaiKey})
+    const template = `
+    # Project Structure Document Generator
+
+You are an expert software architect specializing in creating comprehensive project structure documentation. Your task is to analyze the project requirements, architecture, and development plan to generate a detailed Project_Structure.md that defines the complete file organization, folder hierarchy, and structural guidelines for the development team.
+
+## INPUT DATA:
+- **Project Plan:** {planContent}
+- **Project Architecture:** {architectureData}
+- **PRD:** {prd}
+
+## ANALYSIS INSTRUCTIONS:
+
+### Step 1: Platform & Technology Analysis
+From the inputs, identify:
+- **Platform type**: Web application, mobile app (iOS/Android/React Native), or hybrid
+- **Technology stack**: Primary frameworks, languages, and tools from architectureData
+- **Project complexity**: Number of components, integrations, and features
+- **Development approach**: Monorepo, microservices, or traditional structure
+- **Build tools and configuration requirements**
+
+### Step 2: Architecture-Driven Structure Design
+Based on architectureData components:
+- **Map components to folder structure**: Each architectural component should have a logical place
+- **Plan integration points**: Where external services and APIs will be organized
+- **Design data flow organization**: How models, types, and data structures will be arranged
+- **Establish component relationships**: Parent-child and sibling component organization
+
+### Step 3: Development Workflow Integration
+From planContent, understand:
+- **Phase-based development needs**: Structure that supports incremental development
+- **Team collaboration requirements**: Clear separation of concerns for multiple developers
+- **Testing and quality assurance structure**: Where tests, docs, and quality tools live
+- **Deployment and build artifact organization**
+
+## PROJECT STRUCTURE REQUIREMENTS:
+
+### Generate Complete Folder Hierarchy
+Create a comprehensive folder structure that includes:
+- **Root level organization** with clear purpose for each top-level directory
+- **Source code organization** appropriate for the chosen technology stack
+- **Component and feature organization** that matches the architectural design
+- **Asset and resource management** for styles, images, configs, and static files
+- **Documentation structure** for all project documentation
+- **Testing organization** for unit, integration, and end-to-end tests
+- **Build and deployment structure** for configuration and deployment files
+
+### Technology-Specific Adaptations
+**For Web Applications:**
+- Modern web framework structure (Next.js, React, Vue, Angular, etc.)
+- Public/static asset organization
+- API routes and server-side code structure
+- Component library and design system organization
+
+**For Mobile Applications:**
+- Platform-specific folders (iOS/Android if native, or unified if React Native/Flutter)
+- Asset organization for different screen densities
+- Platform-specific configuration and build files
+- Component and screen organization
+
+**For Full-Stack Applications:**
+- Clear separation between frontend and backend (if applicable)
+- Shared types and utilities organization
+- Database schema and migration structure
+- API and service layer organization
+
+## OUTPUT FORMAT:
+
+***markdown
+# Project Structure Documentation
+
+## Overview
+[Brief description of the project structure philosophy and organization principles based on the project type and architecture]
+
+## Root Directory Structure
+
+
+[PROJECT_NAME]/
+├── [Generate complete folder hierarchy with explanations]
+│   ├── [Subfolder with purpose explanation]
+│   │   ├── [Files and nested structure]
+│   │   └── [More specific organization]
+│   ├── [Another major section]
+│   └── [Continue with full structure]
+├── [Configuration files at root level]
+├── [Documentation and project files]
+└── [Build and deployment files]
+
+
+## Directory Descriptions
+
+### [Major Directory 1]
+**Purpose:** [What this directory contains and why]
+**Contents:** [What types of files go here]
+**Naming Convention:** [How files should be named in this directory]
+**Usage Guidelines:** [When and how to use this directory]
+
+### [Major Directory 2]
+[Continue for all major directories...]
+
+## File Organization Guidelines
+
+### Component Organization
+[Specific rules for organizing components based on the architecture]
+- [Guideline based on project type]
+- [Another guideline specific to the tech stack]
+- [Rules for component co-location]
+
+### Feature-Based Organization
+[How features should be structured based on the PRD requirements]
+- [Feature folder structure]
+- [Shared vs feature-specific code organization]
+- [Cross-feature dependency management]
+
+### Asset Management
+[How to organize static assets, styles, and resources]
+- [Image and media file organization]
+- [Stylesheet and design system structure]
+- [Configuration and environment file placement]
+
+## Naming Conventions
+
+### Files
+- [Specific naming rules for different file types]
+- [Case conventions (camelCase, kebab-case, PascalCase)]
+- [Extension and suffix rules]
+
+### Folders
+- [Directory naming standards]
+- [Hierarchy and nesting rules]
+- [Special folder naming conventions]
+
+### Components/Modules
+- [Component naming based on the technology stack]
+- [Export and import naming standards]
+- [Interface and type naming conventions]
+
+## Technology-Specific Guidelines
+
+### [Primary Technology/Framework]
+[Specific guidelines for the main technology stack]
+- [Framework-specific folder requirements]
+- [Configuration file placement]
+- [Best practices for the chosen stack]
+
+### Dependencies & Package Management
+- [Where to place package configuration files]
+- [How to organize installed dependencies]
+- [Custom package and module organization]
+
+### Build & Deployment
+- [Build artifact organization]
+- [Configuration file structure]
+- [Environment-specific file placement]
+
+## Development Workflow Integration
+
+### Phase-Based Development
+[How the structure supports the development phases from planContent]
+- [Where phase-specific files should be placed]
+- [How to organize work-in-progress vs completed features]
+
+### Testing Structure
+- [Unit test placement and organization]
+- [Integration test structure]
+- [End-to-end test organization]
+- [Test utility and helper organization]
+
+### Documentation Organization
+- [Where different types of documentation live]
+- [API documentation structure]
+- [Component documentation placement]
+
+## Critical Rules
+
+### File Creation Guidelines
+- **Always check this structure** before creating new files or folders
+- **Follow naming conventions** consistently throughout the project
+- **Maintain feature isolation** - keep related files together
+- **Separate concerns** - don't mix different types of code in the same directory
+
+### Folder Management
+- **Don't create new top-level directories** without updating this documentation
+- **Group related functionality** in appropriate subdirectories
+- **Keep flat structures** where possible to avoid deep nesting
+- **Use descriptive names** that clearly indicate purpose
+
+### Maintenance Guidelines
+- **Update this document** when adding new major features or changing structure
+- **Refactor organization** if folders become too large or unwieldy
+- **Document exceptions** if deviating from standard structure for specific reasons
+- **Review structure** regularly to ensure it still serves the project needs
+
+## Common Patterns
+
+### Import/Export Patterns
+[How to structure imports and exports based on the folder organization]
+
+### Code Co-location
+[When to keep related files together vs when to separate them]
+
+### Shared vs Feature-Specific
+[Guidelines for deciding where shared code should live]
+
+---
+
+*This structure is designed to support the project architecture and development workflow. Always consult this document before making structural changes.*
+
+
+## GENERATION REQUIREMENTS:
+
+### Structure Accuracy:
+- **Technology Appropriate**: Use folder structures that match the actual technology stack
+- **Architecture Aligned**: Ensure structure supports all components in architectureData
+- **Scalable Design**: Structure should grow with the project without major reorganization
+- **Team Friendly**: Clear separation that allows multiple developers to work simultaneously
+
+### Documentation Quality:
+- **Be Specific**: Include exact folder names and file placement rules
+- **Be Comprehensive**: Cover all aspects of project organization
+- **Be Actionable**: Provide clear guidelines that developers can follow immediately
+- **Be Maintainable**: Structure that can evolve with the project
+
+### Platform Considerations:
+- **Web Apps**: Include public assets, API routes, components, pages, and build files
+- **Mobile Apps**: Include platform-specific folders, assets for different densities, and build configurations
+- **Full-Stack**: Clear frontend/backend separation with shared utilities and types
+
+Generate a comprehensive Project_Structure.md that serves as the rough guide for all file and folder organization decisions throughout the development process.
+`
+ const prompt = PromptTemplate.fromTemplate(template);
+ const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+ const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, prd: prd});
+ return result;
+}
+
+export async function generateUIUX(architectureData: any, plan: string, prd: string) {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const llm = new ChatOpenAI({openAIApiKey: openaiKey})
+    const template = `
+# UI/UX Documentation Generator
+
+You are an expert UI/UX designer and user experience strategist specializing in creating comprehensive design documentation. Your task is to analyze the project requirements, architecture, and development plan to generate a detailed UI_UX.md that defines design standards, user flows, and interface guidelines for the development team.
+
+## INPUT DATA:
+- **Project Plan:** {planContent}
+- **Project Architecture:** {architectureData}
+- **PRD:** {prd}
+
+## ANALYSIS INSTRUCTIONS:
+
+### Step 1: User Experience Foundation Analysis
+From PRD and project context, identify:
+- **Target user personas** and their specific needs and behaviors
+- **Primary user goals** and core value propositions
+- **Platform characteristics** (web responsive, mobile native, hybrid)
+- **Accessibility requirements** and compliance standards
+- **Business objectives** that drive design decisions
+
+### Step 2: Architecture-Driven Interface Planning
+Based on architectureData components:
+- **User interface touchpoints** for each architectural component
+- **Data visualization needs** based on data flows and storage
+- **Integration interface requirements** for external services
+- **Real-time update patterns** for dynamic components
+- **Error handling and feedback mechanisms** for system interactions
+
+### Step 3: User Journey & Flow Mapping
+From PRD features and user stories:
+- **Core user workflows** that accomplish primary objectives
+- **Alternative paths** and edge cases users might encounter
+- **Cross-feature navigation patterns** and information architecture
+- **Onboarding and first-time user experience flows**
+- **Error recovery and help-seeking behaviors**
+
+## UI/UX DOCUMENTATION REQUIREMENTS:
+
+### Design System Foundation
+Create comprehensive guidelines covering:
+- **Visual design principles** aligned with project goals and user needs
+- **Component library specifications** with consistent patterns
+- **Responsive design standards** appropriate for the platform
+- **Accessibility compliance** meeting WCAG standards
+- **Performance considerations** for optimal user experience
+
+### Platform-Specific Considerations
+**For Web Applications:**
+- Responsive breakpoints and mobile-first design
+- Browser compatibility and progressive enhancement  
+- SEO and semantic markup requirements
+- Loading states and progressive disclosure patterns
+
+**For Mobile Applications:**
+- Platform design guidelines (iOS Human Interface/Material Design)
+- Touch target sizes and gesture interactions
+- Device-specific considerations (screen sizes, orientations)
+- Native vs custom component usage
+
+**For Cross-Platform:**
+- Consistency across platforms while respecting native patterns
+- Shared design tokens and component specifications
+- Platform-specific adaptations and exceptions
+
+## OUTPUT FORMAT:
+
+markdown
+# UI/UX Design Documentation
+
+## Design Philosophy & Principles
+
+### Core Design Principles
+[Extract and articulate design principles based on project goals and user needs]
+1. **[Principle Name]:** [Description of how it applies to this specific project]
+2. **[Another Principle]:** [Specific application and reasoning]
+3. **[Third Principle]:** [Context-specific explanation]
+
+### User-Centered Design Approach
+[Describe the approach based on target users from PRD]
+- **Primary User Focus:** [Specific user type and their key needs]
+- **Design Priorities:** [What matters most for these users]
+- **Success Metrics:** [How design success will be measured]
+
+## User Experience Architecture
+
+### Information Architecture
+[Organize content and features based on PRD requirements]
+
+[Generate site map or app structure showing:]
+├── [Primary Navigation Areas]
+│   ├── [Core Feature Sections]
+│   │   ├── [Sub-features and content]
+│   │   └── [Related functionality]
+│   └── [Secondary Features]
+├── [User Account Areas] 
+└── [Administrative/Settings Areas]
+
+
+### Navigation Patterns
+[Define navigation based on platform and architecture]
+- **Primary Navigation:** [Main navigation structure and behavior]
+- **Secondary Navigation:** [Contextual and sub-navigation patterns]
+- **Breadcrumbs:** [When and how to implement hierarchical navigation]
+- **Deep Linking:** [URL structure and direct access patterns]
+
+## Core User Flows
+
+### [Primary User Flow 1]
+**Objective:** [What the user wants to accomplish based on PRD user stories]
+**Entry Points:** [How users access this flow]
+**Steps:**
+1. [Specific screen/page] → [User action] → [System response]
+2. [Next screen/state] → [User interaction] → [Feedback/result]
+3. [Continue mapping complete flow...]
+
+**Success Criteria:** [How user knows they've succeeded]
+**Error Handling:** [What happens when things go wrong]
+**Alternative Paths:** [Other ways to accomplish the same goal]
+
+### [Primary User Flow 2]
+[Repeat for all core workflows identified in PRD]
+
+### [Additional Core Flows]
+[Continue for all essential user journeys]
+
+## Component Design System
+
+### UI Component Standards
+
+#### Buttons
+- **Primary Button:** [Style specs, when to use, examples]
+- **Secondary Button:** [Style specs, usage guidelines]
+- **Icon Buttons:** [Specifications and accessibility requirements]
+- **Button States:** [Hover, active, disabled, loading states]
+
+#### Forms & Inputs
+- **Text Inputs:** [Style, validation states, error handling]
+- **Select/Dropdown:** [Behavior, options presentation, search]
+- **Checkboxes & Radio:** [Visual design and interaction patterns]
+- **Form Validation:** [Real-time vs submit validation, error messaging]
+
+#### Data Display
+- **Tables:** [Responsive behavior, sorting, filtering, pagination]
+- **Cards:** [Content organization, actions, responsive behavior]
+- **Lists:** [Item structure, actions, empty states]
+- **Charts/Graphs:** [If data visualization is needed from architectureData]
+
+#### Navigation Components
+- **Header/Navigation Bar:** [Structure, responsive behavior, active states]
+- **Sidebar:** [When to use, collapse behavior, responsive treatment]
+- **Tabs:** [Style, behavior, responsive stacking]
+- **Pagination:** [Style and interaction patterns]
+
+#### Feedback Components
+- **Alerts/Notifications:** [Types, positioning, dismissal, persistence]
+- **Loading States:** [Spinners, skeletons, progress indicators]
+- **Empty States:** [When no content exists, helpful guidance]
+- **Error States:** [Error presentation and recovery options]
+
+### Layout & Grid System
+[Define layout standards based on platform]
+- **Grid System:** [Column structure, gutters, responsive behavior]
+- **Spacing Scale:** [Consistent spacing units and application]
+- **Container Widths:** [Maximum widths and responsive breakpoints]
+- **Content Areas:** [Main content, sidebars, headers, footers]
+
+## Visual Design Standards
+
+### Typography
+- **Font Family:** [Primary and fallback fonts]
+- **Type Scale:** [Heading hierarchy, body text, captions]
+- **Line Height & Spacing:** [Readable line heights and paragraph spacing]
+- **Font Weights:** [When to use different weights]
+
+### Color System
+- **Primary Colors:** [Brand colors with hex values and usage]
+- **Secondary Colors:** [Supporting palette and applications]
+- **Semantic Colors:** [Success, warning, error, info colors]
+- **Neutral Colors:** [Grays for text, borders, backgrounds]
+- **Accessibility:** [Contrast ratios and compliance notes]
+
+### Iconography
+- **Icon Style:** [Outline, filled, or mixed approach]
+- **Icon Sizes:** [Standard sizes and scaling rules]
+- **Icon Usage:** [When and how to use icons effectively]
+- **Custom vs Library:** [Whether using icon library or custom icons]
+
+## Responsive Design Guidelines
+
+### Breakpoint Strategy
+[Define breakpoints based on platform needs]
+- **Mobile:** [< XXXpx] - [Specific layout adaptations]
+- **Tablet:** [XXX-XXXpx] - [Layout changes and interactions]
+- **Desktop:** [> XXXpx] - [Full-featured layout]
+
+### Component Responsive Behavior
+[How key components adapt across screen sizes]
+- **Navigation:** [Mobile menu, desktop navigation differences]
+- **Data Tables:** [Scrolling, stacking, hiding columns]
+- **Forms:** [Layout changes, input sizing]
+- **Content Areas:** [Sidebar behavior, content reflow]
+
+## Accessibility Standards
+
+### Compliance Requirements
+- **WCAG Level:** [AA or AAA compliance target]
+- **Keyboard Navigation:** [Tab order, focus indicators, shortcuts]
+- **Screen Reader Support:** [ARIA labels, semantic HTML, alt text]
+- **Color Accessibility:** [Contrast requirements, color-blind considerations]
+
+### Inclusive Design Practices
+- **Motor Accessibility:** [Touch target sizes, click areas]
+- **Cognitive Load:** [Simple language, clear instructions, error prevention]
+- **Language Support:** [Internationalization considerations if applicable]
+
+## Interaction Design Patterns
+
+### Micro-Interactions
+[Based on architecture components and real-time features]
+- **Button Feedback:** [Hover, click, loading states]
+- **Form Interactions:** [Validation feedback, input focus]
+- **Data Loading:** [Progressive loading, skeleton screens]
+- **Status Updates:** [Real-time notifications, activity indicators]
+
+### Animation Guidelines
+- **Motion Principles:** [When and why to use animation]
+- **Duration & Easing:** [Timing functions and duration standards]
+- **Performance:** [Hardware acceleration, reduced motion preferences]
+
+## Platform-Specific Guidelines
+
+### [Web Application Specific]
+[Include only if it's a web app]
+- **Browser Support:** [Minimum supported versions]
+- **Progressive Enhancement:** [Baseline vs enhanced experiences]
+- **SEO Considerations:** [Meta tags, semantic structure]
+- **Performance Budget:** [Page load times, image optimization]
+
+### [Mobile Application Specific]
+[Include only if it's a mobile app]
+- **Platform Guidelines:** [iOS/Android specific patterns]
+- **Touch Interactions:** [Gestures, swipe patterns, long press]
+- **Device Features:** [Camera, location, notifications integration]
+- **App Store Guidelines:** [Screenshot requirements, icon specs]
+
+## Quality Assurance & Testing
+
+### Design QA Checklist
+- [ ] All components match design system specifications
+- [ ] Responsive behavior works across all breakpoints
+- [ ] Accessibility standards are met
+- [ ] Loading and error states are implemented
+- [ ] User flows work as designed
+- [ ] Cross-browser/platform compatibility verified
+
+### Usability Testing Guidelines
+- **Testing Scenarios:** [Key user tasks to validate]
+- **Success Metrics:** [How to measure usability success]
+- **Feedback Collection:** [Methods for gathering user feedback]
+
+## Implementation Guidelines
+
+### Developer Handoff Requirements
+- **Design Assets:** [What files/specifications developers need]
+- **Component Documentation:** [Props, states, usage examples]
+- **Responsive Specifications:** [Exact breakpoint behaviors]
+- **Animation Specifications:** [Timing, easing, triggers]
+
+### Quality Gates
+- **Design Review Checkpoints:** [When design review is required]
+- **Component Approval Process:** [How new components get approved]
+- **Accessibility Testing:** [Required accessibility checks]
+- **Cross-Platform Testing:** [Platform-specific validation requirements]
+
+---
+
+*This UI/UX documentation must be consulted before implementing any visual elements or user interactions. All design decisions should align with these established patterns and principles.*
+
+
+## GENERATION REQUIREMENTS:
+
+### User-Centered Focus:
+- **Extract actual user types** from PRD user assumptions and stories
+- **Map real user flows** based on PRD functional requirements
+- **Address specific user goals** mentioned in the project context
+- **Consider platform-appropriate patterns** for the chosen technology
+
+### Architecture Integration:
+- **Reference actual components** from architectureData for interface planning
+- **Consider data visualization** needs based on data flows
+- **Plan for real-time features** if present in architecture
+- **Address integration touchpoints** for external services
+
+### Platform Adaptation:
+- **Generate web-specific guidelines** for web applications (responsive, SEO, browser support)
+- **Create mobile-specific standards** for mobile apps (touch targets, platform guidelines)
+- **Adapt component specifications** to the chosen technology stack
+- **Include performance considerations** appropriate for the platform
+
+### Actionable Documentation:
+- **Provide specific specifications** (colors, sizes, spacings) not just general advice
+- **Include implementation guidance** for developers
+- **Create measurable quality standards** for design validation
+- **Establish clear approval processes** for design decisions
+
+Generate comprehensive UI/UX documentation that serves as the definitive guide for all design and user experience decisions throughout the development process.
+`
+const prompt = PromptTemplate.fromTemplate(template);
+const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, prd: prd});
+return result;
 }

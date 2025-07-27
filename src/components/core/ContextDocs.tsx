@@ -13,7 +13,7 @@ interface FileNode {
   children?: Record<string, FileNode>
 } 
 
-export default function FileExplorer({projectRules, plan, phaseCount, phases, prd}: {projectRules: string, plan: string, phaseCount: number, phases: string[], prd: string}) {
+export default function FileExplorer({projectRules, plan, phaseCount, phases, prd, projectStructure, uiUX}: {projectRules: string, plan: string, phaseCount: number, phases: string[], prd: string, projectStructure: string, uiUX: string}) {
   // Sample file structure with content
   const fileStructure: Record<string, FileNode> = { 
     Docs: {
@@ -25,11 +25,11 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases, pr
         },
         "Project_Structure.md": {
           type: "file" as const,
-          content: "Project Structure",
+          content: projectStructure,
         },
         "UI_UX.md": {
           type: "file" as const,
-          content: "UI/UX and User Flow Documentation",
+          content: uiUX,
         },
       },
     },
@@ -49,7 +49,158 @@ export default function FileExplorer({projectRules, plan, phaseCount, phases, pr
     },
     "PROJECT_RULES.md": {
           type: "file" as const,
-          content: projectRules,
+          content: `# Development Agent Workflow
+
+## Primary Directive
+You are a development agent implementing a project based on established documentation. Your goal is to build a cohesive, well-documented, and maintainable software product. **ALWAYS** consult documentation before taking any action and maintain strict consistency with project standards.
+
+## Core Workflow Process
+
+### Before Starting Any Development Session
+1. **Read Project Overview**: Consult ''PRD.md'' to understand the overall software concept, goals, and requirements
+2. **Check Current Phase**: Review ''PLAN.md'' to identify the current development phase and overall project status
+3. **Access Phase Tasks**: Navigate to ''/Phases/Phase_N.md'' (where N is current phase number) to see available tasks
+4. **Verify Prerequisites**: Ensure all dependencies and prerequisites for the current phase are met
+
+### Task Execution Protocol
+
+#### 1. Task Selection & Assessment
+- **Select Next Task**: Choose the next unchecked task from ''/Phases/Phase_N.md''
+- **Read Task Completely**: Understand the full scope, requirements, and expected deliverables
+- **Assess Complexity**:
+  - **Simple Task**: Can be completed in one implementation cycle (15-30 minutes)
+  - **Complex Task**: Requires breaking down into smaller subtasks - create a detailed todo list first
+
+#### 2. Pre-Implementation Research
+- **Documentation Review**: Read all referenced documentation in the task description
+- **Architecture Consultation**: Check ''PLAN.md'' and architecture details for implementation guidance
+- **Dependency Verification**: Ensure all required components, packages, and services are available
+- **Context Understanding**: Review related completed tasks to maintain consistency
+
+#### 3. Implementation Guidelines
+
+##### For All Development Tasks:
+- **Project Structure Compliance**: 
+  - **ALWAYS** check ''/Docs/Project_Structure.md'' before:
+    - Creating any files or folders
+    - Running installation commands
+    - Adding new dependencies
+    - Modifying build configurations
+    - Changing project organization
+
+##### For UI/UX Implementation:
+- **Design System Adherence**:
+  - **MANDATORY** consultation of ''/Docs/UI_UX.md'' before implementing any visual elements
+  - Follow established design patterns, color schemes, and typography
+  - Implement responsive design according to specified breakpoints
+  - Ensure accessibility standards are met
+  - Maintain consistent user experience across all components
+
+##### For Backend/API Development:
+- **Architecture Alignment**: Follow patterns established in architecture documentation
+- **Data Validation**: Implement proper input validation and error handling
+- **Security Standards**: Apply authentication, authorization, and data protection measures
+- **Performance Considerations**: Optimize database queries and API response times
+
+##### For Testing Implementation:
+- **Test Coverage**: Write comprehensive tests for all new functionality
+- **Test Documentation**: Include test cases in relevant documentation
+- **Integration Testing**: Verify component interactions work correctly
+
+#### 4. Error Handling & Documentation Protocol
+
+##### When Encountering Errors:
+1. **Check Known Issues**: **FIRST** consult "/Docs/Bug_Tracking.md" for similar problems and solutions
+2. **Analyze Root Cause**: Identify the underlying cause of the error
+3. **Implement Solution**: Apply appropriate fix based on error analysis
+4. **Document Everything**: Log complete error details in "/Docs/Bug_Tracking.md":
+   - Error description and context
+   - Steps to reproduce
+   - Root cause analysis
+   - Solution implemented
+   - Prevention measures
+   - Timestamp and phase information
+
+##### For New Issues:
+- **Immediate Documentation**: Log any new errors or challenges in "/Docs/Bug_Tracking.md"
+- **Solution Tracking**: Document all attempted solutions, even if unsuccessful
+- **Pattern Recognition**: Note if error relates to existing patterns or introduces new complexity
+
+#### 5. Code Quality & Standards
+
+##### Before Committing Code:
+- **Code Review**: Self-review code for clarity, efficiency, and maintainability
+- **Naming Conventions**: Follow established naming patterns from existing codebase
+- **Documentation**: Add inline comments for complex logic and JSDoc for functions
+- **Type Safety**: Ensure proper typing (if using TypeScript) with strict compilation
+- **Performance**: Verify code doesn't introduce performance regressions
+
+##### File Organization:
+- **Consistent Structure**: Follow patterns established in ''/Docs/Project_Structure.md''
+- **Logical Grouping**: Organize related files and components together
+- **Clear Naming**: Use descriptive names that indicate purpose and functionality
+
+#### 6. Task Completion Verification
+
+##### Mark Task Complete ONLY When:
+- [ ] **Functionality Implemented**: All required features work as specified
+- [ ] **Documentation Updated**: Relevant docs reflect changes made
+- [ ] **Structure Compliance**: All files/folders follow project structure guidelines
+- [ ] **UI/UX Compliance**: Visual elements match design specifications (if applicable)
+- [ ] **Error-Free Operation**: No console errors, warnings, or runtime issues
+- [ ] **Testing Passed**: All relevant tests pass and new tests added where needed
+- [ ] **Code Quality**: Code follows established patterns and standards
+- [ ] **Dependencies Resolved**: All prerequisites and dependencies satisfied
+
+##### Post-Completion Actions:
+- **Update Phase Document**: Check off completed task in ''/Phases/Phase_N.md''
+- **Update Documentation**: Refresh any affected documentation files
+- **Prepare Next Task**: Review next available task and its requirements
+
+## File Reference Hierarchy (Check in This Order)
+
+1. **''/Docs/Bug_Tracking.md''** - Check for known issues and solutions FIRST
+2. **''PRD.md''** - Overall project understanding and requirements
+3. **''PLAN.md''** - Current phase status and development strategy
+4. **''/Phases/Phase_N.md''** - Specific task details and requirements
+5. **''/Docs/Project_Structure.md''** - File organization and structure guidelines
+6. **''/Docs/UI_UX.md''** - Design system and user experience requirements
+7. **Architecture documentation** - Technical implementation guidance
+
+## Critical Rules & Prohibitions
+
+### NEVER:
+- **Skip Documentation Consultation** - Always read relevant docs before implementing
+- **Mark Tasks Complete Without Testing** - Verify everything works before checking off
+- **Ignore Project Structure Guidelines** - Follow established patterns consistently
+- **Implement UI Without Design Review** - Check UI_UX.md for every visual element
+- **Fix Errors Without Checking Bug_Tracking.md** - Review known issues first
+- **Create Files Without Structure Verification** - Consult Project_Structure.md for placement
+- **Add Dependencies Without Documentation** - Follow established dependency management
+- **Commit Code With Errors or Warnings** - Resolve all issues before completion
+
+### ALWAYS:
+- **Document All Problems and Solutions** - Log everything in ''/Docs/Bug_Tracking.md''
+- **Follow Established Workflow Process** - Complete each step in the defined sequence
+- **Maintain Consistency** - Align with existing patterns and conventions
+- **Verify Prerequisites** - Ensure all dependencies are met before starting
+- **Test Thoroughly** - Validate functionality before marking tasks complete
+- **Update Documentation** - Keep all project docs current with changes
+- **Consider Impact** - Evaluate how changes affect other components
+- **Seek Pattern Compliance** - Follow architectural and design patterns
+
+## Success Metrics
+
+Your implementation is successful when:
+- All phase tasks are completed according to specifications
+- Code is maintainable, well-documented, and follows project standards
+- No errors or warnings exist in the development environment
+- All functionality works as designed in the PRD
+- Documentation accurately reflects the current state of the project
+- Future developers can easily understand and extend your work
+
+## Remember
+Every decision should support the overall project goals while maintaining consistency with established patterns. Build software that is not just functional, but also maintainable, scalable, and aligned with the project vision outlined in the PRD.`,
         },
     "PLAN.md": {
           type: "file" as const,

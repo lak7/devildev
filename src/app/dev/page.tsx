@@ -12,7 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../actions/architecture'; 
 import FileExplorer from '@/components/core/ContextDocs';
-import { generateNthPhase, generatePlan, generateProjectRules, numberOfPhases, generatePRD } from '../../../actions/context';
+import { generateNthPhase, generatePlan, generateProjectRules, numberOfPhases, generatePRD, generateProjectStructure, generateUIUX } from '../../../actions/context';
 
 export interface ChatMessage { 
   id: string;
@@ -49,6 +49,8 @@ const DevPage = () => {
   const [prd, setPrd] = useState<string>("");
   const [phaseCount, setPhaseCount] = useState<any>();
   const [phases, setPhase] = useState<string[]>([]);
+  const [projectStructure, setProjectStructure] = useState<string>("");
+  const [uiUX, setUiUX] = useState<string>("");
   
   // Component position persistence
   const [componentPositions, setComponentPositions] = useState<Record<string, {x: number, y: number}>>({});
@@ -268,6 +270,10 @@ const DevPage = () => {
     // alert("Plan Generated");
     const plan = await generatePlan(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases, prd);
     setPlan(plan);
+    const projectStructure = await generateProjectStructure(architectureData, plan, prd);
+    setProjectStructure(projectStructure);
+    const uiUX = await generateUIUX(architectureData, plan, prd);
+    setUiUX(uiUX);
 
     const allPhases: string[] = [];
 
@@ -682,7 +688,7 @@ const DevPage = () => {
                 onPositionsChange={setComponentPositions}
               />
             ) : ( 
-              <FileExplorer projectRules={projectRules} plan={plan} phaseCount={phaseCount} phases={phases} prd={prd} /> 
+              <FileExplorer projectRules={projectRules} plan={plan} phaseCount={phaseCount} phases={phases} prd={prd} projectStructure={projectStructure} uiUX={uiUX} /> 
             )}
           </div>
         </div>
