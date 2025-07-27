@@ -304,104 +304,162 @@ const result = await chain.invoke({conversation_history: formattedHistory, archi
 return result;
 }
 
-export async function generatePlan(conversationHistory: any[] = [], architectureData: any, numOfPhase: string) {
+export async function generatePlan(conversationHistory: any[] = [], architectureData: any, numOfPhase: string, phaseDetails: string, prd: string) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
-    const template = `You are an expert technical project manager. Create a comprehensive PLAN.md that will guide a coding assistant through the entire development process.
+    const template = `# Development Plan Document (PLAN.md) Generation Agent
 
-**INPUTS:**
-- Conversation History: {conversation_history}
-- Project Architecture: {projectArchitecture}
-- Number of Phases: {numberOfPhases}
+You are an expert technical project manager and software architect specializing in creating comprehensive development execution plans. Your task is to analyze the project requirements, architecture, and phases to generate a detailed PLAN.md that serves as the definitive execution guide for coding assistants and development teams.
 
-**OUTPUT:** Generate a complete PLAN.md file following this exact structure:
+## Input Data:
+- **Conversation History:** {conversation_history}
+- **Architecture Details:** {architecture_data}
+- **Number of Phases:** {numberOfPhases}
+- **Phase Details:** {phaseDetails}
+- **Product Requirements Document:** {prd}
 
----
+## Analysis Instructions:
 
-# PROJECT PLAN
+### Step 1: Extract Development Context
+From all inputs, identify:
+- **Core product concept and technical complexity**
+- **Technology stack and architectural patterns**
+- **Development methodology requirements**
+- **Key technical challenges and risks**
+- **Integration points and dependencies**
+- **Quality and performance requirements**
 
-## 🎯 Project Overview
-**What we're building:** [1-2 sentence description]
+### Step 2: Architecture-Driven Planning
+From architecture_data, understand:
+- **Component relationships and dependencies**
+- **Data flow and storage patterns**
+- **External service integrations**
+- **Security and performance considerations**
+- **Deployment and infrastructure needs**
 
-**Core functionality:** 
-- [Key feature 1]
-- [Key feature 2] 
-- [Key feature 3]
+### Step 3: Phase Integration Analysis
+Use phaseDetails to:
+- **Map technical components to phases**
+- **Identify cross-phase dependencies**
+- **Establish phase entry/exit criteria**
+- **Define deliverables and success metrics**
 
-**Success criteria:**
-- All features work as specified
-- Code passes quality gates
-- Application is deployable and functional
+## PLAN.md Structure Requirements:
 
-**Target users:** [Who will use this]
+### 1. Development Execution Overview
+- **Development Strategy:** High-level approach and methodology
+- **Technical Architecture Summary:** Key architectural decisions and rationale
+- **Development Workflow:** How the team should approach implementation
+- **Quality Assurance Strategy:** Testing approach and quality gates
 
-## 🏗️ Technical Architecture
+### 2. Technical Implementation Strategy
+- **Code Organization:** Folder structure and file organization principles
+- **Naming Conventions:** Consistent naming across components, functions, and variables
+- **Coding Standards:** Language-specific best practices and style guidelines
+- **Database Design Strategy:** Schema evolution and data management approach
+- **API Design Principles:** RESTful design, versioning, and documentation standards
 
-**System Components:**
-- [Component 1]: [Technology] - [Purpose]
-- [Component 2]: [Technology] - [Purpose]
-- [Component 3]: [Technology] - [Purpose]
+### 3. Integration & Testing Strategy
+- **Component Integration Plan:** How different architecture components connect
+- **Testing Methodology:** Unit, integration, and end-to-end testing approach
+- **Quality Gates:** Acceptance criteria and validation checkpoints
+- **Performance Testing:** Load testing and optimization strategies
+- **Security Testing:** Security validation and penetration testing approach
 
-**Technology Stack:**
-- Frontend: [Specific technologies]
-- Backend: [Specific technologies] 
-- Database: [Specific technologies]
-- [Other]: [Specific technologies]
+### 4. Development Environment Setup
+- **Required Tools:** Development tools, IDEs, and utilities
+- **Dependencies Management:** Package managers and version control
+- **Environment Configuration:** Local, development, and staging environments
+- **Database Setup:** Local database configuration and seed data
+- **Third-Party Services:** API keys, service configurations, and testing accounts
 
-**Key Integrations:**
-- [Integration 1]: [Purpose and protocol]
-- [Integration 2]: [Purpose and protocol]
+### 5. Risk Management & Technical Challenges
+- **Technical Risks:** Potential technical bottlenecks and challenges
+- **Mitigation Strategies:** Alternative approaches and fallback plans
+- **Third-Party Dependencies:** External service risks and alternatives
+- **Performance Bottlenecks:** Anticipated performance issues and solutions
+- **Security Considerations:** Security risks and implementation guidelines
 
-## 📋 Implementation Phases
+### 6. Communication & Handoff Protocols
+- **Deliverable Standards:** What constitutes completed work for each phase
+- **Documentation Requirements:** Code documentation and technical specifications
+- **Code Review Process:** Review standards and approval workflows
+- **Knowledge Transfer:** Information sharing between development phases
+- **Progress Tracking:** Status reporting and milestone validation
 
-**IMPORTANT:** Generate exactly {numberOfPhases} phases below. Do not skip any phases or limit to 4 phases.
+### 7. Success Metrics & Validation
+- **Technical Validation Criteria:** How to verify technical implementation
+- **Performance Benchmarks:** Expected performance metrics and thresholds
+- **User Acceptance Validation:** Testing with real users and feedback collection
+- **Launch Readiness Checklist:** Final validation before production deployment
 
-[For each phase from 1 to {numberOfPhases}, generate the following structure:]
+## Critical Requirements:
 
-### Phase [N]: [Phase Name Based on Content]
-**Status:** NOT_STARTED
-**Goal:** [What gets built in this phase]
-**Dependencies:** [Phase N-1 completion, or "None" for Phase 1]
-**Deliverables:**
-- [Specific deliverable 1]
-- [Specific deliverable 2]
-- [Specific deliverable 3]
-**Success Criteria:**
-- [Testable criterion 1]
-- [Testable criterion 2]
+### MUST Include Development Phases Progress Table:
 
-[Repeat this structure for ALL {numberOfPhases} phases - whether it's 3, 4, 5, 6, or 7 phases]
+| Phase | Key Deliverables | Success Criteria | Status |
+|-------|------------------|------------------|--------|
+| [Use exact phase names from phaseDetails] | [Specific technical deliverables] | [Measurable validation criteria] | NOT STARTED |
 
-## 🧪 Quality Requirements
-**Testing:** Unit tests for core functions, integration tests for APIs
-**Code Quality:** TypeScript strict mode, ESLint passing, proper error handling
-**Documentation:** README with setup instructions, API documentation
-**Performance:** [Specific performance requirements based on project type]
 
----
+**Table Requirements:**
+- **Make sure all are marked as NOT STARTED**
+- **Use exact phase names** from phaseDetails input
+- **Key Deliverables** must be specific, technical outcomes
+- **Success Criteria** must be measurable and testable
+- **Status column** shows "NOT STARTED" for all phases initially ** MOST IMPORTANT **
+- **Cover all phases** from numberOfPhases and phaseDetails
 
-**INSTRUCTIONS:**
-1. **Phase Count:** Generate exactly {numberOfPhases} phases - no more, no less. Count carefully and include all requested phases.
-2. **Dynamic Generation:** If numberOfPhases is 3, generate 3 phases. If it's 7, generate 7 phases. Always match the exact number.
-3. **Phase Types:** 
-   - Phase 1: Always project setup, basic structure, core infrastructure
-   - Middle Phases: Core and advanced feature implementation 
-   - Final Phase: Always integration, testing, and polish
-4. **Phase Distribution:** Spread features logically across all {numberOfPhases} phases
-5. **Deliverables:** Make them specific and measurable (e.g., "User authentication API with login/register endpoints" not "Authentication system")
-6. **Success Criteria:** Make them testable (e.g., "Login API returns JWT token on valid credentials" not "Users can log in")
-7. **Dependencies:** Each phase should build logically on the previous one
-8. **Exclude:** No deployment, DevOps, monitoring, or infrastructure phases - focus only on application development
-9. **Language:** Use technical language suitable for coding assistants
-10. **Specificity:** Reference exact technologies from the architecture, not generic terms
+### Critical Dependencies & Assumptions Section:
+- **Architecture Dependencies:** Components that must be built before others
+- **Third-Party Service Dependencies:** External services from architecture_data
+- **Technical Risk Factors:** Challenges based on chosen technology stack
+- **Development Assumptions:** Key assumptions that could impact timeline
 
-Generate the complete PLAN.md content now.`
+### Technical Implementation Guidelines:
+- **Use actual technology names** from architecture_data
+- **Reference specific components** and their integration requirements
+- **Include data models and relationships** based on architecture
+- **Specify performance requirements** appropriate for the system complexity
+- **Define security implementation** standards for the application type
+
+## Content Quality Standards:
+
+### Be Development-Focused:
+- **Actionable for developers:** Every section should guide actual development work
+- **Technically specific:** Use exact technologies, frameworks, and tools
+- **Implementation-ready:** Provide concrete guidance for coding decisions
+- **Quality-oriented:** Include standards for code quality and testing
+
+### Be Architecture-Aligned:
+- **Reflect actual system design** from architecture_data
+- **Address real technical challenges** identified in the architecture
+- **Support chosen technology stack** with appropriate methodologies
+- **Enable successful integration** of all architectural components
+
+### Be Phase-Aware:
+- **Support phase-based development** approach
+- **Enable smooth transitions** between development phases
+- **Provide clear validation** criteria for each phase completion
+- **Facilitate parallel development** where architecturally possible
+
+## Output Requirements:
+
+Generate a comprehensive PLAN.md document that:
+- **Serves as the primary execution guide** for all development work
+- **Contains no placeholder text** - all sections filled with project-specific content
+- **Is immediately actionable** for coding assistants and developers
+- **Accurately reflects** the technical architecture and requirements
+- **Provides clear quality standards** and validation criteria
+- **Enables successful project execution** from start to deployment
+
+The PLAN.md should be the go-to document that any coding assistant can reference to understand how to build this specific product according to the established architecture, standards, and methodology.`
     const prompt = PromptTemplate.fromTemplate(template);
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
     const formattedHistory = conversationHistory.map(msg => 
         `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
     ).join('\n');
-    const result = await chain.invoke({conversation_history: formattedHistory, projectArchitecture: JSON.stringify(architectureData), numberOfPhases: numOfPhase});
+    const result = await chain.invoke({conversation_history: formattedHistory, architecture_data: JSON.stringify(architectureData), numberOfPhases: numOfPhase, phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails, prd: prd});
     return result;
 }
 
@@ -471,6 +529,8 @@ Use the numberOfPhases and phaseDetails to:
 - **Performance Requirements:** Set realistic metrics based on app complexity
 - **Security Requirements:** Match the sensitivity of data being handled
 
+
+
 ## PRD Structure Requirements:
 
 Follow the provided template structure exactly, but fill with project-specific content:
@@ -483,30 +543,6 @@ Follow the provided template structure exactly, but fill with project-specific c
 6. **MVP Functional Requirements:** Comprehensive feature specifications with acceptance criteria
 7. **Technical Architecture:** Detailed system design based on architecture_data
 8. **User Experience & Design:** Specific UX/UI requirements for the product type
-9. **Analytics & Success Metrics:** Measurable KPIs for product validation
-10. **Timeline & Milestones:** Development schedule with exact phases from phaseDetails, including status tracking
-
-## Critical Timeline Requirements:
-
-### MVP Development Phases Table:
-**MUST include this exact table structure:**
-
-| Phase  | Key Deliverables | Success Criteria | Status |
-|-------|----------|------------------|------------------|--------|
-| [Use exact phase names from phaseDetails] | [Specific deliverables] | [Measurable criteria] | NOT STARTED |
-
-
-**Requirements:**
-- **Use exact phase names** from the phaseDetails input (e.g., "Phase 1: Project Foundation & Backend Setup")
-- **Include Status column** with "NOT STARTED" for all phases initially  
-- **Key Deliverables** must be specific, actionable outcomes for each phase
-- **Success Criteria** must be measurable and testable
-- **Cover all phases** provided in numberOfPhases and phaseDetails
-
-### Section Critical MVP Milestones:
-- Create milestone dates based on phase durations
-- Include phase completion milestones
-- Use actual dates (calculate from current date + phase durations)
 
 ### Section Dependencies & Assumptions:
 - Reference specific architecture components that create dependencies
@@ -525,13 +561,6 @@ Follow the provided template structure exactly, but fill with project-specific c
 - **Define data models and relationships** based on app functionality
 - **Specify performance and security requirements** appropriate for the product
 
-### Timeline Integration:
-- **Use exact phase names and count** from the provided phaseDetails
-- **Create realistic duration estimates** based on feature complexity (typically 1-4 weeks per phase)
-- **Define clear milestones and deliverables** for each phase
-- **Include "NOT STARTED" status** for all phases initially
-- **Map specific features** from architecture to appropriate phases
-- **Include dependencies and risk factors** that could impact timeline
 
 ## Output Requirements:
 
@@ -564,7 +593,7 @@ Generate a comprehensive, professional PRD that serves as the definitive guide f
     
 }
 
-export async function generateNthPhase(architectureData: any, plan: string, numOfPhase: string) {
+export async function generateNthPhase(architectureData: any, plan: string, numOfPhase: string, phaseDetails: string, prd: string) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
     const template = `You are an expert software development lead creating actionable todo lists for AI coding agents. Generate a focused phase execution plan that an AI can follow step-by-step.
@@ -573,6 +602,8 @@ export async function generateNthPhase(architectureData: any, plan: string, numO
 - Project Plan: {planContent}
 - Project Architecture: {architectureData}  
 - Target Phase: {phaseNumber}
+- Phase Details: {phaseDetails}
+- PRD: {prd}
 
 **OUTPUT FORMAT:**
 
@@ -674,6 +705,6 @@ export async function generateNthPhase(architectureData: any, plan: string, numO
 Generate the complete phase execution plan now.`
     const prompt = PromptTemplate.fromTemplate(template);
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
-    const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, phaseNumber: numOfPhase});
+    const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, phaseNumber: numOfPhase, phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails, prd: prd});
     return result;
 }

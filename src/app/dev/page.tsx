@@ -263,20 +263,20 @@ const DevPage = () => {
     // alert("Rules Generated");
     
     // alert("Phase Count Generated");
-    // const plan = await generatePlan(messages, architectureData, parsedPhasesDetails.numberOfPhases);
-    // setPlan(plan);
     const prd = await generatePRD(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases);
     setPrd(prd);
     // alert("Plan Generated");
+    const plan = await generatePlan(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases, prd);
+    setPlan(plan);
 
     const allPhases: string[] = [];
 
 
-    // for (let i = 1; i <= Number(parsedPhasesDetails.numberOfPhases); i++) {
-    //   const nthPhase = await generateNthPhase(architectureData, plan, i.toString());
-    //   console.log(nthPhase);
-    //   allPhases.push(nthPhase);
-    // }
+    for (let i = 1; i <= Number(parsedPhasesDetails.numberOfPhases); i++) {
+      const nthPhase = await generateNthPhase(architectureData, plan, i.toString(), parsedPhasesDetails.phases, prd);
+      console.log(nthPhase);
+      allPhases.push(nthPhase);
+    }
 
 
     setPhase(allPhases);
