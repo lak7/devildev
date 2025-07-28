@@ -207,7 +207,7 @@ export default function ComingSoonPage() {
         {/* Logo */}
         <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
           <Image
-            src="/devildev.png"
+            src="/finaldev.png"
             alt="DevilDev Logo"
             width={400}
             height={120}

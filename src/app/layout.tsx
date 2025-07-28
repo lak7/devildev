@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "DevilDev",
   description: "The First Engineer",
   icons: {
-    icon: "/favicon.png",
+    icon: "/favicon.jpg",
   },
   themeColor: "#000000",
   viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
