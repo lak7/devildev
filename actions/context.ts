@@ -593,12 +593,12 @@ Generate a comprehensive, professional PRD that serves as the definitive guide f
     
 }
 
-export async function generateNthPhase(architectureData: any, plan: string, numOfPhase: string, phaseDetails: string, prd: string) {
+export async function generateNthPhase(architectureData: any, plan: string, numOfPhase: string, phaseDetails: string, prd: string, totalPhases: string) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
-    const template = `# Phase Execution Plan Generator
+    const template = `# Phase Execution Plan Generator with Human Review Integration
 
-You are an expert software development lead creating actionable execution plans for AI coding agents. Generate a focused phase execution document with a comprehensive todo list tailored specifically to the current phase requirements.
+You are an expert software development lead creating actionable execution plans for AI coding agents. Generate a focused phase execution document with a comprehensive todo list tailored specifically to the current phase requirements, including mandatory human review checkpoints.
 
 ## INPUT DATA:
 - **Project Plan:** {planContent}
@@ -606,6 +606,7 @@ You are an expert software development lead creating actionable execution plans 
 - **Target Phase:** {phaseNumber}
 - **Phase Details:** {phaseDetails}
 - **PRD:** {prd}
+- **Total Phases:** {totalPhases}
 
 ## ANALYSIS INSTRUCTIONS:
 
@@ -614,6 +615,7 @@ You are an expert software development lead creating actionable execution plans 
 - Identify which architecture components are being built in this phase
 - Understand what features/functionality this phase delivers
 - Determine the platform (web app/mobile app) and relevant technologies
+- **Identify if this is first phase, middle phase, or final phase for human review requirements**
 
 ### Step 2: Task Generation Strategy
 - Break down the phase objective into specific, actionable implementation tasks
@@ -621,15 +623,16 @@ You are an expert software development lead creating actionable execution plans 
 - Ensure tasks are appropriate for the platform (web/mobile) and tech stack
 - Order tasks logically based on dependencies and development workflow
 - Make each task granular enough for AI agents to execute independently
+- **Include human review checkpoints at appropriate intervals**
 
 ### Step 3: Platform and Technology Adaptation
 - Generate tasks specific to the chosen platform and technology stack
 - Include appropriate file paths, naming conventions, and patterns for the tech stack
 - Reference actual components, APIs, and integrations from the architecture
 - Ensure tasks reflect real development work needed for this specific phase
+- **Add human approval requirements based on phase position**
 
 ## OUTPUT FORMAT:
-
 
 ---
 # PHASE {phaseNumber}: [Extract exact phase name from phaseDetails]
@@ -650,8 +653,39 @@ You are an expert software development lead creating actionable execution plans 
 
 ## 📋 Prerequisites
 **Must be completed before starting:**
-- [ ] [Specific prerequisite from previous phase or setup requirement]
-- [ ] [Required dependency or configuration needed]
+
+[If phaseNumber == 1:]
+- [ ] Project setup completed and README.md reviewed
+- [ ] Development environment configured according to architecture requirements
+- [ ] All required dependencies and tools installed
+
+[If phaseNumber > 1:]
+- [ ] **HUMAN APPROVAL REQUIRED:** Phase {{phaseNumber-1}} must be reviewed and approved in HUMAN_REVIEW.md
+- [ ] All deliverables from Phase {{phaseNumber-1}} tested and confirmed working
+- [ ] Environment setup maintained and updated from previous phase
+- [ ] All reported issues from Phase {{phaseNumber-1}} resolved
+
+**⚠️ CRITICAL: DO NOT START THIS PHASE WITHOUT HUMAN APPROVAL OF PREVIOUS PHASE ⚠️**
+
+## 🔄 Human Review Checkpoints
+
+### Pre-Phase Validation
+[If phaseNumber > 1:]
+- [ ] **Verify Human Approval**: Check HUMAN_REVIEW.md for Phase {{phaseNumber-1}} approval status
+- [ ] **Issues Resolution**: Confirm all human-reported issues from previous phase are resolved
+- [ ] **Environment Validation**: Ensure previous phase deliverables are working in human's environment
+
+### Mid-Phase Review (for complex phases)
+[If phase has more than 12 tasks, add:]
+- [ ] **Mid-Phase Check**: After completing 60% of tasks, request human validation of core functionality
+- [ ] **Course Correction**: Address any human feedback before proceeding with remaining tasks
+
+### End-Phase Review (MANDATORY)
+- [ ] **Deliverable Testing**: Human must test all key deliverables listed above
+- [ ] **Environment Setup**: Human must follow updated README.md and configure .env variables
+- [ ] **Functionality Validation**: Human must confirm all features work as expected
+- [ ] **Issue Reporting**: Human must document any problems in HUMAN_REVIEW.md
+- [ ] **Final Approval**: Human must approve phase completion before moving forward
 
 ## ✅ Implementation Tasks
 
@@ -663,20 +697,100 @@ You are an expert software development lead creating actionable execution plans 
 [- Follow logical development sequence]
 [- Include proper typing/interface specifications for typed languages]
 
+### Core Development Tasks:
 - [ ] [Specific task with exact file path and technology details]
 - [ ] [Another specific task with implementation details]
 - [ ] [Continue with all necessary tasks for this phase...]
 
+### Documentation & Testing Tasks:
+- [ ] Update README.md with new setup instructions for this phase
+- [ ] Document all new environment variables and configuration requirements
+- [ ] Create comprehensive testing instructions for human reviewer
+- [ ] Update relevant documentation files with new features/components
+- [ ] Add inline code documentation and comments for complex logic
+
+### Human Review Preparation Tasks:
+- [ ] **Create Human Testing Instructions**: Document step-by-step testing process for all deliverables
+- [ ] **Update Environment Documentation**: Ensure all required .env variables are documented
+- [ ] **Prepare Demo/Screenshots**: Create visual proof of functionality for human review
+- [ ] **Validate Error Handling**: Test and document error scenarios human might encounter
+
 ## 🏁 Phase Completion Criteria
+
 **This phase is complete when:**
 - [ ] All implementation tasks above are checked off
 - [ ] [Specific functional requirement works based on phase objective]
-- [ ] [Specific technical requirement is met based on architecture]
+- [ ] [Specific technical requirement is met based on architecture]  
 - [ ] [Specific validation criteria based on deliverables]
+- [ ] README.md updated with current setup instructions
+- [ ] All environment variables documented and tested
+
+**⚠️ CRITICAL: HUMAN APPROVAL REQUIRED BEFORE MARKING COMPLETE ⚠️**
+
+### Human Approval Requirements:
+- [ ] **Human Environment Setup**: Human successfully followed README.md instructions
+- [ ] **Human Functional Testing**: Human tested all key deliverables and confirmed they work
+- [ ] **Human Issue Resolution**: All human-reported issues resolved completely
+- [ ] **Human Documentation Review**: Human reviewed and approved updated documentation
+- [ ] **Human Final Approval**: Human marked this phase as "APPROVED" in HUMAN_REVIEW.md
+
+[If this is the final phase (phaseNumber == totalPhases):]
+### 🎉 FINAL PHASE - COMPLETE PROJECT VALIDATION
+**Additional Final Phase Requirements:**
+- [ ] **Full Application Testing**: Human must test complete end-to-end functionality
+- [ ] **Production Readiness**: Human must confirm application is deployment-ready
+- [ ] **Documentation Completeness**: Human must validate all documentation is comprehensive
+- [ ] **Final Project Approval**: Human must provide final project sign-off in HUMAN_REVIEW.md
+
+**⚠️ ABSOLUTE REQUIREMENT: PROJECT NOT COMPLETE WITHOUT FINAL HUMAN APPROVAL ⚠️**
 
 ---
 **COMPLETION STATUS:** NOT_STARTED
+
+**HUMAN APPROVAL STATUS:** PENDING
+
 ---
+
+## 🚨 HUMAN REVIEW PROTOCOL
+
+### When Phase Implementation is Complete:
+1. **STOP**: Do not mark phase as complete
+2. **NOTIFY HUMAN**: Request human review using this exact message:
+
+
+🔄 PHASE {phaseNumber} COMPLETION - HUMAN REVIEW REQUIRED
+
+Phase {phaseNumber} implementation is complete. I need your review and approval before proceeding.
+
+DELIVERABLES TO TEST:
+[List all key deliverables from above]
+
+SETUP INSTRUCTIONS:
+1. Follow updated README.md instructions
+2. Configure .env variables as documented
+3. Test each deliverable according to provided instructions
+
+REQUIRED ACTION:
+Update HUMAN_REVIEW.md with your test results and approval status.
+
+❌ I CANNOT PROCEED UNTIL YOU APPROVE THIS PHASE
+
+
+3. **WAIT**: Do not proceed until human approval is received
+4. **FIX ISSUES**: If human reports problems, resolve them completely before requesting re-review
+5. **FINAL APPROVAL**: Only mark phase complete after explicit human approval
+
+### Issue Resolution Process:
+If human reports issues:
+1. **Document Issues**: Log all reported problems
+2. **Analyze Problems**: Understand root causes  
+3. **Implement Fixes**: Resolve all issues completely
+4. **Re-test**: Validate fixes work properly
+5. **Request Re-review**: Ask human to test again
+6. **Repeat**: Continue until human approves
+
+---
+
 ## TASK GENERATION REQUIREMENTS:
 
 ### Task Quality Standards:
@@ -686,6 +800,7 @@ You are an expert software development lead creating actionable execution plans 
 - **Actionable:** Each task should be a specific action an AI can take
 - **Granular:** Tasks should be completable in 15-30 minutes each
 - **Sequential:** Order tasks logically based on development dependencies
+- **Human-Testable:** Ensure deliverables can be easily tested by non-technical humans
 
 ### Task Content Requirements:
 - **Exact File Paths:** Include precise file locations appropriate for the project structure
@@ -693,6 +808,13 @@ You are an expert software development lead creating actionable execution plans 
 - **Technology Integration:** Include framework-specific patterns and best practices
 - **Type Specifications:** For typed languages, include interface/type requirements
 - **API Specifications:** Include exact endpoint paths and method details where relevant
+- **Testing Instructions:** Include how humans can verify each major component works
+
+### Human Review Integration:
+- **Prerequisites Checking:** Always verify previous phase approval before starting
+- **Documentation Updates:** Always include README.md and environment setup updates
+- **Testing Preparation:** Always include tasks for preparing human testing instructions
+- **Approval Requirements:** Always include human approval as completion requirement
 
 ### Avoid These Patterns:
 - Generic category headers like "Setup & Configuration" or "Frontend Development"
@@ -700,20 +822,25 @@ You are an expert software development lead creating actionable execution plans 
 - Platform assumptions (don't assume web if it's mobile, or vice versa)
 - Technology assumptions not present in the architectureData
 - Tasks unrelated to the specific phase objective
+- **Proceeding without human approval from previous phases**
+- **Marking phases complete without human validation**
 
 ## GENERATION PROCESS:
 
 1. **Read phaseDetails** to understand exactly what this phase should accomplish
 2. **Analyze architectureData** to identify relevant components and technologies
-3. **Determine platform type** (web/mobile) and generate appropriate tasks
-4. **Create specific tasks** that directly contribute to the phase objective
-5. **Order tasks logically** following natural development workflow
-6. **Validate task relevance** - ensure every task is necessary for this phase
+3. **Determine phase position** (first/middle/last) for appropriate human review requirements
+4. **Determine platform type** (web/mobile) and generate appropriate tasks
+5. **Create specific tasks** that directly contribute to the phase objective
+6. **Add human review checkpoints** at appropriate intervals
+7. **Order tasks logically** following natural development workflow including review points
+8. **Validate task relevance** - ensure every task is necessary for this phase
+9. **Include human approval requirements** based on phase position and complexity
 
-Generate the complete phase execution plan now, ensuring all tasks are specific to this phase, platform, and technology stack.`
+Generate the complete phase execution plan now, ensuring all tasks are specific to this phase, platform, and technology stack, with appropriate human review integration based on the phase number and total phases.`
     const prompt = PromptTemplate.fromTemplate(template);
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
-    const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, phaseNumber: numOfPhase, phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails, prd: prd});
+    const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, phaseNumber: numOfPhase, phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails, prd: prd, totalPhases: totalPhases});
     return result;
 }
 

@@ -279,7 +279,7 @@ const DevPage = () => {
 
 
     for (let i = 1; i <= Number(parsedPhasesDetails.numberOfPhases); i++) {
-      const nthPhase = await generateNthPhase(architectureData, plan, i.toString(), parsedPhasesDetails.phases, prd);
+      const nthPhase = await generateNthPhase(architectureData, plan, i.toString(), parsedPhasesDetails.phases, prd, parsedPhasesDetails.numberOfPhases);
       console.log(nthPhase);
       allPhases.push(nthPhase);
     }

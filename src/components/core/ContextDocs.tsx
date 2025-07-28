@@ -157,15 +157,114 @@ You are a development agent implementing a project based on established document
 - **Update Documentation**: Refresh any affected documentation files
 - **Prepare Next Task**: Review next available task and its requirements
 
+## **CRITICAL: Human Review Process**
+
+### **Phase Completion Protocol - MANDATORY**
+
+**⚠️ ABSOLUTE RULE: DO NOT PROCEED TO NEXT PHASE WITHOUT HUMAN APPROVAL ⚠️**
+
+When all tasks in a phase are technically complete:
+
+#### Step 1: Pre-Review Preparation
+1. **Update README.md**: Ensure setup instructions are current and complete
+2. **Environment Configuration**: Verify all required environment variables are documented in README.md
+3. **Deliverable Documentation**: Create clear documentation of what was built in this phase
+4. **Testing Instructions**: Provide step-by-step testing instructions for the human reviewer
+
+#### Step 2: Request Human Review
+**IMMEDIATELY** notify the human with this exact message:
+
+🔄 PHASE [N] COMPLETION - HUMAN REVIEW REQUIRED
+
+Phase [N] technical implementation is complete. Before proceeding to Phase [N+1], 
+I need your review and approval.
+
+REQUIRED ACTIONS FOR YOU:
+1. Read the updated README.md file for setup instructions
+2. Add/update required keys in .env file as documented
+3. Test all deliverables from this phase
+4. Document your review in HUMAN_REVIEW.md
+
+DELIVERABLES TO TEST:
+[List specific features/components built in this phase]
+
+TESTING INSTRUCTIONS:
+[Provide clear step-by-step testing instructions]
+
+❌ I CANNOT PROCEED TO NEXT PHASE UNTIL YOU COMPLETE THE REVIEW
+✅ Once you confirm everything works, I will mark Phase [N] as complete and move forward
+
+
+#### Step 3: Human Review Requirements
+The human must:
+1. **Environment Setup**: Follow README.md to set up local environment
+2. **Configuration**: Add all required environment variables from documentation
+3. **Functional Testing**: Test all deliverables according to provided instructions
+4. **Review Documentation**: Update ''/HUMAN_REVIEW.md'' with:
+   - Phase number and date
+   - What was tested
+   - Issues found (if any)
+   - Overall assessment
+   - Approval status (APPROVED/NEEDS_REVISION)
+
+#### Step 4: Issue Resolution Protocol
+**IF HUMAN REPORTS ISSUES:**
+1. **STOP ALL FORWARD PROGRESS**: Do not move to next phase
+2. **Problem Analysis**: Thoroughly analyze reported issues
+3. **Solution Implementation**: Fix all reported problems completely
+4. **Re-testing Request**: Ask human to re-test after fixes
+5. **Repeat Until Approved**: Continue this cycle until human approves
+
+#### Step 5: Phase Finalization
+**ONLY AFTER HUMAN APPROVAL:**
+1. Mark final checkbox in ''/Phases/Phase_N.md'' as complete
+2. Update ''PLAN.md'' to reflect phase completion
+3. Move to next phase initialization
+
+### **Human Review Documentation Template**
+
+Ensure ''/HUMAN_REVIEW.md'' follows this structure:
+
+markdown
+# Human Review Log
+
+## Phase [N] Review - [Date]
+
+### Deliverables Tested:
+- [ ] [Feature/Component 1]
+- [ ] [Feature/Component 2]
+- [ ] [Feature/Component 3]
+
+### Environment Setup:
+- [ ] README.md instructions followed
+- [ ] .env variables configured
+- [ ] Dependencies installed successfully
+- [ ] Application runs without errors
+
+### Issues Found:
+[List any problems encountered during testing]
+
+### Overall Assessment:
+[Human feedback on functionality, usability, and completeness]
+
+### Status: [APPROVED/NEEDS_REVISION]
+
+**Reviewer:** [Human Name]  
+**Review Date:** [Date]  
+**Approved for Next Phase:** [YES/NO]
+
+---
+
 ## File Reference Hierarchy (Check in This Order)
 
-1. **''/Docs/Bug_Tracking.md''** - Check for known issues and solutions FIRST
-2. **''PRD.md''** - Overall project understanding and requirements
-3. **''PLAN.md''** - Current phase status and development strategy
-4. **''/Phases/Phase_N.md''** - Specific task details and requirements
-5. **''/Docs/Project_Structure.md''** - File organization and structure guidelines
-6. **''/Docs/UI_UX.md''** - Design system and user experience requirements
-7. **Architecture documentation** - Technical implementation guidance
+1. **''/HUMAN_REVIEW.md''** - Check human approval status for current phase
+2. **''/Docs/Bug_Tracking.md''** - Check for known issues and solutions FIRST
+3. **''PRD.md''** - Overall project understanding and requirements
+4. **''PLAN.md''** - Current phase status and development strategy
+5. **''/Phases/Phase_N.md''** - Specific task details and requirements
+6. **''/Docs/Project_Structure.md''** - File organization and structure guidelines
+7. **''/Docs/UI_UX.md''** - Design system and user experience requirements
+8. **Architecture documentation** - Technical implementation guidance
 
 ## Critical Rules & Prohibitions
 
@@ -178,6 +277,9 @@ You are a development agent implementing a project based on established document
 - **Create Files Without Structure Verification** - Consult Project_Structure.md for placement
 - **Add Dependencies Without Documentation** - Follow established dependency management
 - **Commit Code With Errors or Warnings** - Resolve all issues before completion
+- **⚠️ PROCEED TO NEXT PHASE WITHOUT HUMAN APPROVAL** - ABSOLUTE PROHIBITION
+- **Mark Phase Complete Without Human Review** - Human must test and approve first
+- **Ignore Human-Reported Issues** - Must fix all problems before proceeding
 
 ### ALWAYS:
 - **Document All Problems and Solutions** - Log everything in ''/Docs/Bug_Tracking.md''
@@ -188,19 +290,55 @@ You are a development agent implementing a project based on established document
 - **Update Documentation** - Keep all project docs current with changes
 - **Consider Impact** - Evaluate how changes affect other components
 - **Seek Pattern Compliance** - Follow architectural and design patterns
+- **⚠️ WAIT FOR HUMAN REVIEW** - Never proceed without explicit human approval
+- **Request Human Testing** - Provide clear instructions for human verification
+- **Fix Issues Completely** - Resolve all human-reported problems before proceeding
 
 ## Success Metrics
 
 Your implementation is successful when:
 - All phase tasks are completed according to specifications
+- **Human has reviewed and approved the phase deliverables**
 - Code is maintainable, well-documented, and follows project standards
 - No errors or warnings exist in the development environment
 - All functionality works as designed in the PRD
 - Documentation accurately reflects the current state of the project
 - Future developers can easily understand and extend your work
+- **Human can successfully set up and test the application**
 
 ## Remember
-Every decision should support the overall project goals while maintaining consistency with established patterns. Build software that is not just functional, but also maintainable, scalable, and aligned with the project vision outlined in the PRD.`,
+Every decision should support the overall project goals while maintaining consistency with established patterns. Build software that is not just functional, but also maintainable, scalable, and aligned with the project vision outlined in the PRD. **Most importantly, never proceed without human verification - the human review process is crucial for ensuring quality and preventing cascading errors in subsequent phases.**`,
+        },
+        "HUMAN_REVIEW.md": {
+          type: "file" as const,
+          content: `# Human Review Log
+
+## Phase [N] Review - [Date]
+
+### Deliverables Tested:
+- [ ] [Feature/Component 1]
+- [ ] [Feature/Component 2]
+- [ ] [Feature/Component 3]
+
+### Environment Setup:
+- [ ] README.md instructions followed
+- [ ] .env variables configured
+- [ ] Dependencies installed successfully
+- [ ] Application runs without errors
+
+### Issues Found:
+[List any problems encountered during testing]
+
+### Overall Assessment:
+[Human feedback on functionality, usability, and completeness]
+
+### Status: [APPROVED/NEEDS_REVISION]
+
+**Reviewer:** [Human Name]  
+**Review Date:** [Date]  
+**Approved for Next Phase:** [YES/NO]
+
+---`,
         },
     "PLAN.md": {
           type: "file" as const,
@@ -210,6 +348,7 @@ Every decision should support the overall project goals while maintaining consis
           type: "file" as const,
           content: prd,
         },
+
   }
   const [selectedFile, setSelectedFile] = React.useState<string>("PROJECT_RULES.md")
   const [selectedContent, setSelectedContent] = React.useState<string>("")
