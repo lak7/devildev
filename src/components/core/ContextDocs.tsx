@@ -56,11 +56,14 @@ You are a development agent implementing a project based on established document
 
 ## Core Workflow Process
 
-### Before Starting Any Development Session
+### **Before Starting Any Development Session**
 1. **Read Project Overview**: Consult ''PRD.md'' to understand the overall software concept, goals, and requirements
 2. **Check Current Phase**: Review ''PLAN.md'' to identify the current development phase and overall project status
-3. **Access Phase Tasks**: Navigate to ''/Phases/Phase_N.md'' (where N is current phase number) to see available tasks
-4. **Verify Prerequisites**: Ensure all dependencies and prerequisites for the current phase are met
+3. **⚠️ VERIFY PREVIOUS PHASE APPROVAL**: Check ''HUMAN_REVIEW.md'' to ensure previous phase (if any) has "APPROVED" status
+4. **Access Phase Tasks**: Navigate to ''/Phases/Phase_N.md'' (where N is current phase number) to see available tasks
+5. **Verify Prerequisites**: Ensure all dependencies and prerequisites for the current phase are met
+
+**⚠️ CRITICAL: IF PREVIOUS PHASE IS NOT APPROVED IN HUMAN_REVIEW.md, DO NOT START NEW PHASE ⚠️**
 
 ### Task Execution Protocol
 
@@ -169,7 +172,7 @@ When all tasks in a phase are technically complete:
 1. **Update README.md**: Ensure setup instructions are current and complete
 2. **Environment Configuration**: Verify all required environment variables are documented in README.md
 3. **Deliverable Documentation**: Create clear documentation of what was built in this phase
-4. **Testing Instructions**: Provide step-by-step testing instructions for the human reviewer
+4. **Prepare HUMAN_REVIEW.md Entry**: Create the review template with testing checklist (DO NOT create separate testing files)
 
 #### Step 2: Request Human Review
 **IMMEDIATELY** notify the human with this exact message:
@@ -179,81 +182,108 @@ When all tasks in a phase are technically complete:
 Phase [N] technical implementation is complete. Before proceeding to Phase [N+1], 
 I need your review and approval.
 
+I have prepared a review template in HUMAN_REVIEW.md with testing checklist.
+
 REQUIRED ACTIONS FOR YOU:
-1. Read the updated README.md file for setup instructions
-2. Add/update required keys in .env file as documented
-3. Test all deliverables from this phase
-4. Document your review in HUMAN_REVIEW.md
+1. Follow the setup instructions in README.md
+2. Complete the testing checklist in HUMAN_REVIEW.md
+3. Mark your approval status in HUMAN_REVIEW.md
 
-DELIVERABLES TO TEST:
-[List specific features/components built in this phase]
+❌ I WILL NOT PROCEED TO NEXT PHASE UNTIL HUMAN_REVIEW.md IS PROPERLY COMPLETED
+✅ I will only continue after you fill out the complete review in HUMAN_REVIEW.md
 
-TESTING INSTRUCTIONS:
-[Provide clear step-by-step testing instructions]
-
-❌ I CANNOT PROCEED TO NEXT PHASE UNTIL YOU COMPLETE THE REVIEW
-✅ Once you confirm everything works, I will mark Phase [N] as complete and move forward
-
+CRITICAL: Even if you say "next phase" or "continue", I will ONLY proceed after 
+checking that HUMAN_REVIEW.md contains your completed review for this phase.
 
 #### Step 3: Human Review Requirements
-The human must:
-1. **Environment Setup**: Follow README.md to set up local environment
-2. **Configuration**: Add all required environment variables from documentation
-3. **Functional Testing**: Test all deliverables according to provided instructions
-4. **Review Documentation**: Update ''/HUMAN_REVIEW.md'' with:
-   - Phase number and date
-   - What was tested
-   - Issues found (if any)
-   - Overall assessment
-   - Approval status (APPROVED/NEEDS_REVISION)
+The human must complete the review template in HUMAN_REVIEW.md with:
+- **Phase Testing Checklist**: Complete all testing items
+- **Environment Setup Verification**: Confirm setup worked
+- **Issues Documentation**: Report any problems found
+- **Overall Assessment**: Provide feedback on functionality
+- **Approval Status**: Mark as APPROVED or NEEDS_REVISION
 
-#### Step 4: Issue Resolution Protocol
-**IF HUMAN REPORTS ISSUES:**
+**⚠️ CRITICAL: AGENT MUST VERIFY HUMAN_REVIEW.md IS COMPLETED BEFORE PROCEEDING ⚠️**
+
+#### Step 4: Review Verification Protocol
+**BEFORE MOVING TO NEXT PHASE, AGENT MUST:**
+1. **Check HUMAN_REVIEW.md**: Verify the review entry for current phase exists and is complete
+2. **Validate Review Content**: Ensure all required fields are filled out
+3. **Confirm Approval Status**: Verify status is marked as "APPROVED"
+4. **Ignore Verbal Instructions**: Even if human says "next phase" or "continue", DO NOT proceed without proper HUMAN_REVIEW.md completion
+
+**IF HUMAN_REVIEW.md IS NOT PROPERLY COMPLETED:**
+- Remind human to complete the review template
+- Do not accept verbal approvals or shortcuts
+- Wait until proper documentation is provided
+
+#### Step 5: Issue Resolution Protocol
+**IF HUMAN REPORTS ISSUES IN HUMAN_REVIEW.md:**
 1. **STOP ALL FORWARD PROGRESS**: Do not move to next phase
 2. **Problem Analysis**: Thoroughly analyze reported issues
 3. **Solution Implementation**: Fix all reported problems completely
-4. **Re-testing Request**: Ask human to re-test after fixes
-5. **Repeat Until Approved**: Continue this cycle until human approves
+4. **Update HUMAN_REVIEW.md**: Add resolution details to the review entry
+5. **Request Re-Review**: Ask human to update their review in HUMAN_REVIEW.md after testing fixes
+6. **Repeat Until Approved**: Continue this cycle until HUMAN_REVIEW.md shows "APPROVED"
 
-#### Step 5: Phase Finalization
-**ONLY AFTER HUMAN APPROVAL:**
+#### Step 6: Phase Finalization
+**ONLY AFTER HUMAN_REVIEW.md SHOWS "APPROVED" STATUS:**
 1. Mark final checkbox in ''/Phases/Phase_N.md'' as complete
 2. Update ''PLAN.md'' to reflect phase completion
 3. Move to next phase initialization
 
+**⚠️ CRITICAL: NEVER ACCEPT VERBAL APPROVALS - ONLY HUMAN_REVIEW.md DOCUMENTATION ⚠️**
+
 ### **Human Review Documentation Template**
 
-Ensure ''/HUMAN_REVIEW.md'' follows this structure:
+The agent must create this exact template in ''/HUMAN_REVIEW.md'' for each phase review:
 
 markdown
 # Human Review Log
 
 ## Phase [N] Review - [Date]
 
-### Deliverables Tested:
-- [ ] [Feature/Component 1]
-- [ ] [Feature/Component 2]
-- [ ] [Feature/Component 3]
+### Testing Checklist:
+**Setup & Environment:**
+- [ ] Followed README.md setup instructions successfully
+- [ ] Added/updated .env variables as documented
+- [ ] All dependencies installed without errors
+- [ ] Application starts/runs without issues
 
-### Environment Setup:
-- [ ] README.md instructions followed
-- [ ] .env variables configured
-- [ ] Dependencies installed successfully
-- [ ] Application runs without errors
+**Feature Testing:**
+- [ ] [Specific deliverable 1] - works as expected
+- [ ] [Specific deliverable 2] - works as expected  
+- [ ] [Specific deliverable 3] - works as expected
+[Add one checkbox for each key deliverable from the phase]
+
+**Integration Testing:**
+- [ ] All features work together properly
+- [ ] No console errors or warnings
+- [ ] Performance is acceptable
+- [ ] UI/UX matches expected design (if applicable)
 
 ### Issues Found:
-[List any problems encountered during testing]
+[List any problems, bugs, or concerns discovered during testing]
+- Issue 1: [Description]
+- Issue 2: [Description]
+[If no issues: "No issues found"]
 
 ### Overall Assessment:
-[Human feedback on functionality, usability, and completeness]
+[Your feedback on the phase deliverables - functionality, code quality, documentation, etc.]
 
 ### Status: [APPROVED/NEEDS_REVISION]
 
-**Reviewer:** [Human Name]  
+**Reviewer:** [Your Name]  
 **Review Date:** [Date]  
-**Approved for Next Phase:** [YES/NO]
+**Ready for Next Phase:** [YES/NO]
+
+### Agent Notes:
+[Space for agent to add resolution details if issues were reported]
 
 ---
+
+**⚠️ AGENT REQUIREMENT: NEVER CREATE SEPARATE TESTING INSTRUCTION FILES ⚠️**
+All testing instructions must be embedded in the HUMAN_REVIEW.md template as checklists.
 
 ## File Reference Hierarchy (Check in This Order)
 
@@ -277,9 +307,12 @@ markdown
 - **Create Files Without Structure Verification** - Consult Project_Structure.md for placement
 - **Add Dependencies Without Documentation** - Follow established dependency management
 - **Commit Code With Errors or Warnings** - Resolve all issues before completion
-- **⚠️ PROCEED TO NEXT PHASE WITHOUT HUMAN APPROVAL** - ABSOLUTE PROHIBITION
-- **Mark Phase Complete Without Human Review** - Human must test and approve first
-- **Ignore Human-Reported Issues** - Must fix all problems before proceeding
+- **⚠️ PROCEED TO NEXT PHASE WITHOUT HUMAN_REVIEW.md COMPLETION** - ABSOLUTE PROHIBITION
+- **Mark Phase Complete Without Documented Human Review** - Human must complete HUMAN_REVIEW.md template
+- **Accept Verbal Approvals** - Only documented reviews in HUMAN_REVIEW.md are valid
+- **Create Separate Testing Instruction Files** - All testing info goes in HUMAN_REVIEW.md template
+- **Ignore "NEEDS_REVISION" Status** - Must fix all issues before proceeding
+- **Move Forward on Human Say-So Without Documentation** - Even if human says "continue", check HUMAN_REVIEW.md first
 
 ### ALWAYS:
 - **Document All Problems and Solutions** - Log everything in ''/Docs/Bug_Tracking.md''
@@ -290,9 +323,11 @@ markdown
 - **Update Documentation** - Keep all project docs current with changes
 - **Consider Impact** - Evaluate how changes affect other components
 - **Seek Pattern Compliance** - Follow architectural and design patterns
-- **⚠️ WAIT FOR HUMAN REVIEW** - Never proceed without explicit human approval
-- **Request Human Testing** - Provide clear instructions for human verification
-- **Fix Issues Completely** - Resolve all human-reported problems before proceeding
+- **⚠️ VERIFY HUMAN_REVIEW.md COMPLETION** - Check documentation before proceeding to next phase
+- **Create Review Templates** - Prepare proper HUMAN_REVIEW.md templates with testing checklists
+- **Wait for Documented Approval** - Only proceed when HUMAN_REVIEW.md shows "APPROVED" status
+- **Embed Testing Instructions** - Include all testing info in HUMAN_REVIEW.md template, not separate files
+- **Validate Review Completeness** - Ensure all fields in HUMAN_REVIEW.md are filled before proceeding
 
 ## Success Metrics
 

@@ -256,9 +256,9 @@ const DevPage = () => {
         ? JSON.parse(cleanedNumOfPhase) 
         : cleanedNumOfPhase;
     const finalNumberOfPhases = Number(parsedPhasesDetails.numberOfPhases);
-    alert(finalNumberOfPhases);
+    // alert(finalNumberOfPhases);
     setPhaseCount(finalNumberOfPhases);
-    alert(phaseCount);
+    // alert(phaseCount);
     console.log("Phases Details: ", parsedPhasesDetails);
     // const docs = await generateProjectRules(messages, architectureData); 
     // setProjectRules(docs);
@@ -355,7 +355,7 @@ const DevPage = () => {
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 bottom-12">
           <div className="mb-0 transform hover:scale-105 transition-transform duration-300 flex justify-center">
             <Image
-              src="/devildev-logo.png"
+              src="/finaldev.png"
               alt="DevilDev Logo"
               width={400}
               height={120}
