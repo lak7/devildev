@@ -12,6 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../actions/architecture'; 
 import FileExplorer from '@/components/core/ContextDocs';
+import Noise from '@/components/Noise/Noise';
 
 export interface ChatMessage { 
   id: string;
@@ -348,7 +349,7 @@ const DevPage = () => {
         }
         
         // Process any remaining buffered data
-        if (buffer.trim()) {
+        if (buffer.trim()) { 
           const lines = buffer.split('\n');
           for (const line of lines) {
             if (line.startsWith('data: ') && line.length > 6) {
@@ -414,7 +415,7 @@ const DevPage = () => {
       setTextareaHeight(maxHeight + 'px');
     }
   };
-
+ 
   // Initial centered layout
   if (!isChatMode) {
     return (
@@ -440,24 +441,10 @@ const DevPage = () => {
             }}
           />
         </div>
-
-        {/* Floating particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          {particles.map((particle) => (
-            <div
-              key={particle.id}
-              className="absolute w-1 h-1 bg-red-500/30 rounded-full animate-pulse"
-              style={{
-                left: particle.left,
-                top: particle.top,
-                animationDelay: particle.animationDelay,
-                animationDuration: particle.animationDuration,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Main content */}
+        <div className="flex h-full w-full justify-center items-center">
+          {/* <div className="h-dvh min-w-20 bg-white absolute left-0"/>
+          <div className="h-dvh min-w-20 bg-black visible:none  left-0"/> */}
+           {/* Main content */}
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 bottom-12">
           <div className="mb-0 transform hover:scale-105 transition-transform duration-300 flex justify-center">
             <Image
@@ -508,7 +495,21 @@ const DevPage = () => {
               </div>
             </form>
           </div>
+          <div className="flex w-full h-full justify-center items-center mt-12">
+          <a href="/about" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">About Us</a>
+          <div className="w-px h-6 bg-gray-400 mx-5" />
+          <a href="/contact" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Contact Us</a>
+          <div className="w-px h-6 bg-gray-400 mx-5" />
+          <a href="/devlogs" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Devlogs</a>
+
+          {/* <span className="text-red-500">Hello</span>
+          <h1>Hello</h1> */}
+          </div>
+          
         </div>
+        </div>
+
+       
 
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
 
