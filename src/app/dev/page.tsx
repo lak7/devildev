@@ -445,7 +445,7 @@ const DevPage = () => {
           {/* <div className="h-dvh min-w-20 bg-white absolute left-0"/>
           <div className="h-dvh min-w-20 bg-black visible:none  left-0"/> */}
            {/* Main content */}
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 bottom-12">
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-2 bottom-12">
           <div className="mb-0 transform hover:scale-105 transition-transform duration-300 flex justify-center">
             <Image
               src="/finaldev.png"
@@ -462,7 +462,7 @@ const DevPage = () => {
           </h1>
 
           {/* Search Input */}
-          <div className="w-full max-w-2xl">
+          <div className="w-full sm:w-[600px] md:w-[800px] lg:w-[1200px] xl:w-[750px]">
             <form onSubmit={handleSubmit} className="relative">
               <div className="bg-white/5 border-t border-x border-gray-600/100 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
@@ -475,10 +475,10 @@ const DevPage = () => {
                       handleSubmit(e);
                     }
                   }}
-                  className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
+                  className=" bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[69px] max-h-[180px] w-full"
                   rows={2}
                   style={{ height: textareaHeight }}
-                  maxLength={5000}
+                  maxLength={69000}
                   disabled={isLoading}
                 />
               </div>
@@ -500,7 +500,7 @@ const DevPage = () => {
           <div className="w-px h-6 bg-gray-400 mx-5" />
           <a href="/contact" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Contact Us</a>
           <div className="w-px h-6 bg-gray-400 mx-5" />
-          <a href="/devlogs" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Devlogs</a>
+          <a href="/devlogs" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
 
           {/* <span className="text-red-500">Hello</span>
           <h1>Hello</h1> */}

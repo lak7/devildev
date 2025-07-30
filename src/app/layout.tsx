@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import {
+  ClerkProvider,
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,60 +44,62 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <meta name="theme-color" content="#000000" />
-        <meta
-          name="theme-color"
-          media="(prefers-color-scheme: dark)"
-          content="#000000"
-        />
-        <meta
-          name="theme-color"
-          media="(prefers-color-scheme: light)"
-          content="#000000"
-        />
-        <meta name="msapplication-navbutton-color" content="#000000" />
-        <meta
-          name="apple-mobile-web-app-status-bar-style"
-          content="black-translucent"
-        />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="format-detection" content="telephone=no" />
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-            :root {
-              --safe-area-inset-top: env(safe-area-inset-top);
-              --safe-area-inset-right: env(safe-area-inset-right);
-              --safe-area-inset-bottom: env(safe-area-inset-bottom);
-              --safe-area-inset-left: env(safe-area-inset-left);
-            }
-            @supports (-webkit-touch-callout: none) {
-              body {
-                background-color: #000000 !important;
+    <ClerkProvider>
+      <html lang="en">
+        <head>
+          <meta name="theme-color" content="#000000" />
+          <meta
+            name="theme-color"
+            media="(prefers-color-scheme: dark)"
+            content="#000000"
+          />
+          <meta
+            name="theme-color"
+            media="(prefers-color-scheme: light)"
+            content="#000000"
+          />
+          <meta name="msapplication-navbutton-color" content="#000000" />
+          <meta
+            name="apple-mobile-web-app-status-bar-style"
+            content="black-translucent"
+          />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="mobile-web-app-capable" content="yes" />
+          <meta name="format-detection" content="telephone=no" />
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+              :root {
+                --safe-area-inset-top: env(safe-area-inset-top);
+                --safe-area-inset-right: env(safe-area-inset-right);
+                --safe-area-inset-bottom: env(safe-area-inset-bottom);
+                --safe-area-inset-left: env(safe-area-inset-left);
               }
-            }
-            @media screen and (max-width: 768px) {
-              html {
-                background-color: #000000 !important;
+              @supports (-webkit-touch-callout: none) {
+                body {
+                  background-color: #000000 !important;
+                }
               }
-              body {
-                background-color: #000000 !important;
+              @media screen and (max-width: 768px) {
+                html {
+                  background-color: #000000 !important;
+                }
+                body {
+                  background-color: #000000 !important;
+                }
               }
-            }
-          `,
-          }}
-        />
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ backgroundColor: "#000000" }}
-      >
-        {children}
-        <Analytics />
-      </body>
-    </html>
+            `,
+            }}
+          />
+        </head>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          style={{ backgroundColor: "#000000" }}
+        >
+          {children}
+          <Analytics />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
