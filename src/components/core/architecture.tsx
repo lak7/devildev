@@ -481,21 +481,35 @@ export default function Architecture({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
-        e.preventDefault()
-        setIsSpacePressed(true)
-        if (containerRef.current) {
-          containerRef.current.style.cursor = 'grab'
+        // Don't prevent default if user is typing in an input or textarea
+        const target = e.target as HTMLElement
+        const isInputElement = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || 
+                              target.contentEditable === 'true' || target.isContentEditable
+        
+        if (!isInputElement) {
+          e.preventDefault()
+          setIsSpacePressed(true)
+          if (containerRef.current) {
+            containerRef.current.style.cursor = 'grab'
+          }
         }
       }
     }
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
-        e.preventDefault()
-        setIsSpacePressed(false)
-        setIsPanning(false)
-        if (containerRef.current) {
-          containerRef.current.style.cursor = ''
+        // Don't prevent default if user is typing in an input or textarea
+        const target = e.target as HTMLElement
+        const isInputElement = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || 
+                              target.contentEditable === 'true' || target.isContentEditable
+        
+        if (!isInputElement) {
+          e.preventDefault()
+          setIsSpacePressed(false)
+          setIsPanning(false)
+          if (containerRef.current) {
+            containerRef.current.style.cursor = ''
+          }
         }
       }
     }
@@ -739,22 +753,6 @@ export default function Architecture({
   if (!architectureData?.components && !isLoading) {
     return (
       <div className="min-h-full bg-black text-white flex flex-col items-center justify-start pt-48 relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0">
-          {/* Floating particles */}
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-white rounded-full opacity-20"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
-                animationDelay: `${Math.random() * 2}s`
-              }}
-            />
-          ))}
-        </div>
 
         {/* Main Glow Orb */}
         <div className="relative mb-3">

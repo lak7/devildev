@@ -4,7 +4,7 @@ import { generateDocsWithStreaming, type StreamingUpdateCallback } from '../../.
 export async function POST(request: NextRequest) {
   try {
     const { messages, architectureData } = await request.json();
-
+ 
     // Create a readable stream
     const stream = new ReadableStream({
       async start(controller) {

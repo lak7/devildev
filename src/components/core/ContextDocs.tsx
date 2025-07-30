@@ -823,9 +823,7 @@ function FileTreeFile({
     >
       <File className="w-4 h-4 mr-2 flex-shrink-0" style={{ color: getFileIcon(name) }} />
       <span className="text-sm truncate flex-1 text-left">{name}</span>
-      <div className="ml-2 flex-shrink-0">
-        {getStatusIcon()}
-      </div>
+
     </Button>
   )
 }
