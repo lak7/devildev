@@ -637,7 +637,7 @@ const DevPage = () => {
 
         {/* Right Panel with Tabs - Resizable */}
         <div 
-          className="bg-gray-900/30 border border-gray-600/30 rounded-r-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
+          className={`bg-gray-900/30 border border-gray-600/30 rounded-r-xl flex flex-col min-h-0 transition-all duration-200 ease-out`}
           style={{ width: `${100 - leftPanelWidth}%` }}
         >
           {/* Clean Tab Headers */}

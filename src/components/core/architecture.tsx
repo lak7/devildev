@@ -171,6 +171,20 @@ const DEFAULT_POSITIONS: Record<number, Position[]> = {
   ]
 }
 
+// Architecture facts for the idle animation
+const ARCHITECTURE_FACTS = [
+  "Microservices can improve scalability by 10-100x compared to monoliths",
+  "The average API response time should be under 200ms for optimal UX",
+  "Event-driven architectures can handle 1M+ events per second",
+  "Properly cached systems can reduce database load by 90%",
+  "Container orchestration reduces deployment time from hours to minutes",
+  "Load balancers can distribute traffic across 1000+ servers seamlessly",
+  "CDNs can reduce page load times by up to 70% globally",
+  "Database sharding can handle petabytes of data efficiently",
+  "Message queues enable asynchronous processing of millions of tasks",
+  "Circuit breakers prevent cascading failures in distributed systems"
+]
+
 // Icon mapping for dynamic icon resolution
 const iconMap: Record<string, any> = {
   Monitor, Server, Database, Shield, Move, RotateCcw, Activity, ArrowRight,
@@ -358,11 +372,6 @@ const initialComponents: ComponentData[] = [
 
 
 
-
-
-
-
-
 export default function Architecture({ 
   architectureData, 
   isLoading = false, 
@@ -370,10 +379,16 @@ export default function Architecture({
   customPositions = {}, 
   onPositionsChange 
 }: ArchitectureProps) {
+  // Idle animation state - always declared to maintain hook order
+  const [currentFactIndex, setCurrentFactIndex] = useState(0)
+  const [isFactVisible, setIsFactVisible] = useState(true)
+
   const [components, setComponents] = useState<ComponentData[]>(() => {
-    // Process components with predefined colors and positions
-    const initialData = architectureData?.components || initialComponents;
-    return processComponents(initialData, customPositions);
+    // Only process components if architectureData is provided
+    if (architectureData?.components) {
+      return processComponents(architectureData.components, customPositions);
+    }
+    return []; // Empty array when no data is provided
   })
 
   const [connectionLabels, setConnectionLabels] = useState<Record<string, string>>(
@@ -400,7 +415,7 @@ export default function Architecture({
   }
   
   const [transform, setTransform] = useState<ViewportTransform>(() => {
-    const initialData = architectureData?.components || initialComponents;
+    const initialData = architectureData?.components || [];
     const scale = getInitialScale(initialData.length);
     return { x: 0, y: 0, scale };
   })
@@ -417,6 +432,8 @@ export default function Architecture({
   const COMPONENT_HEIGHT = 210
   const MIN_SCALE = 0.1
   const MAX_SCALE = 3
+
+  // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL RETURNS
 
   useEffect(() => {
     console.log("THIS IS IT BITCH: ", architectureData)
@@ -438,6 +455,21 @@ export default function Architecture({
     }
   }, [architectureData, customPositions])
 
+  // Idle animation effect - always runs to maintain hook order
+  useEffect(() => {
+    if (!architectureData?.components && !isLoading) {
+      const interval = setInterval(() => {
+        setIsFactVisible(false)
+        setTimeout(() => {
+          setCurrentFactIndex((prev) => (prev + 1) % ARCHITECTURE_FACTS.length)
+          setIsFactVisible(true)
+        }, 300)
+      }, 4000)
+
+      return () => clearInterval(interval)
+    }
+  }, [architectureData?.components, isLoading])
+
   // Trigger animation restart when selection changes
   useEffect(() => {
     if (selectedComponent) {
@@ -448,22 +480,40 @@ export default function Architecture({
   // Keyboard event handlers for space key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !isSpacePressed) {
-        // e.preventDefault()
-        setIsSpacePressed(true)
-        if (containerRef.current) {
-          containerRef.current.style.cursor = 'grab'
+      if (e.code === 'Space') {
+        // Don't prevent default if user is typing in an input element
+        const target = e.target as HTMLElement
+        const isInputElement = target.tagName === 'INPUT' || 
+                              target.tagName === 'TEXTAREA' || 
+                              target.contentEditable === 'true' ||
+                              target.closest('input, textarea, [contenteditable]')
+        
+        if (!isInputElement) {
+          e.preventDefault()
+          setIsSpacePressed(true)
+          if (containerRef.current) {
+            containerRef.current.style.cursor = 'grab'
+          }
         }
       }
     }
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
-        // e.preventDefault()
-        setIsSpacePressed(false)
-        setIsPanning(false)
-        if (containerRef.current) {
-          containerRef.current.style.cursor = 'default'
+        // Don't prevent default if user is typing in an input element
+        const target = e.target as HTMLElement
+        const isInputElement = target.tagName === 'INPUT' || 
+                              target.tagName === 'TEXTAREA' || 
+                              target.contentEditable === 'true' ||
+                              target.closest('input, textarea, [contenteditable]')
+        
+        if (!isInputElement) {
+          e.preventDefault()
+          setIsSpacePressed(false)
+          setIsPanning(false)
+          if (containerRef.current) {
+            containerRef.current.style.cursor = ''
+          }
         }
       }
     }
@@ -475,28 +525,28 @@ export default function Architecture({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [isSpacePressed])
+  }, [])
 
-  // Convert screen coordinates to canvas coordinates
   const screenToCanvas = useCallback((screenX: number, screenY: number) => {
     const rect = containerRef.current?.getBoundingClientRect()
     if (!rect) return { x: screenX, y: screenY }
     
-    return {
-      x: (screenX - rect.left - transform.x) / transform.scale,
-      y: (screenY - rect.top - transform.y) / transform.scale
-    }
+    const canvasX = (screenX - rect.left - transform.x) / transform.scale
+    const canvasY = (screenY - rect.top - transform.y) / transform.scale
+    
+    return { x: canvasX, y: canvasY }
   }, [transform])
 
-  // Convert canvas coordinates to screen coordinates
   const canvasToScreen = useCallback((canvasX: number, canvasY: number) => {
-    return {
-      x: canvasX * transform.scale + transform.x,
-      y: canvasY * transform.scale + transform.y
-    }
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return { x: canvasX, y: canvasY }
+    
+    const screenX = canvasX * transform.scale + transform.x + rect.left
+    const screenY = canvasY * transform.scale + transform.y + rect.top
+    
+    return { x: screenX, y: screenY }
   }, [transform])
 
-  // Zoom functions
   const zoomIn = useCallback(() => {
     setTransform(prev => ({
       ...prev,
@@ -512,16 +562,16 @@ export default function Architecture({
   }, [])
 
   const resetView = useCallback(() => {
-    setTransform({ x: 0, y: 0, scale: 1 })
-  }, [])
+    const newScale = getInitialScale(components.length)
+    setTransform({ x: 0, y: 0, scale: newScale })
+  }, [components.length])
 
   const fitToView = useCallback(() => {
     if (!containerRef.current || components.length === 0) return
-
-    const rect = containerRef.current.getBoundingClientRect()
+    
+    const container = containerRef.current.getBoundingClientRect()
     const padding = 50
-
-    // Calculate bounding box of all components
+    
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
     
     components.forEach(comp => {
@@ -530,47 +580,43 @@ export default function Architecture({
       maxX = Math.max(maxX, comp.position.x + COMPONENT_WIDTH)
       maxY = Math.max(maxY, comp.position.y + COMPONENT_HEIGHT)
     })
-
-    const contentWidth = maxX - minX
-    const contentHeight = maxY - minY
-    const scaleX = (rect.width - padding * 2) / contentWidth
-    const scaleY = (rect.height - padding * 2) / contentHeight
+    
+    const contentWidth = maxX - minX + padding * 2
+    const contentHeight = maxY - minY + padding * 2
+    
+    const scaleX = container.width / contentWidth
+    const scaleY = container.height / contentHeight
     const scale = Math.min(scaleX, scaleY, MAX_SCALE)
-
+    
     const centerX = (minX + maxX) / 2
     const centerY = (minY + maxY) / 2
-    const viewCenterX = rect.width / 2
-    const viewCenterY = rect.height / 2
-
-    setTransform({
-      scale,
-      x: viewCenterX - centerX * scale,
-      y: viewCenterY - centerY * scale
-    })
+    
+    const x = container.width / 2 - centerX * scale
+    const y = container.height / 2 - centerY * scale
+    
+    setTransform({ x, y, scale })
   }, [components])
 
-  // Mouse wheel zoom
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault()
     
     const rect = containerRef.current?.getBoundingClientRect()
     if (!rect) return
-
+    
     const mouseX = e.clientX - rect.left
     const mouseY = e.clientY - rect.top
     
-    const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1
-    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, transform.scale * scaleFactor))
+    const delta = e.deltaY > 0 ? 0.9 : 1.1
+    const newScale = Math.min(Math.max(transform.scale * delta, MIN_SCALE), MAX_SCALE)
     
     if (newScale !== transform.scale) {
-      const scaleRatio = newScale / transform.scale
-      setTransform(prev => ({
-        scale: newScale,
-        x: mouseX - (mouseX - prev.x) * scaleRatio,
-        y: mouseY - (mouseY - prev.y) * scaleRatio
-      }))
+      const scaleDiff = newScale - transform.scale
+      const newX = transform.x - (mouseX - transform.x) * (scaleDiff / transform.scale)
+      const newY = transform.y - (mouseY - transform.y) * (scaleDiff / transform.scale)
+      
+      setTransform({ x: newX, y: newY, scale: newScale })
     }
-  }, [transform.scale])
+  }, [transform])
 
   // Attach wheel listener
   useEffect(() => {
@@ -633,17 +679,16 @@ export default function Architecture({
       
       e.preventDefault()
       e.stopPropagation()
-
+      
       const component = components.find((c) => c.id === componentId)
       if (!component) return
-
+      
       const canvasPos = screenToCanvas(e.clientX, e.clientY)
-
-      setIsDragging(componentId)
       setDragOffset({
         x: canvasPos.x - component.position.x,
         y: canvasPos.y - component.position.y,
       })
+      setIsDragging(componentId)
     },
     [components, screenToCanvas, isSpacePressed],
   )
@@ -651,22 +696,20 @@ export default function Architecture({
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!isDragging) return
-
-      e.preventDefault()
-
+      
       const canvasPos = screenToCanvas(e.clientX, e.clientY)
-      // Allow negative positions for components to be placed anywhere on the large canvas
-      const newX = canvasPos.x - dragOffset.x
-      const newY = canvasPos.y - dragOffset.y
-
-      const newPosition = { x: newX, y: newY }
-
-      // Update components state
+      const newPosition = {
+        x: canvasPos.x - dragOffset.x,
+        y: canvasPos.y - dragOffset.y,
+      }
+      
       setComponents((prev) =>
-        prev.map((comp) => (comp.id === isDragging ? { ...comp, position: newPosition } : comp)),
+        prev.map((comp) =>
+          comp.id === isDragging ? { ...comp, position: newPosition } : comp,
+        ),
       )
-
-      // Store custom position
+      
+      // Update custom positions if callback is provided
       if (onPositionsChange) {
         onPositionsChange({
           ...customPositions,
@@ -674,14 +717,15 @@ export default function Architecture({
         })
       }
     },
-    [isDragging, dragOffset, screenToCanvas, customPositions, onPositionsChange],
+    [isDragging, screenToCanvas, dragOffset, onPositionsChange, customPositions],
   )
 
   const handleMouseUp = useCallback((e: MouseEvent) => {
-    e.preventDefault()
-    setIsDragging(null)
-    setDragOffset({ x: 0, y: 0 })
-  }, [])
+    if (isDragging) {
+      setIsDragging(null)
+      setDragOffset({ x: 0, y: 0 })
+    }
+  }, [isDragging])
 
   useEffect(() => {
     if (isDragging) {
@@ -705,6 +749,78 @@ export default function Architecture({
     }
     setComponents(processComponents(initialComponents, {}))
     setSelectedComponent(null)
+  }
+
+  // NOW ALL HOOKS ARE DECLARED - SAFE TO DO CONDITIONAL RETURNS
+
+  // Show idle animation when no architecture data is provided
+  if (!architectureData?.components && !isLoading) {
+    return (
+      <div className="min-h-full bg-black text-white flex flex-col items-center justify-start pt-48 relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0">
+          {/* Floating particles */}
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-white rounded-full opacity-20"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Main Glow Orb */}
+        <div className="relative mb-3">
+          {/* Main orb */}
+          <div className="relative w-32 h-32">
+            {/* Dev image */}
+            <img 
+              src="/favicon.jpg" 
+              alt="Developer" 
+              className="relative w-full h-full object-cover rounded-full"
+              style={{ filter: 'brightness(1.2) contrast(1.1)' }}
+            />
+          </div>
+        </div>
+
+        {/* Architecture Facts */}
+        <div className="text-center max-w-2xl px-8">
+          <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent">
+            Software Architecture Insights
+          </h2>
+          
+          <div className="relative h-16 flex items-center justify-center">
+            <p 
+              className={`text-lg text-gray-300 transition-all duration-300 absolute inset-0 flex items-center justify-center ${
+                isFactVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'
+              }`}
+            >
+              {ARCHITECTURE_FACTS[currentFactIndex]}
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom instruction */}
+        <div className="absolute bottom-8 text-center">
+          <p className="text-sm text-gray-500">
+            Describe your project requirements to generate a custom architecture diagram
+          </p>
+        </div>
+
+        {/* CSS for custom animations */}
+        <style jsx>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+          }
+        `}</style>
+      </div>
+    )
   }
 
   // Calculate connection points on component edges with orthogonal routing
