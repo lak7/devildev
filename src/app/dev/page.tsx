@@ -13,6 +13,8 @@ import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../actions/architecture'; 
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 export interface ChatMessage { 
   id: string;
@@ -67,6 +69,9 @@ const DevPage = () => {
   
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const { isLoaded, isSignedIn, user } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
@@ -158,6 +163,15 @@ const DevPage = () => {
       setIsArchitectureLoading(false);
     }
   };
+
+  const handleFirstMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if(isSignedIn){
+      handleSubmit(e);
+    }else{
+      router.push('/sign-in');
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -463,7 +477,7 @@ const DevPage = () => {
 
           {/* Search Input */}
           <div className="w-full sm:w-[600px] md:w-[800px] lg:w-[1200px] xl:w-[750px]">
-            <form onSubmit={handleSubmit} className="relative">
+            <form onSubmit={handleFirstMessage} className="relative">
               <div className="bg-white/5 border-t border-x border-gray-600/100 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
                   placeholder="What you want to build?"
@@ -472,7 +486,7 @@ const DevPage = () => {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
-                      handleSubmit(e);
+                      handleFirstMessage(e);
                     }
                   }}
                   className=" bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[69px] max-h-[180px] w-full"

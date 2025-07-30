@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "preinstall": "npm i --legacy-peer-deps",
     "build": "next build",
     "start": "next start",
     "postinstall": "prisma generate",
