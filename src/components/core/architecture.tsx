@@ -481,39 +481,21 @@ export default function Architecture({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
-        // Don't prevent default if user is typing in an input element
-        const target = e.target as HTMLElement
-        const isInputElement = target.tagName === 'INPUT' || 
-                              target.tagName === 'TEXTAREA' || 
-                              target.contentEditable === 'true' ||
-                              target.closest('input, textarea, [contenteditable]')
-        
-        if (!isInputElement) {
-          e.preventDefault()
-          setIsSpacePressed(true)
-          if (containerRef.current) {
-            containerRef.current.style.cursor = 'grab'
-          }
+        e.preventDefault()
+        setIsSpacePressed(true)
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'grab'
         }
       }
     }
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
-        // Don't prevent default if user is typing in an input element
-        const target = e.target as HTMLElement
-        const isInputElement = target.tagName === 'INPUT' || 
-                              target.tagName === 'TEXTAREA' || 
-                              target.contentEditable === 'true' ||
-                              target.closest('input, textarea, [contenteditable]')
-        
-        if (!isInputElement) {
-          e.preventDefault()
-          setIsSpacePressed(false)
-          setIsPanning(false)
-          if (containerRef.current) {
-            containerRef.current.style.cursor = ''
-          }
+        e.preventDefault()
+        setIsSpacePressed(false)
+        setIsPanning(false)
+        if (containerRef.current) {
+          containerRef.current.style.cursor = ''
         }
       }
     }

@@ -12,7 +12,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../actions/architecture'; 
 import FileExplorer from '@/components/core/ContextDocs';
-import { generateNthPhase, generatePlan, generateProjectRules, numberOfPhases, generatePRD, generateProjectStructure, generateUIUX } from '../../../actions/context';
 
 export interface ChatMessage { 
   id: string;
@@ -51,6 +50,10 @@ const DevPage = () => {
   const [phases, setPhase] = useState<string[]>([]);
   const [projectStructure, setProjectStructure] = useState<string>("");
   const [uiUX, setUiUX] = useState<string>("");
+  
+  // New streaming state
+  const [streamingUpdates, setStreamingUpdates] = useState<Array<{fileName: string, content: string, isComplete: boolean}>>([]);
+  const [isStreamingDocs, setIsStreamingDocs] = useState(false);
   
   // Component position persistence
   const [componentPositions, setComponentPositions] = useState<Record<string, {x: number, y: number}>>({});
@@ -240,55 +243,158 @@ const DevPage = () => {
   const handleGenerateDocs = async () => {
     setIsLoading(true);
     setActiveTab('context');
-    const numOfPhase = await numberOfPhases(messages, architectureData); 
-    let cleanedNumOfPhase = numOfPhase;
-      if (typeof numOfPhase === 'string') {
-        // Remove markdown code blocks (```json...``` or ```...```)
-        cleanedNumOfPhase = numOfPhase
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '')
-          .replace(/\s*```\s*$/, '')
-          .trim();
+    setIsStreamingDocs(true);
+    setStreamingUpdates([]);
+
+    try {
+      const response = await fetch('/api/generate-docs-stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages,
+          architectureData
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      // Parse the JSON result
-      const parsedPhasesDetails = typeof cleanedNumOfPhase === 'string' 
-        ? JSON.parse(cleanedNumOfPhase) 
-        : cleanedNumOfPhase;
-    const finalNumberOfPhases = Number(parsedPhasesDetails.numberOfPhases);
-    // alert(finalNumberOfPhases);
-    setPhaseCount(finalNumberOfPhases);
-    // alert(phaseCount);
-    console.log("Phases Details: ", parsedPhasesDetails);
-    // const docs = await generateProjectRules(messages, architectureData); 
-    // setProjectRules(docs);
-    // alert("Rules Generated");
-    
-    // alert("Phase Count Generated");
-    const prd = await generatePRD(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases);
-    setPrd(prd);
-    // alert("Plan Generated");
-    const plan = await generatePlan(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases, prd);
-    setPlan(plan);
-    const projectStructure = await generateProjectStructure(architectureData, plan, prd);
-    setProjectStructure(projectStructure);
-    const uiUX = await generateUIUX(architectureData, plan, prd);
-    setUiUX(uiUX);
 
-    const allPhases: string[] = [];
+      if (!response.body) {
+        throw new Error('No response body');
+      }
 
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-    for (let i = 1; i <= Number(parsedPhasesDetails.numberOfPhases); i++) {
-      const nthPhase = await generateNthPhase(architectureData, plan, i.toString(), parsedPhasesDetails.phases, prd, parsedPhasesDetails.numberOfPhases);
-      console.log(nthPhase);
-      allPhases.push(nthPhase);
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) break;
+
+          // Add new chunk to buffer
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Process complete messages from buffer
+          const messages = buffer.split('\n\n');
+          
+          // Keep the last incomplete message in buffer
+          buffer = messages.pop() || '';
+
+          for (const message of messages) {
+            if (message.trim()) {
+              const lines = message.split('\n');
+              
+              for (const line of lines) {
+                if (line.startsWith('data: ') && line.length > 6) {
+                  const jsonStr = line.slice(6).trim();
+                  
+                  try {
+                    if (jsonStr) {
+                      // Log for debugging
+                      if (jsonStr.length > 1000) {
+                        console.log(`Processing large JSON (${jsonStr.length} chars):`, jsonStr.substring(0, 100) + '...');
+                      }
+                      
+                      const data = JSON.parse(jsonStr);
+                      
+                      if (data.type === 'update') {
+                        // Handle streaming update
+                        setStreamingUpdates(prev => {
+                          const existingIndex = prev.findIndex(update => update.fileName === data.fileName);
+                          const newUpdate = { 
+                            fileName: data.fileName, 
+                            content: data.content, 
+                            isComplete: data.isComplete 
+                          };
+                          
+                          if (existingIndex >= 0) {
+                            const updated = [...prev];
+                            updated[existingIndex] = newUpdate;
+                            return updated;
+                          } else {
+                            return [...prev, newUpdate];
+                          }
+                        });
+                      } else if (data.type === 'complete') {
+                        // Handle completion
+                        const result = data.result;
+                        setPhaseCount(result.phaseCount);
+                        setPhase(result.phases);
+                        setPrd(result.prd);
+                        setPlan(result.plan);
+                        setProjectStructure(result.projectStructure);
+                        setUiUX(result.uiUX);
+                        setProjectRules(result.projectRules);
+                      } else if (data.type === 'error') {
+                        console.error('Streaming error:', data.error);
+                        throw new Error(data.error);
+                      }
+                    }
+                  } catch (parseError) {
+                    console.error('Error parsing streaming data:', parseError);
+                    console.error('Problematic line:', line);
+                    console.error('JSON string length:', jsonStr?.length || 0);
+                    console.error('JSON preview:', jsonStr?.substring(0, 200) + '...');
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // Process any remaining buffered data
+        if (buffer.trim()) {
+          const lines = buffer.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ') && line.length > 6) {
+              const jsonStr = line.slice(6).trim();
+              
+              try {
+                if (jsonStr) {
+                  // Log for debugging
+                  if (jsonStr.length > 1000) {
+                    console.log(`Processing remaining buffer JSON (${jsonStr.length} chars):`, jsonStr.substring(0, 100) + '...');
+                  }
+                  
+                  const data = JSON.parse(jsonStr);
+                  
+                  if (data.type === 'complete') {
+                    const result = data.result;
+                    setPhaseCount(result.phaseCount);
+                    setPhase(result.phases);
+                    setPrd(result.prd);
+                    setPlan(result.plan);
+                    setProjectStructure(result.projectStructure);
+                    setUiUX(result.uiUX);
+                    setProjectRules(result.projectRules);
+                  } else if (data.type === 'error') {
+                    console.error('Streaming error:', data.error);
+                    throw new Error(data.error);
+                  }
+                }
+              } catch (parseError) {
+                console.error('Error parsing remaining buffer data:', parseError);
+                console.error('Buffer line:', line);
+                console.error('Buffer JSON string length:', jsonStr?.length || 0);
+                console.error('Buffer JSON preview:', jsonStr?.substring(0, 200) + '...');
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    } catch (error) {
+      console.error('Error generating docs:', error);
+    } finally {
+      setIsLoading(false);
+      setIsStreamingDocs(false);
     }
-
-
-    setPhase(allPhases);
-
-    // console.log(phases);
-    setIsLoading(false);
   }
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -570,8 +676,16 @@ const DevPage = () => {
             )}
             {currentStartOrNot && !isLoading && !isArchitectureLoading && (
                <div className="flex h-12 ml-12">
-               <button onClick={handleGenerateDocs} className=" px-6 py-2 hover:bg-transparent border border-white hover:text-white rounded-lg font-bold cursor-pointer bg-white text-black transition-colors duration-200">
-                 Generate Docs{"->"}
+               <button 
+                 onClick={handleGenerateDocs} 
+                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 ${
+                   isStreamingDocs 
+                     ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
+                     : "hover:bg-transparent border-white hover:text-white bg-white text-black"
+                 }`}
+                 disabled={isStreamingDocs}
+               >
+                 {isStreamingDocs ? "Generating Docs..." : "Generate Docs→"}
                </button>
              </div>
             )}
@@ -637,7 +751,7 @@ const DevPage = () => {
 
         {/* Right Panel with Tabs - Resizable */}
         <div 
-          className={`bg-gray-900/30 border border-gray-600/30 rounded-r-xl flex flex-col min-h-0 transition-all duration-200 ease-out`}
+          className="bg-gray-900/30 border border-gray-600/30 rounded-r-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
           style={{ width: `${100 - leftPanelWidth}%` }}
         >
           {/* Clean Tab Headers */}
@@ -680,16 +794,28 @@ const DevPage = () => {
 
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            {activeTab === 'architecture' ? (
+            <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
               <Architecture 
                 architectureData={architectureData} 
                 isLoading={isArchitectureLoading}
                 customPositions={componentPositions}
                 onPositionsChange={setComponentPositions}
               />
-            ) : ( 
-              <FileExplorer projectRules={projectRules} plan={plan} phaseCount={phaseCount} phases={phases} prd={prd} projectStructure={projectStructure} uiUX={uiUX} /> 
-            )}
+            </div>
+            
+            <div className={`h-full ${activeTab === 'context' ? 'block' : 'hidden'}`}>
+              <FileExplorer 
+                projectRules={projectRules} 
+                plan={plan} 
+                phaseCount={phaseCount} 
+                phases={phases} 
+                prd={prd} 
+                projectStructure={projectStructure} 
+                uiUX={uiUX}
+                streamingUpdates={streamingUpdates}
+                isGenerating={isStreamingDocs}
+              /> 
+            </div>
           </div>
         </div>
       </div>

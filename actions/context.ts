@@ -4,6 +4,13 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 
+// Streaming update callback type
+export type StreamingUpdateCallback = (
+  fileName: string,
+  content: string,
+  isComplete: boolean
+) => void;
+
 export async function numberOfPhases(conversationHistory: any[] = [], architectureData: any) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const llm = new ChatOpenAI({openAIApiKey: openaiKey})
@@ -1396,4 +1403,379 @@ const prompt = PromptTemplate.fromTemplate(template);
 const chain = prompt.pipe(llm).pipe(new StringOutputParser());
 const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, prd: prd});
 return result;
+}
+
+export async function generateDocsWithStreaming(
+  messages: any[],
+  architectureData: any,
+  onUpdate: StreamingUpdateCallback
+) {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const llm = new ChatOpenAI({ openAIApiKey: openaiKey });
+
+  try {
+    // Step 1: Generate number of phases
+    onUpdate("phases_analysis.json", "Analyzing project complexity and determining phases...", false);
+    
+    const numOfPhase = await numberOfPhases(messages, architectureData);
+    let cleanedNumOfPhase = numOfPhase;
+    if (typeof numOfPhase === 'string') {
+      cleanedNumOfPhase = numOfPhase
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/, '')
+        .replace(/\s*```\s*$/, '')
+        .trim();
+    }
+    
+    const parsedPhasesDetails = typeof cleanedNumOfPhase === 'string' 
+      ? JSON.parse(cleanedNumOfPhase) 
+      : cleanedNumOfPhase;
+    
+    onUpdate("phases_analysis.json", JSON.stringify(parsedPhasesDetails, null, 2), true);
+
+    // Step 2: Generate PRD with streaming
+    onUpdate("PRD.md", "# Product Requirements Document\n\nGenerating product requirements...", false);
+    
+    const prd = await generatePRDStreaming(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases, onUpdate);
+    
+    // Step 3: Generate PLAN with streaming  
+    onUpdate("PLAN.md", "# Development Plan\n\nGenerating development plan...", false);
+    
+    const plan = await generatePlanStreaming(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases, prd, onUpdate);
+    
+    // Step 4: Generate Project Structure with streaming
+    onUpdate("Docs/Project_Structure.md", "# Project Structure\n\nGenerating project structure...", false);
+    
+    const projectStructure = await generateProjectStructureStreaming(architectureData, plan, prd, onUpdate);
+    
+    // Step 5: Generate UI/UX with streaming
+    onUpdate("Docs/UI_UX.md", "# UI/UX Documentation\n\nGenerating UI/UX guidelines...", false);
+    
+    const uiUX = await generateUIUXStreaming(architectureData, plan, prd, onUpdate);
+
+    // Step 6: Generate all phases with streaming
+    const allPhases: string[] = [];
+    
+    for (let i = 1; i <= Number(parsedPhasesDetails.numberOfPhases); i++) {
+      onUpdate(`Phases/Phase_${i}.md`, `# Phase ${i}\n\nGenerating phase ${i} documentation...`, false);
+      
+      const nthPhase = await generateNthPhaseStreaming(architectureData, plan, i.toString(), parsedPhasesDetails.phases, prd, parsedPhasesDetails.numberOfPhases, onUpdate, i);
+      allPhases.push(nthPhase);
+    }
+
+    return {
+      phaseCount: Number(parsedPhasesDetails.numberOfPhases),
+      phases: allPhases,
+      prd,
+      plan,
+      projectStructure,
+      uiUX,
+      projectRules: "" // This can be generated separately if needed
+    };
+
+  } catch (error) {
+    console.error('Error in streaming generation:', error);
+    onUpdate("error.log", `Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    throw error;
+  }
+}
+
+// Streaming version of generatePRD
+export async function generatePRDStreaming(
+  conversationHistory: any[] = [],
+  architectureData: any,
+  numOfPhase: string,
+  phaseDetails: string,
+  onUpdate: StreamingUpdateCallback
+) {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const llm = new ChatOpenAI({ 
+    openAIApiKey: openaiKey,
+    streaming: true,
+    temperature: 0.7
+  });
+
+  const template = `
+    # Product Requirements Document (PRD) Generation Agent
+
+You are an expert product manager specializing in creating comprehensive Product Requirements Documents for software products. Your task is to analyze the project conversation, architecture, and development phases to generate a detailed, professional PRD that serves as the complete specification for developers and stakeholders.
+
+## Input Data:
+- **Conversation History:** {conversation_history}
+- **Architecture Details:** {architecture_data}
+- **Number of Phases:** {numberOfPhases}
+- **Phase Details:** {phaseDetails}
+
+## Analysis Instructions:
+
+### Step 1: Extract Core Product Information
+From the conversation history and architecture, identify:
+- **Product concept and main purpose**
+- **Target users and their primary needs**
+- **Core value proposition**
+- **Key business objectives**
+- **Technical platform (web app/mobile app)**
+- **Essential vs nice-to-have features**
+
+### Step 2: Architecture Analysis
+From the architecture_data, understand:
+- **Technology stack and components**
+- **System complexity and integrations**
+- **Data flow and storage requirements**
+- **Third-party service dependencies**
+- **Security and performance considerations**
+
+### Step 3: Phase Integration
+Use the numberOfPhases and phaseDetails to:
+- **Map features to development phases**
+- **Create realistic timeline estimates**
+- **Identify phase dependencies and milestones**
+- **Structure feature priorities based on phase sequence**
+
+## PRD Generation Guidelines:
+
+### Content Quality Standards:
+- **Be Specific:** Avoid generic placeholders - use actual project details
+- **Be Actionable:** Every requirement should be implementable
+- **Be Measurable:** Include specific acceptance criteria and success metrics
+- **Be Complete:** Cover all aspects needed for development
+- **Be Realistic:** Align with the project's actual scope and complexity
+
+### Platform-Specific Considerations:
+**For Web Applications:**
+- Focus on browser compatibility, responsive design, and web performance
+- Include SEO considerations if applicable
+- Address Progressive Web App features if relevant
+
+**For Mobile Applications:**
+- Specify iOS/Android requirements and versions
+- Include app store guidelines and approval processes
+- Address offline functionality and device-specific features
+
+### Technical Accuracy:
+- **Technology Stack:** Use actual technologies from architecture_data
+- **Integration Details:** Reference specific APIs and services mentioned
+- **Performance Requirements:** Set realistic metrics based on app complexity
+- **Security Requirements:** Match the sensitivity of data being handled
+
+Generate a comprehensive, professional PRD that serves as the definitive guide for building this specific product, incorporating all provided context and technical details.`;
+
+  const prompt = PromptTemplate.fromTemplate(template);
+  const formattedHistory = conversationHistory.map(msg => 
+    `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+  ).join('\n');
+
+  let accumulatedContent = "";
+  
+  const stream = await llm.stream(await prompt.format({
+    conversation_history: formattedHistory,
+    architecture_data: JSON.stringify(architectureData),
+    numberOfPhases: numOfPhase,
+    phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails
+  }));
+
+  for await (const chunk of stream) {
+    accumulatedContent += chunk.content;
+    onUpdate("PRD.md", accumulatedContent, false);
+  }
+
+  onUpdate("PRD.md", accumulatedContent, true);
+  return accumulatedContent;
+}
+
+// Streaming version of generatePlan
+export async function generatePlanStreaming(
+  conversationHistory: any[] = [],
+  architectureData: any,
+  numOfPhase: string,
+  phaseDetails: string,
+  prd: string,
+  onUpdate: StreamingUpdateCallback
+) {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const llm = new ChatOpenAI({ 
+    openAIApiKey: openaiKey,
+    streaming: true,
+    temperature: 0.7
+  });
+
+  const template = `# Development Plan Document (PLAN.md) Generation Agent
+
+You are an expert technical project manager and software architect specializing in creating comprehensive development execution plans. Your task is to analyze the project requirements, architecture, and phases to generate a detailed PLAN.md that serves as the definitive execution guide for coding assistants and development teams.
+
+## Input Data:
+- **Conversation History:** {conversation_history}
+- **Architecture Details:** {architecture_data}
+- **Number of Phases:** {numberOfPhases}
+- **Phase Details:** {phaseDetails}
+- **Product Requirements Document:** {prd}
+
+Generate a comprehensive PLAN.md document that serves as the primary execution guide for all development work.`;
+
+  const prompt = PromptTemplate.fromTemplate(template);
+  const formattedHistory = conversationHistory.map(msg => 
+    `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+  ).join('\n');
+
+  let accumulatedContent = "";
+  
+  const stream = await llm.stream(await prompt.format({
+    conversation_history: formattedHistory,
+    architecture_data: JSON.stringify(architectureData),
+    numberOfPhases: numOfPhase,
+    phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails,
+    prd: prd
+  }));
+
+  for await (const chunk of stream) {
+    accumulatedContent += chunk.content;
+    onUpdate("PLAN.md", accumulatedContent, false);
+  }
+
+  onUpdate("PLAN.md", accumulatedContent, true);
+  return accumulatedContent;
+}
+
+// Streaming version of generateProjectStructure
+export async function generateProjectStructureStreaming(
+  architectureData: any,
+  plan: string,
+  prd: string,
+  onUpdate: StreamingUpdateCallback
+) {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const llm = new ChatOpenAI({ 
+    openAIApiKey: openaiKey,
+    streaming: true,
+    temperature: 0.7
+  });
+
+  const template = `
+    # Project Structure Document Generator
+
+You are an expert software architect specializing in creating comprehensive project structure documentation. Your task is to analyze the project requirements, architecture, and development plan to generate a detailed Project_Structure.md that defines the complete file organization, folder hierarchy, and structural guidelines for the development team.
+
+## INPUT DATA:
+- **Project Plan:** {planContent}
+- **Project Architecture:** {architectureData}
+- **PRD:** {prd}
+
+Generate a comprehensive Project_Structure.md that serves as the rough guide for all file and folder organization decisions throughout the development process.`;
+
+  const prompt = PromptTemplate.fromTemplate(template);
+
+  let accumulatedContent = "";
+  
+  const stream = await llm.stream(await prompt.format({
+    architectureData: JSON.stringify(architectureData),
+    planContent: plan,
+    prd: prd
+  }));
+
+  for await (const chunk of stream) {
+    accumulatedContent += chunk.content;
+    onUpdate("Docs/Project_Structure.md", accumulatedContent, false);
+  }
+
+  onUpdate("Docs/Project_Structure.md", accumulatedContent, true);
+  return accumulatedContent;
+}
+
+// Streaming version of generateUIUX
+export async function generateUIUXStreaming(
+  architectureData: any,
+  plan: string,
+  prd: string,
+  onUpdate: StreamingUpdateCallback
+) {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const llm = new ChatOpenAI({ 
+    openAIApiKey: openaiKey,
+    streaming: true,
+    temperature: 0.7
+  });
+
+  const template = `
+# UI/UX Documentation Generator
+
+You are an expert UI/UX designer and user experience strategist specializing in creating comprehensive design documentation. Your task is to analyze the project requirements, architecture, and development plan to generate a detailed UI_UX.md that defines design standards, user flows, and interface guidelines for the development team.
+
+## INPUT DATA:
+- **Project Plan:** {planContent}
+- **Project Architecture:** {architectureData}
+- **PRD:** {prd}
+
+Generate comprehensive UI/UX documentation that serves as the definitive guide for all design and user experience decisions throughout the development process.`;
+
+  const prompt = PromptTemplate.fromTemplate(template);
+
+  let accumulatedContent = "";
+  
+  const stream = await llm.stream(await prompt.format({
+    architectureData: JSON.stringify(architectureData),
+    planContent: plan,
+    prd: prd
+  }));
+
+  for await (const chunk of stream) {
+    accumulatedContent += chunk.content;
+    onUpdate("Docs/UI_UX.md", accumulatedContent, false);
+  }
+
+  onUpdate("Docs/UI_UX.md", accumulatedContent, true);
+  return accumulatedContent;
+}
+
+// Streaming version of generateNthPhase
+export async function generateNthPhaseStreaming(
+  architectureData: any,
+  plan: string,
+  numOfPhase: string,
+  phaseDetails: string,
+  prd: string,
+  totalPhases: string,
+  onUpdate: StreamingUpdateCallback,
+  phaseIndex: number
+) {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const llm = new ChatOpenAI({ 
+    openAIApiKey: openaiKey,
+    streaming: true,
+    temperature: 0.7
+  });
+
+  const template = `# Phase Execution Plan Generator with Human Review Integration
+
+You are an expert software development lead creating actionable execution plans for AI coding agents. Generate a focused phase execution document with a comprehensive todo list tailored specifically to the current phase requirements, including mandatory human review checkpoints.
+
+## INPUT DATA:
+- **Project Plan:** {planContent}
+- **Project Architecture:** {architectureData}  
+- **Target Phase:** {phaseNumber}
+- **Phase Details:** {phaseDetails}
+- **PRD:** {prd}
+- **Total Phases:** {totalPhases}
+
+Generate the complete phase execution plan now, ensuring all tasks are specific to this phase, platform, and technology stack, with appropriate human review integration based on the phase number and total phases.`;
+
+  const prompt = PromptTemplate.fromTemplate(template);
+
+  let accumulatedContent = "";
+  
+  const stream = await llm.stream(await prompt.format({
+    architectureData: JSON.stringify(architectureData),
+    planContent: plan,
+    phaseNumber: numOfPhase,
+    phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails,
+    prd: prd,
+    totalPhases: totalPhases
+  }));
+
+  for await (const chunk of stream) {
+    accumulatedContent += chunk.content;
+    onUpdate(`Phases/Phase_${phaseIndex}.md`, accumulatedContent, false);
+  }
+
+  onUpdate(`Phases/Phase_${phaseIndex}.md`, accumulatedContent, true);
+  return accumulatedContent;
 }
