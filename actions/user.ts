@@ -84,24 +84,7 @@ export async function updateUserProfile(
   }
 }
 
-export async function createUserChat(
-  userId: string,
-  title?: string
-) {
-  try {
-    const chat = await db.chat.create({
-      data: {
-        userId,
-        title: title || 'New Chat',
-        messages: [],
-      },
-    });
-    return chat;
-  } catch (error) {
-    console.error('Error creating chat:', error);
-    throw error;
-  }
-}
+
 
 export async function updateChatMessages(
   chatId: string,
