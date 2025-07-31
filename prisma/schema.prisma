@@ -46,3 +46,25 @@ model Devlogs {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model User {
+  id           String   @id // Clerk's userId as primary key
+  email        String   @unique
+  name         String?
+  username     String?  @unique
+  level        String?  @default("beginner")
+  preferredIde String?  @default("vscode")
+  chats        Chat[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Chat {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Json[]   // Store messages as JSON objects instead of strings
+  title     String?  // Optional chat title
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -153,7 +153,7 @@ const DevPage = () => {
       // // Parse the JSON result
       const parsedArchitecture = typeof cleanedResult === 'string' 
         ? JSON.parse(cleanedResult) 
-        : cleanedResult;
+        : cleanedResult; 
       
       setArchitectureData(parsedArchitecture);
       setArchitectureGenerated(true);
@@ -509,16 +509,19 @@ const DevPage = () => {
               </div>
             </form>
           </div>
-          <div className="flex w-full h-full justify-center items-center mt-12">
-          <a href="/about" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">About Us</a>
-          <div className="w-px h-6 bg-gray-400 mx-5" />
-          <a href="/contact" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Contact Us</a>
-          <div className="w-px h-6 bg-gray-400 mx-5" />
-          <a href="/devlogs" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
-
-          {/* <span className="text-red-500">Hello</span>
-          <h1>Hello</h1> */}
-          </div>
+          {!isSignedIn && (
+            <div className="flex w-full h-full justify-center items-center mt-12">
+             <a href="/contact" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Contact</a>
+             <div className="w-px h-6 bg-gray-400 mx-5" />
+             <a href="/devlogs" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
+             <div className="w-px h-6 bg-gray-400 mx-5" />
+               <a href="/about" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">About</a>
+   
+             {/* <span className="text-red-500">Hello</span>
+             <h1>Hello</h1> */}
+             </div>
+          )}
+         
           
         </div>
         </div>

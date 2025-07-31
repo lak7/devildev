@@ -36,6 +36,7 @@
     "rehype-highlight": "^7.0.2",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
+    "svix": "^1.69.0",
     "tailwind-merge": "^3.3.0",
     "zod": "^3.25.54"
   },
