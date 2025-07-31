@@ -12,46 +12,6 @@ export interface ChatMessage {
   isStreaming?: boolean;
 }
 
-// Create a new chat and return the chatId
-export async function createChat(initialMessage: string) {
-  try {
-    const { userId } = await auth();
-    
-    if (!userId) {
-      throw new Error("User not authenticated");
-    }
-
-    // Ensure user exists in database
-    const user = await db.user.findUnique({
-      where: { id: userId },
-    });
-
-    // Create initial message object
-    const initialMessageObj: ChatMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: initialMessage,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Create new chat with initial message
-    const chat = await db.chat.create({
-      data: {
-        userId: userId,
-        messages: [initialMessageObj] as any,
-        title: initialMessage.length > 50 
-          ? initialMessage.substring(0, 50) + "..." 
-          : initialMessage,
-      },
-    });
-
-    return { success: true, chatId: chat.id };
-  } catch (error) {
-    console.error("Error creating chat:", error);
-    return { success: false, error: "Failed to create chat" };
-  }
-}
-
 // Create a new chat with a specific ID (for localStorage flow)
 export async function createChatWithId(chatId: string, initialMessage: string) {
   try {
