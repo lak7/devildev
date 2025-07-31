@@ -19,6 +19,12 @@ import {
   ArchitectureData,
   ComponentPosition 
 } from '../../../../actions/architecturePersistence';
+import {
+  saveContextualDocs,
+  getContextualDocs,
+  batchUpdateDocs,
+  ContextualDocsData
+} from '../../../../actions/contextualDocsPersistence';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
 import { useUser } from '@clerk/nextjs';
@@ -60,6 +66,11 @@ const DevPage = () => {
   const [isArchitectureLoading, setIsArchitectureLoading] = useState(false);
   const [architectureGenerated, setArchitectureGenerated] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // Contextual docs state
+  const [contextualDocs, setContextualDocs] = useState<ContextualDocsData>({});
+  const [docsGenerated, setDocsGenerated] = useState(false);
+  
+  // Individual doc states for backward compatibility with existing components
   const [projectRules, setProjectRules] = useState<string>("");
   const [plan, setPlan] = useState<string>("");
   const [prd, setPrd] = useState<string>("");
@@ -138,6 +149,39 @@ const DevPage = () => {
     }
   };
 
+  // Helper function to sync individual doc states with contextualDocs
+  const syncIndividualStates = (docs: ContextualDocsData) => {
+    if (docs.projectRules) setProjectRules(docs.projectRules);
+    if (docs.plan) setPlan(docs.plan);
+    if (docs.prd) setPrd(docs.prd);
+    if (docs.phases) setPhase(docs.phases);
+    if (docs.phaseCount) setPhaseCount(docs.phaseCount);
+    if (docs.projectStructure) setProjectStructure(docs.projectStructure);
+    if (docs.uiUX) setUiUX(docs.uiUX);
+  };
+
+  // Helper function to save contextual docs
+  const saveDocsData = async (docsData: ContextualDocsData) => {
+    if (!chatId) return;
+    
+    try {
+      const result = await saveContextualDocs({
+        chatId,
+        docsData,
+      });
+      
+      if (result.success) {
+        setContextualDocs(docsData);
+        syncIndividualStates(docsData);
+        setDocsGenerated(true);
+      } else {
+        console.error('Failed to save contextual docs:', result.error);
+      }
+    } catch (error) {
+      console.error('Error saving contextual docs:', error);
+    }
+  };
+
   // Load chat data and architecture when component mounts
   useEffect(() => {
     const loadChatAndArchitecture = async () => {
@@ -158,6 +202,14 @@ const DevPage = () => {
             setArchitectureData(archResult.architecture);
             setComponentPositions(archResult.componentPositions || {});
             setArchitectureGenerated(true);
+          }
+
+          // Load contextual docs data if it exists
+          const docsResult = await getContextualDocs(chatId);
+          if (docsResult.success && docsResult.contextualDocs) {
+            setContextualDocs(docsResult.contextualDocs);
+            syncIndividualStates(docsResult.contextualDocs);
+            setDocsGenerated(true);
           }
           
           // If there's an initial message, process it
@@ -490,6 +542,25 @@ const DevPage = () => {
                         setProjectStructure(result.projectStructure);
                         setUiUX(result.uiUX);
                         setProjectRules(result.projectRules);
+                        
+                        // Save all docs to database
+                        const docsData: ContextualDocsData = {
+                          plan: result.plan,
+                          prd: result.prd,
+                          projectStructure: result.projectStructure,
+                          uiUX: result.uiUX,
+                          projectRules: result.projectRules,
+                          phases: result.phases,
+                          phaseCount: result.phaseCount,
+                          isPlanComplete: !!result.plan,
+                          isPrdComplete: !!result.prd,
+                          isProjectStructureComplete: !!result.projectStructure,
+                          isUiUXComplete: !!result.uiUX,
+                          isProjectRulesComplete: !!result.projectRules,
+                          arePhasesComplete: !!result.phases?.length,
+                        };
+                        
+                        await saveDocsData(docsData);
                       } else if (data.type === 'error') {
                         console.error('Streaming error:', data.error);
                         throw new Error(data.error);
@@ -532,6 +603,25 @@ const DevPage = () => {
                     setProjectStructure(result.projectStructure);
                     setUiUX(result.uiUX);
                     setProjectRules(result.projectRules);
+                    
+                    // Save all docs to database
+                    const docsData: ContextualDocsData = {
+                      plan: result.plan,
+                      prd: result.prd,
+                      projectStructure: result.projectStructure,
+                      uiUX: result.uiUX,
+                      projectRules: result.projectRules,
+                      phases: result.phases,
+                      phaseCount: result.phaseCount,
+                      isPlanComplete: !!result.plan,
+                      isPrdComplete: !!result.prd,
+                      isProjectStructureComplete: !!result.projectStructure,
+                      isUiUXComplete: !!result.uiUX,
+                      isProjectRulesComplete: !!result.projectRules,
+                      arePhasesComplete: !!result.phases?.length,
+                    };
+                    
+                    await saveDocsData(docsData);
                   } else if (data.type === 'error') {
                     console.error('Streaming error:', data.error);
                     throw new Error(data.error);
@@ -742,11 +832,13 @@ const DevPage = () => {
                  className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 ${
                    isStreamingDocs 
                      ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
-                     : "hover:bg-transparent border-white hover:text-white bg-white text-black"
+                     : docsGenerated
+                       ? "bg-green-600 border-green-600 text-white cursor-not-allowed"
+                       : "hover:bg-transparent border-white hover:text-white bg-white text-black"
                  }`}
-                 disabled={isStreamingDocs}
+                 disabled={isStreamingDocs || docsGenerated}
                >
-                 {isStreamingDocs ? "Generating Docs..." : "Generate Docs→"}
+                 {isStreamingDocs ? "Generating Docs..." : docsGenerated ? "Docs Generated ✓" : "Generate Docs→"}
                </button>
              </div>
             )}

@@ -60,14 +60,15 @@ model User {
 }
 
 model Chat {
-  id           String        @id @default(uuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages     Json[]        // Store messages as JSON objects instead of strings
-  title        String?       // Optional chat title
-  architecture Architecture? // One-to-one relationship with Architecture
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id             String             @id @default(uuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages       Json[]             // Store messages as JSON objects instead of strings
+  title          String?            // Optional chat title
+  architecture   Architecture?      // One-to-one relationship with Architecture
+  contextualDocs ContextualDocs?    // One-to-one relationship with ContextualDocs
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 }
 
 model Architecture {
@@ -92,4 +93,43 @@ model Architecture {
   
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+}
+
+model ContextualDocs {
+  id                  String   @id @default(uuid())
+  chatId              String   @unique
+  chat                Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  // Core documentation content
+  projectRules        String?  @db.Text // PROJECT_RULES.md content
+  humanReview         String?  @db.Text // HUMAN_REVIEW.md content
+  plan                String?  @db.Text // PLAN.md content
+  prd                 String?  @db.Text // PRD.md content (Product Requirements Document)
+  
+  // Docs folder content
+  bugTracking         String?  @db.Text // Docs/Bug_Tracking.md content
+  projectStructure    String?  @db.Text // Docs/Project_Structure.md content
+  uiUX                String?  @db.Text // Docs/UI_UX.md content
+  
+  // Phases content (stored as JSON array of phase strings)
+  phases              Json?    // Array of phase content strings
+  phaseCount          Int?     // Number of phases
+  
+  // Generation metadata
+  requirement         String?  @db.Text // Original requirement that generated these docs
+  generatedAt         DateTime @default(now())
+  lastDocUpdate       DateTime @default(now())
+  
+  // Completion status for each document type
+  isProjectRulesComplete     Boolean @default(false)
+  isHumanReviewComplete      Boolean @default(false)
+  isPlanComplete             Boolean @default(false)
+  isPrdComplete              Boolean @default(false)
+  isBugTrackingComplete      Boolean @default(false)
+  isProjectStructureComplete Boolean @default(false)
+  isUiUXComplete             Boolean @default(false)
+  arePhasesComplete          Boolean @default(false)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 } 
