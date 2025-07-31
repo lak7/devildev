@@ -1,166 +1,92 @@
 "use client";
 
-import type React from "react";
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.css';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info } from 'lucide-react';
+import Architecture from '@/components/core/architecture';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { startOrNot, firstBot } from '../../actions/agentsFlow';
+import { generateArchitecture, generateArchitectureWithToolCalling } from '../../actions/architecture'; 
+import { createChat } from '../../actions/chat';
+import FileExplorer from '@/components/core/ContextDocs';
+import Noise from '@/components/Noise/Noise';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
-import { useState, useEffect, MouseEvent } from "react";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { joinWaitlist } from "../../actions/user";
-import {
-  Github,
-  Twitter,
-  Mail,
-  ArrowRight,
-  Code2,
-  Zap,
-  Sparkles,
-  X,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+// Using ChatMessage from actions/chat.ts
+// export interface ChatMessage { 
+//   id: string;
+//   type: 'user' | 'assistant';
+//   content: string;
+//   timestamp: Date;
+//   isStreaming?: boolean;
+// }
 
-// Success Dialog Component
-const SuccessDialog = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/10 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Dialog */}
-      <div className="relative bg-black/90 border border-gray-700/50 rounded-3xl p-8 max-w-sm w-full shadow-2xl backdrop-blur-xl ring-1 ring-white/10">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors duration-200 hover:bg-gray-800/50 rounded-full p-1"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        {/* Content */}
-        <div className="space-y-2">
-          {/* Header */}
-          <h2 className="text-2xl font-bold text-white text-left">
-            Thank You!
-          </h2>
-
-          {/* Message */}
-          <p className="text-sm text-gray-300 leading-relaxed text-left">
-            You've been added to our waitlist. We'll notify you when we launch!
-          </p>
-
-          {/* Hell Satan GIF */}
-          <div className="flex justify-center pt-5">
-            <div className="rounded-xl overflow-hidden shadow-lg ring-1 ring-white/20">
-              <Image
-                src="/hell-satan.gif"
-                alt="Hell Satan"
-                width={200}
-                height={200}
-                className="w-full h-auto"
-                unoptimized
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default function ComingSoonPage() {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [alreadyJoined, setAlreadyJoined] = useState(false);
-  const [error, setError] = useState("");
+export default function Page() {
+  const [inputMessage, setInputMessage] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [textareaHeight, setTextareaHeight] = useState('60px');
+  // const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  
 
-  useEffect(() => {
-    const handleMouseMove = (e: globalThis.MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
+  const { isLoaded, isSignedIn, user } = useUser();
+  const router = useRouter();
 
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
 
-  // Check localStorage on component mount
-  useEffect(() => {
-    const savedEmail = localStorage.getItem("devildev-waitlist-email");
-    if (savedEmail) {
-      setAlreadyJoined(true);
-      setEmail(savedEmail);
-    }
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFirstMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-
-    // If already joined, show success dialog
-    if (alreadyJoined) {
-      setShowSuccessDialog(true);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError("");
-
-    try {
-      const result = await joinWaitlist(email.trim());
-
-      if (result.success) {
-        // Store email in localStorage
-        localStorage.setItem("devildev-waitlist-email", email.trim());
-        setAlreadyJoined(true);
-        setShowSuccessDialog(true);
-      } else if (result.error) {
-        if (result.error === "Email already in waitlist") {
-          // If email already exists in DB, store it in localStorage too
-          localStorage.setItem("devildev-waitlist-email", email.trim());
-          setAlreadyJoined(true);
-          setShowSuccessDialog(true);
+    
+    if (!inputMessage.trim()) return;
+    
+    if (isSignedIn) {
+      setIsLoading(true);
+      try {
+        // Create new chat with the initial message
+        const result = await createChat(inputMessage.trim());
+        
+        if (result.success) {
+          // Redirect to the dev page with the new chat ID
+          router.push(`/dev/${result.chatId}`);
         } else {
-          setError(result.error);
+          console.error("Failed to create chat:", result.error);
+          alert("Failed to create chat. Please try again.");
         }
+      } catch (error) {
+        console.error("Error creating chat:", error);
+        alert("An error occurred. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-      console.error("Error submitting waitlist:", err);
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      router.push('/sign-in');
+    }
+  }
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputMessage(e.target.value);
+     
+    // Auto-resize the textarea
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    const scrollHeight = textarea.scrollHeight;
+    const maxHeight = 180; // Maximum height in pixels (about 7-8 lines)
+    
+    if (scrollHeight <= maxHeight) {
+      textarea.style.height = scrollHeight + 'px';
+      setTextareaHeight(scrollHeight + 'px');
+    } else {
+      textarea.style.height = maxHeight + 'px';
+      setTextareaHeight(maxHeight + 'px');
     }
   };
 
-  const handleCloseDialog = () => {
-    setShowSuccessDialog(false);
-  };
-
-  const getButtonText = () => {
-    if (isSubmitting) return "Joining...";
-    if (alreadyJoined) return "Already Joined!";
-    return "Notify Me";
-  };
-
-  const getButtonIcon = () => {
-    if (isSubmitting) return <Loader2 className="ml-2 h-4 w-4 animate-spin" />;
-    return (
-      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-    );
-  };
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -186,147 +112,199 @@ export default function ComingSoonPage() {
         />
       </div>
 
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-red-500/30 rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-8">
-        {/* Logo */}
-        <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
-          <Image
-            src="/finaldev.png"
-            alt="DevilDev Logo"
-            width={400}
-            height={120}
-            className="w-auto h-32 md:h-40 lg:h-48 drop-shadow-2xl"
-            priority
-          />
-        </div>
-
-        {/* Main description */}
-        <div className="text-center mb-12 space-y-6">
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed px-4">
-            We're crafting the{" "}
-            <span className="text-red-400 font-semibold">
-              The First Engineer
-            </span>{" "}
-            that will revolutionize how you build and ship applications.
-          </p>
-        </div>
-
-        {/* Status indicator */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 text-red-400 bg-gray-900/50 px-6 py-3 rounded-full border border-gray-800/50 backdrop-blur-sm">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
-            <span className="text-sm font-mono tracking-wider">
-              INITIALIZING SYSTEMS
-            </span>
-            <div
-              className="w-2 h-2 bg-red-500 rounded-full animate-ping"
-              style={{ animationDelay: "0.5s" }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Email Signup */}
-        <div className="w-full max-w-md mb-12">
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row gap-3"
-          >
-            <Input
-              type="email"
-              placeholder={
-                alreadyJoined
-                  ? "Already joined waitlist!"
-                  : "Enter your email for early access"
-              }
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 bg-gray-900/50 border-gray-700 text-white placeholder-gray-400 focus:border-red-500 focus:ring-red-500 backdrop-blur-sm min-h-[48px] py-3 px-4 text-base sm:text-sm"
-              required
-              disabled={alreadyJoined}
-            />
-            <Button
-              type="submit"
-              className={`px-8 h-12 group transition-all duration-300 font-semibold bg-red-600 hover:bg-red-700 text-white`}
-              disabled={isSubmitting}
-            >
-              {getButtonText()}
-              {getButtonIcon()}
-            </Button>
-          </form>
-
-          {/* Error message */}
-          {error && (
-            <div className="mt-3 flex items-center gap-2 text-red-400 text-sm justify-center">
-              <AlertCircle className="h-4 w-4" />
-              {error}
+      {/* Hover-expandable Sidebar for signed in users */}
+      {isSignedIn && (
+        <div 
+          className={`fixed top-0 left-0 h-full bg-black/20 backdrop-blur-md border-r border-red-500/20 transition-all duration-300 ease-in-out z-20 group hover:w-72 ${
+            isSidebarHovered ? 'w-72' : 'w-16'
+          } overflow-hidden`}
+          onMouseEnter={() => setIsSidebarHovered(true)}
+          onMouseLeave={() => setIsSidebarHovered(false)}
+        >
+          {/* Subtle glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          <div className="relative flex flex-col h-full pt-8 pb-6">
+            {/* Top navigation items */}
+            <div className="px-2 space-y-3">
+              <a
+                href="/about"
+                className="flex items-center space-x-4 px-3 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group/item"
+                title="About"
+              >
+                <Info className="h-5 w-5 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-200" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  About
+                </span>
+              </a>
+              <a
+                href="/devlogs"
+                className="flex items-center space-x-4 px-3 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group/item"
+                title="Community"
+              >
+                <Users className="h-5 w-5 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-200" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  Community
+                </span>
+              </a>
+              <a
+                href="/contact"
+                className="flex items-center space-x-4 px-3 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group/item"
+                title="Contact"
+              >
+                <Phone className="h-5 w-5 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-200" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  Contact
+                </span>
+              </a>
             </div>
-          )}
 
-          <p className="text-xs text-gray-500 mt-3 text-center">
-            Be the first to experience pure development power. No spam, just
-            wicked updates.
-          </p>
+            {/* Elegant divider */}
+            <div className="mx-4 my-6 h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent"></div>
+
+            {/* Chats section */}
+            <div className="flex-1 px-2">
+              <div className="flex items-center space-x-4 px-3 py-3 mb-3">
+                <MessageCircle className="h-5 w-5 text-red-400/60 flex-shrink-0" />
+                <span className={`text-sm font-medium text-red-400/60 whitespace-nowrap transition-all duration-300 ${
+                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  Chats
+                </span>
+              </div>
+              <div className={`space-y-1 transition-all duration-300 ${
+                isSidebarHovered ? 'opacity-100' : 'opacity-0'
+              }`}>
+                <div className="px-6 py-2 text-gray-500 text-xs italic">
+                  No recent chats
+                </div>
+              </div>
+            </div>
+
+            {/* User avatar at bottom with enhanced design */}
+            <div className="px-2 mt-auto">
+              <div className="flex items-center space-x-3 px-3 py-3 rounded-xl backdrop-blur-sm">
+                <Avatar className="size-8 ring-2 ">
+                  <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                  <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                    {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className={`flex-1 min-w-0 transition-all duration-300 ${
+                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  <p className="text-sm font-medium text-white truncate">
+                    {user?.fullName || user?.emailAddresses?.[0]?.emailAddress}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {user?.emailAddresses?.[0]?.emailAddress}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Thin accent line on the right */}
+          <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-red-500/40 to-transparent"></div>
         </div>
+      )}
 
-        {/* Social Links */}
-        <div className="flex space-x-4 max-lg:hidden">
-          <a
-            href="/devlogs"
-            className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
-            title="Dev Logs"
-          >
-            <Code2 className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
-          </a>
-          <a
-            href="https://github.com/lak7"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
-          >
-            <Github className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
-          </a>
-          <a
-            href="mailto:lakshaygupta2511@gmail.com?subject=DevilDev%20Coming%20Soon%20-%20Inquiry"
-            className="p-4 rounded-full bg-gray-900/50 border border-gray-700 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 group backdrop-blur-sm"
-          >
-            <Mail className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
-          </a>
+      <div className="flex h-full w-full justify-center items-center">
+        {isSignedIn && (
+          <div className="h-dvh min-w-16 bg-black visible:none  left-0"/>
+
+        )}
+        {/* Main content */}
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-2 bottom-12">
+          <div className="mb-0 transform hover:scale-105 transition-transform duration-300 flex justify-center">
+            <Image
+              src="/finaldev.png"
+              alt="DevilDev Logo"
+              width={400}
+              height={120}
+              className="w-auto h-24 md:h-32 lg:h-56 drop-shadow-2xl"
+              priority
+            />
+          </div>
+
+          <h1 className="text-xl md:text-2xl lg:text-3xl text-gray-300 font-light mb-12 text-center">
+            From Idea to Architecture—Instinctively
+          </h1>
+
+          {/* Search Input */}
+          <div className="w-full sm:w-[600px] md:w-[800px] lg:w-[1200px] xl:w-[750px]">
+            <form onSubmit={handleFirstMessage} className="relative">
+              <div className="bg-white/5 border-t border-x border-gray-600/100 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+                <textarea
+                  placeholder="What you want to build?"
+                  value={inputMessage}
+                  onChange={handleTextareaChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleFirstMessage(e);
+                    }
+                  }}
+                  className=" bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[69px] max-h-[180px] w-full"
+                  rows={2}
+                  style={{ height: textareaHeight }}
+                  maxLength={69000}
+                  disabled={isLoading}
+                />
+              </div>
+              
+              {/* Button section */}
+              <div className="bg-white/5 border-x border-b border-gray-600/100 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
+                <button 
+                  type="submit" 
+                  className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  disabled={!inputMessage.trim() || isLoading}
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+          </div>
+          {!isSignedIn && (
+            <div className="flex w-full h-full justify-center items-center mt-12">
+             <a href="/contact" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Contact</a>
+             <div className="w-px h-6 bg-gray-400 mx-5" />
+             <a href="/devlogs" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
+             <div className="w-px h-6 bg-gray-400 mx-5" />
+               <a href="/about" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">About</a>
+   
+             {/* <span className="text-red-500">Hello</span>
+             <h1>Hello</h1> */}
+             </div>
+          )}
         </div>
       </div>
 
-      {/* Bottom decoration */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
 
-      {/* Enhanced corner decorations */}
-      <div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
+      {!isSignedIn && (
+<div className="">
+{/* Corner decorations */}
+<div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
       <div className="absolute top-4 right-4 w-12 h-12 border-r-2 border-t-2 border-red-500/40"></div>
       <div className="absolute bottom-4 left-4 w-12 h-12 border-l-2 border-b-2 border-red-500/40"></div>
       <div className="absolute bottom-4 right-4 w-12 h-12 border-r-2 border-b-2 border-red-500/40"></div>
 
-      {/* Additional corner accents */}
+      {/* Corner accents */}
       <div className="absolute top-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
       <div className="absolute top-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
       <div className="absolute bottom-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
       <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
+</div>
+      )}
 
-      {/* Success Dialog */}
-      <SuccessDialog isOpen={showSuccessDialog} onClose={handleCloseDialog} />
+      
     </div>
   );
 }

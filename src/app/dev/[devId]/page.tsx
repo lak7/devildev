@@ -6,23 +6,33 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { startOrNot, firstBot } from '../../../actions/agentsFlow';
-import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../actions/architecture'; 
+import { startOrNot, firstBot } from '../../../../actions/agentsFlow';
+import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../../actions/architecture'; 
+import { getChat, addMessageToChat, updateChatMessages, ChatMessage as ChatMessageType } from '../../../../actions/chat';
+import { 
+  saveArchitecture, 
+  getArchitecture, 
+  updateComponentPositionsDebounced,
+  ArchitectureData,
+  ComponentPosition 
+} from '../../../../actions/architecturePersistence';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 
-export interface ChatMessage { 
-  id: string;
-  type: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  isStreaming?: boolean;
-}
+// Using ChatMessage from actions/chat.ts
+// export interface ChatMessage { 
+//   id: string;
+//   type: 'user' | 'assistant';
+//   content: string;
+//   timestamp: Date;
+//   isStreaming?: boolean;
+// }
 
 interface Particle {
   id: number;
@@ -33,16 +43,20 @@ interface Particle {
 }
 
 const DevPage = () => {
+  const params = useParams();
+  const chatId = params?.devId as string;
+  
   const [inputMessage, setInputMessage] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [textareaHeight, setTextareaHeight] = useState('60px');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingChat, setIsLoadingChat] = useState(true);
   const [currentStartOrNot, setCurrentStartOrNot] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'architecture' | 'context'>('architecture');
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [architectureData, setArchitectureData] = useState<any>(null);
+  const [architectureData, setArchitectureData] = useState<ArchitectureData | null>(null);
   const [isArchitectureLoading, setIsArchitectureLoading] = useState(false);
   const [architectureGenerated, setArchitectureGenerated] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -59,13 +73,16 @@ const DevPage = () => {
   const [isStreamingDocs, setIsStreamingDocs] = useState(false);
   
   // Component position persistence
-  const [componentPositions, setComponentPositions] = useState<Record<string, {x: number, y: number}>>({});
+  const [componentPositions, setComponentPositions] = useState<Record<string, ComponentPosition>>({});
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30); // 30% default
   const [isResizing, setIsResizing] = useState(false);
   const [startX, setStartX] = useState(0);
   const [startLeftWidth, setStartLeftWidth] = useState(30);
+  
+  // Sidebar state - no longer needed as it's hover-based
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,6 +128,62 @@ const DevPage = () => {
     setStartLeftWidth(leftPanelWidth);
   };
 
+  // Handle component position changes with persistence
+  const handlePositionChange = async (positions: Record<string, ComponentPosition>) => {
+    setComponentPositions(positions);
+    
+    // Save to database with debouncing
+    if (chatId && architectureGenerated) {
+      await updateComponentPositionsDebounced(chatId, positions);
+    }
+  };
+
+  // Load chat data and architecture when component mounts
+  useEffect(() => {
+    const loadChatAndArchitecture = async () => {
+      if (!chatId || !isSignedIn) return;
+      
+      setIsLoadingChat(true);
+      try {
+        // Load chat data
+        const chatResult = await getChat(chatId);
+        if (chatResult.success && chatResult.chat) {
+          const chatMessages = chatResult.chat.messages as unknown as ChatMessageType[];
+          setMessages(chatMessages);
+          setIsChatMode(true);
+          
+          // Load architecture data if it exists
+          const archResult = await getArchitecture(chatId);
+          if (archResult.success && archResult.architecture) {
+            setArchitectureData(archResult.architecture);
+            setComponentPositions(archResult.componentPositions || {});
+            setArchitectureGenerated(true);
+          }
+          
+          // If there's an initial message, process it
+          if (chatMessages.length === 1 && chatMessages[0].type === 'user') {
+            // Process the first message that was created when the chat was started
+            const initialMessage = chatMessages[0].content;
+            setInputMessage(''); // Clear input
+            
+            // Start processing the initial message
+            processInitialMessage(initialMessage, chatMessages);
+          }
+        } else {
+          console.error("Failed to load chat:", chatResult.error);
+          router.push('/');
+        }
+      } catch (error) {
+        console.error("Error loading chat:", error);
+        router.push('/');
+      } finally {
+        setIsLoadingChat(false);
+      }
+    };
+
+    loadChatAndArchitecture();
+  }, [chatId, isSignedIn, router]);
+
   // Generate particles only on client side to avoid hydration mismatch
   useEffect(() => {
     const generatedParticles: Particle[] = Array.from({ length: 20 }, (_, i) => ({
@@ -136,9 +209,7 @@ const DevPage = () => {
     
     try {
       const architectureResult = await generateArchitectureWithToolCalling(requirement, conversationHistory, architectureData);
-      // console.log("Architecture Result: ", architectureResult);
-      // const architectureResult = await generateArchitecture(requirement, conversationHistory, architectureData);
-      // alert("CHECK")
+      
       // Clean the result to remove markdown code blocks if present
       let cleanedResult = architectureResult;
       if (typeof architectureResult === 'string') {
@@ -150,13 +221,27 @@ const DevPage = () => {
           .trim();
       }
       
-      // // Parse the JSON result
+      // Parse the JSON result
       const parsedArchitecture = typeof cleanedResult === 'string' 
         ? JSON.parse(cleanedResult) 
         : cleanedResult; 
       
       setArchitectureData(parsedArchitecture);
       setArchitectureGenerated(true);
+      
+      // Save architecture to database
+      if (chatId && parsedArchitecture) {
+        const saveResult = await saveArchitecture({
+          chatId,
+          architectureData: parsedArchitecture,
+          requirement,
+          componentPositions: componentPositions,
+        });
+        
+        if (!saveResult.success) {
+          console.error('Failed to save architecture:', saveResult.error);
+        }
+      }
     } catch (error) {
       console.error('Error generating architecture:', error);
     } finally {
@@ -164,34 +249,82 @@ const DevPage = () => {
     }
   };
 
-  const handleFirstMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if(isSignedIn){
-      handleSubmit(e);
-    }else{
-      router.push('/sign-in');
+  // Process the initial message when loading a chat
+  const processInitialMessage = async (initialMessage: string, currentMessages: ChatMessageType[]) => {
+    setIsLoading(true);
+    
+    try {
+      const isStart = await startOrNot(initialMessage, [], null);
+      let cleanedIsStart = isStart;
+      if (typeof isStart === 'string') {
+        cleanedIsStart = isStart
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/\s*```\s*$/, '')
+          .trim();
+      }
+      
+      const parsedClassifier = typeof cleanedIsStart === 'string' 
+        ? JSON.parse(cleanedIsStart) 
+        : cleanedIsStart;
+
+      const isParsedTrue = parsedClassifier.canStart;
+      setCurrentStartOrNot(parsedClassifier.canStart);
+
+      if (isParsedTrue) {
+        await genArchitecture(initialMessage, currentMessages);
+      } else {
+        const response = await firstBot(initialMessage, false, [], null, "");
+        
+        const assistantMessage: ChatMessageType = {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: response,
+          timestamp: new Date().toISOString()
+        };
+
+        const updatedMessages = [...currentMessages, assistantMessage];
+        setMessages(updatedMessages);
+        setIsLoading(false);
+        
+        // Save to database
+        await updateChatMessages(chatId, updatedMessages);
+      }
+    } catch (error) {
+      console.error("Error processing initial message:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
+
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
-    const userMessage: ChatMessage = {
+    const userMessage: ChatMessageType = {
       id: Date.now().toString(),
       type: 'user',
       content: inputMessage.trim(),
-      timestamp: new Date()
+      timestamp: new Date().toISOString()
     };
 
     // Add user message and switch to chat mode
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessagesWithUser = [...messages, userMessage];
+    setMessages(updatedMessagesWithUser);
     setIsChatMode(true);
     setIsLoading(true);
     
     const currentInput = inputMessage;
     setInputMessage('');
     setTextareaHeight('60px');
+
+    // Save user message to database immediately
+    try {
+      await addMessageToChat(chatId, userMessage);
+    } catch (error) {
+      console.error('Error saving user message:', error);
+    }
  
     const isStart = await startOrNot(currentInput, messages, architectureData);
      let cleanedIsStart = isStart;
@@ -213,39 +346,51 @@ const DevPage = () => {
 
     const isTrue = isParsedTrue;
     setCurrentStartOrNot(parsedClassifier.canStart);
-    // alert(parsedClassifier.canStart);
     console.log("This is the classifier: ", parsedClassifier);
-    // alert(isTrue);
-
-   
-    // alert(isStart.toLowerCase());
-    // alert(isTrue);
 
     try {
       // Use firstBot function directly instead of API call
       const assistantResponse = await firstBot(currentInput, isTrue, messages, architectureData, parsedClassifier.reason);
 
       // Create assistant message with the response
-      const assistantMessage: ChatMessage = {
+      const assistantMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
         content: assistantResponse,
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
       };
       
-      setMessages(prev => [...prev, assistantMessage]);
+      const finalMessages = [...updatedMessagesWithUser, assistantMessage];
+      setMessages(finalMessages);
       setIsLoading(false);
+      
+      // Save assistant message to database
+      try {
+        await addMessageToChat(chatId, assistantMessage);
+      } catch (error) {
+        console.error('Error saving assistant message:', error);
+      }
+      
     } catch (error) {
       console.error('Error calling firstBot:', error);
       
-      const errorMessage: ChatMessage = {
+      const errorMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
         content: 'Sorry, I encountered an error while processing your request. Please try again.',
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
       };
       
-      setMessages(prev => [...prev, errorMessage]);
+      const finalMessages = [...updatedMessagesWithUser, errorMessage];
+      setMessages(finalMessages);
+      
+      // Save error message to database
+      try {
+        await addMessageToChat(chatId, errorMessage);
+      } catch (error) {
+        console.error('Error saving error message:', error);
+      }
+      
       setIsLoading(false);
     }
 
@@ -430,120 +575,6 @@ const DevPage = () => {
     }
   };
  
-  // Initial centered layout
-  if (!isChatMode) {
-    return (
-      <div className="min-h-screen bg-black text-white relative overflow-hidden">
-        {/* Animated background gradient */}
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,0,0,0.15), transparent 40%)`,
-          }}
-        />
-
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-            `,
-              backgroundSize: "60px 60px",
-            }}
-          />
-        </div>
-        <div className="flex h-full w-full justify-center items-center">
-          {/* <div className="h-dvh min-w-20 bg-white absolute left-0"/>
-          <div className="h-dvh min-w-20 bg-black visible:none  left-0"/> */}
-           {/* Main content */}
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-2 bottom-12">
-          <div className="mb-0 transform hover:scale-105 transition-transform duration-300 flex justify-center">
-            <Image
-              src="/finaldev.png"
-              alt="DevilDev Logo"
-              width={400}
-              height={120}
-              className="w-auto h-24 md:h-32 lg:h-56 drop-shadow-2xl"
-              priority
-            />
-          </div>
-
-          <h1 className="text-xl md:text-2xl lg:text-3xl text-gray-300 font-light mb-12 text-center">
-            From Idea to Architecture—Instinctively
-          </h1>
-
-          {/* Search Input */}
-          <div className="w-full sm:w-[600px] md:w-[800px] lg:w-[1200px] xl:w-[750px]">
-            <form onSubmit={handleFirstMessage} className="relative">
-              <div className="bg-white/5 border-t border-x border-gray-600/100 backdrop-blur-sm overflow-hidden rounded-t-2xl">
-                <textarea
-                  placeholder="What you want to build?"
-                  value={inputMessage}
-                  onChange={handleTextareaChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleFirstMessage(e);
-                    }
-                  }}
-                  className=" bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[69px] max-h-[180px] w-full"
-                  rows={2}
-                  style={{ height: textareaHeight }}
-                  maxLength={69000}
-                  disabled={isLoading}
-                />
-              </div>
-              
-              {/* Button section */}
-              <div className="bg-white/5 border-x border-b border-gray-600/100 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
-                <button 
-                  type="submit" 
-                  className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  disabled={!inputMessage.trim() || isLoading}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </button>
-              </div>
-            </form>
-          </div>
-          {!isSignedIn && (
-            <div className="flex w-full h-full justify-center items-center mt-12">
-             <a href="/contact" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Contact</a>
-             <div className="w-px h-6 bg-gray-400 mx-5" />
-             <a href="/devlogs" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
-             <div className="w-px h-6 bg-gray-400 mx-5" />
-               <a href="/about" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">About</a>
-   
-             {/* <span className="text-red-500">Hello</span>
-             <h1>Hello</h1> */}
-             </div>
-          )}
-         
-          
-        </div>
-        </div>
-
-       
-
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
-
-        {/* Corner decorations */}
-        <div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
-        <div className="absolute top-4 right-4 w-12 h-12 border-r-2 border-t-2 border-red-500/40"></div>
-        <div className="absolute bottom-4 left-4 w-12 h-12 border-l-2 border-b-2 border-red-500/40"></div>
-        <div className="absolute bottom-4 right-4 w-12 h-12 border-r-2 border-b-2 border-red-500/40"></div>
-
-        {/* Corner accents */}
-        <div className="absolute top-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-        <div className="absolute top-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-        <div className="absolute bottom-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-        <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-      </div>
-    );
-  }
 
   // Fullscreen Architecture view
   if (isFullscreen) {
@@ -563,13 +594,25 @@ const DevPage = () => {
         <div className="flex-1 p-8 pt-16 overflow-hidden">
           <div className="h-full">
             <Architecture 
-              architectureData={architectureData} 
+              architectureData={architectureData || undefined} 
               isLoading={isArchitectureLoading}
               isFullscreen={true}
               customPositions={componentPositions}
-              onPositionsChange={setComponentPositions}
+              onPositionsChange={handlePositionChange}
             />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading screen while chat is loading
+  if (isLoadingChat) {
+    return (
+      <div className="h-screen bg-black text-white flex flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-500 mb-4"></div>
+          <p className="text-gray-400">Loading chat...</p>
         </div>
       </div>
     );
@@ -814,10 +857,10 @@ const DevPage = () => {
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
               <Architecture 
-                architectureData={architectureData} 
+                architectureData={architectureData || undefined} 
                 isLoading={isArchitectureLoading}
                 customPositions={componentPositions}
-                onPositionsChange={setComponentPositions}
+                onPositionsChange={handlePositionChange}
               />
             </div>
             

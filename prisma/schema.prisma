@@ -60,11 +60,36 @@ model User {
 }
 
 model Chat {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  Json[]   // Store messages as JSON objects instead of strings
-  title     String?  // Optional chat title
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String        @id @default(uuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages     Json[]        // Store messages as JSON objects instead of strings
+  title        String?       // Optional chat title
+  architecture Architecture? // One-to-one relationship with Architecture
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
+
+model Architecture {
+  id                     String   @id @default(uuid())
+  chatId                 String   @unique
+  chat                   Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  // Architecture metadata
+  domain                 String?  // "web3", "ai", "saas", "ecommerce", "fintech", "other"
+  complexity             String?  // "simple", "medium", "complex"
+  architectureRationale  String?  // Explanation of architecture decisions
+  
+  // Components data (stored as JSON)
+  components             Json     // Array of component objects
+  connectionLabels       Json?    // Object mapping component connections to labels
+  componentPositions     Json?    // Object mapping component IDs to x,y positions
+  
+  // Generation metadata
+  requirement            String?  // Original requirement that generated this architecture
+  generatedAt            DateTime @default(now())
+  lastPositionUpdate     DateTime @default(now())
+  
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+} 
