@@ -142,15 +142,15 @@ export async function getArchitecture(chatId: string) {
     const architecture = chatWithArchitecture.architecture;
     
     // Parse the JSON data and reconstruct the architecture object
-    const architectureData: ArchitectureData = {
-      components: architecture.components as ComponentData[],
+    const architectureData: ArchitectureData = { 
+      components: architecture.components as unknown as ComponentData[],
       connectionLabels: architecture.connectionLabels as Record<string, string> || {},
       architectureRationale: architecture.architectureRationale || undefined,
       domain: architecture.domain || undefined,
       complexity: architecture.complexity || undefined,
     };
 
-    const componentPositions = architecture.componentPositions as Record<string, ComponentPosition> || {};
+    const componentPositions = architecture.componentPositions as unknown as Record<string, ComponentPosition> || {};
 
     return { 
       success: true, 
