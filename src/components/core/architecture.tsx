@@ -801,7 +801,7 @@ export default function Architecture({
         `}</style>
       </div>
     )
-  }
+  } 
 
   // Calculate connection points on component edges with orthogonal routing
   const getConnectionPoints = (fromId: string, toId: string) => {
