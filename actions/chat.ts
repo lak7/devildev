@@ -22,13 +22,8 @@ export async function createChat(initialMessage: string) {
     }
 
     // Ensure user exists in database
-    const user = await db.user.upsert({
+    const user = await db.user.findUnique({
       where: { id: userId },
-      update: {},
-      create: {
-        id: userId,
-        email: "", // Will be updated by webhook
-      },
     });
 
     // Create initial message object
@@ -53,6 +48,57 @@ export async function createChat(initialMessage: string) {
     return { success: true, chatId: chat.id };
   } catch (error) {
     console.error("Error creating chat:", error);
+    return { success: false, error: "Failed to create chat" };
+  }
+}
+
+// Create a new chat with a specific ID (for localStorage flow)
+export async function createChatWithId(chatId: string, initialMessage: string) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+
+    // Check if chat with this ID already exists
+    const existingChat = await db.chat.findUnique({
+      where: { id: chatId },
+    });
+
+    if (existingChat) {
+      // Chat already exists, return success
+      return { success: true, chatId: existingChat.id };
+    }
+
+    // Ensure user exists in database
+    const user = await db.user.findUnique({
+      where: { id: userId },
+    });
+
+    // Create initial message object
+    const initialMessageObj: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: initialMessage,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Create new chat with specific ID and initial message
+    const chat = await db.chat.create({
+      data: {
+        id: chatId,
+        userId: userId,
+        messages: [initialMessageObj] as any,
+        title: initialMessage.length > 50 
+          ? initialMessage.substring(0, 50) + "..." 
+          : initialMessage,
+      },
+    });
+
+    return { success: true, chatId: chat.id };
+  } catch (error) {
+    console.error("Error creating chat with ID:", error);
     return { success: false, error: "Failed to create chat" };
   }
 }
@@ -164,7 +210,7 @@ export async function updateChatMessages(chatId: string, messages: ChatMessage[]
 }
 
 // Get user's recent chats
-export async function getUserChats(limit: number = 10) {
+export async function getUserChats(limit: number = 15) {
   try {
     const { userId } = await auth();
     

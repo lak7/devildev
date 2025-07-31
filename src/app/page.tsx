@@ -11,7 +11,7 @@ import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../actions/architecture'; 
-import { createChat } from '../../actions/chat';
+import { createChat, getUserChats } from '../../actions/chat';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
 import { useUser } from '@clerk/nextjs';
@@ -26,6 +26,13 @@ import { useRouter } from 'next/navigation';
 //   isStreaming?: boolean;
 // }
 
+interface UserChat {
+  id: string;
+  title: string | null;
+  updatedAt: Date;
+  createdAt: Date;
+}
+
 
 export default function Page() {
   const [inputMessage, setInputMessage] = useState('');
@@ -34,10 +41,38 @@ export default function Page() {
   // const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [userChats, setUserChats] = useState<UserChat[]>([]);
+  const [chatsLoading, setChatsLoading] = useState(false);
   
 
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
+
+  // Function to fetch user's chats
+  const fetchUserChats = async () => {
+    if (!isSignedIn) return;
+    
+    setChatsLoading(true);
+    try {
+      const result = await getUserChats(10); // Get last 10 chats
+      if (result.success && result.chats) {
+        setUserChats(result.chats);
+      } else {
+        console.error('Failed to fetch chats:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching user chats:', error);
+    } finally {
+      setChatsLoading(false);
+    }
+  };
+
+  // Fetch chats when user is signed in
+  useEffect(() => {
+    if (isSignedIn && isLoaded) {
+      fetchUserChats();
+    }
+  }, [isSignedIn, isLoaded]);
 
 
   const handleFirstMessage = async (e: React.FormEvent) => {
@@ -48,20 +83,19 @@ export default function Page() {
     if (isSignedIn) {
       setIsLoading(true);
       try {
-        // Create new chat with the initial message
-        const result = await createChat(inputMessage.trim());
+        // Generate UUID for new chat
+        const chatId = crypto.randomUUID();
         
-        if (result.success) {
-          // Redirect to the dev page with the new chat ID
-          router.push(`/dev/${result.chatId}`);
-        } else {
-          console.error("Failed to create chat:", result.error);
-          alert("Failed to create chat. Please try again.");
-        }
+        // Store chat data in localStorage
+        localStorage.setItem('isNewChat', "true");
+        localStorage.setItem('newChatId', chatId);
+        localStorage.setItem('firstMessage', inputMessage.trim());
+        
+        // Immediately redirect to dev page
+        router.push(`/dev/${chatId}`);
       } catch (error) {
-        console.error("Error creating chat:", error);
+        console.error("Error preparing new chat:", error);
         alert("An error occurred. Please try again.");
-      } finally {
         setIsLoading(false);
       }
     } else {
@@ -187,10 +221,32 @@ export default function Page() {
               </div>
               <div className={`space-y-1 transition-all duration-300 ${
                 isSidebarHovered ? 'opacity-100' : 'opacity-0'
-              }`}>
-                <div className="px-6 py-2 text-gray-500 text-xs italic">
-                  No recent chats
-                </div>
+              } max-h-96 overflow-y-auto`}>
+                {chatsLoading ? (
+                  <div className="flex items-center justify-center px-6 py-4">
+                    <Loader2 className="h-4 w-4 animate-spin text-red-400/60" />
+                  </div>
+                ) : userChats.length > 0 ? (
+                  userChats.map((chat) => (
+                    <button
+                      key={chat.id}
+                      onClick={() => router.push(`/dev/${chat.id}`)} 
+                      className="w-full text-left px-3 py-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group/chat"
+                      title={chat.title || 'Untitled Chat'}
+                    >
+                      <div className="truncate text-xs font-medium">
+                        {chat.title || 'Untitled Chat'}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate mt-1">
+                        {new Date(chat.updatedAt).toLocaleDateString()}
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-6 py-2 text-gray-500 text-xs italic">
+                    No recent chats
+                  </div>
+                )}
               </div>
             </div>
 

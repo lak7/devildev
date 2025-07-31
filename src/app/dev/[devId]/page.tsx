@@ -11,7 +11,7 @@ import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../../actions/architecture'; 
-import { getChat, addMessageToChat, updateChatMessages, ChatMessage as ChatMessageType } from '../../../../actions/chat';
+import { getChat, addMessageToChat, updateChatMessages, createChatWithId, ChatMessage as ChatMessageType } from '../../../../actions/chat';
 import { 
   saveArchitecture, 
   getArchitecture, 
@@ -57,7 +57,7 @@ const DevPage = () => {
   const [textareaHeight, setTextareaHeight] = useState('60px');
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingChat, setIsLoadingChat] = useState(true);
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [currentStartOrNot, setCurrentStartOrNot] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'architecture' | 'context'>('architecture');
@@ -66,6 +66,7 @@ const DevPage = () => {
   const [isArchitectureLoading, setIsArchitectureLoading] = useState(false);
   const [architectureGenerated, setArchitectureGenerated] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isNewChat, setIsNewChat] = useState(false);
   // Contextual docs state
   const [contextualDocs, setContextualDocs] = useState<ContextualDocsData>({});
   const [docsGenerated, setDocsGenerated] = useState(false);
@@ -185,48 +186,91 @@ const DevPage = () => {
   // Load chat data and architecture when component mounts
   useEffect(() => {
     const loadChatAndArchitecture = async () => {
+      // alert("Step 0")
       if (!chatId || !isSignedIn) return;
       
-      setIsLoadingChat(true);
+      
       try {
-        // Load chat data
-        const chatResult = await getChat(chatId);
-        if (chatResult.success && chatResult.chat) {
-          const chatMessages = chatResult.chat.messages as unknown as ChatMessageType[];
-          setMessages(chatMessages);
-          setIsChatMode(true);
-          
-          // Load architecture data if it exists
-          const archResult = await getArchitecture(chatId);
-          if (archResult.success && archResult.architecture) {
-            setArchitectureData(archResult.architecture);
-            setComponentPositions(archResult.componentPositions || {});
-            setArchitectureGenerated(true);
-          }
+        // Check if this is a new chat from localStorage
+        const isNewChat = localStorage.getItem('isNewChat');
+        if(isNewChat){
+          setIsNewChat(true);
+        }
+        const newChatId = localStorage.getItem('newChatId');
+        const firstMessage = localStorage.getItem('firstMessage');
+        
+        if (isNewChat && firstMessage) {
+          // This is a new chat - create it and process the first message
+          console.log("Creating new chat with localStorage data");
+          // alert("Step 2")
 
-          // Load contextual docs data if it exists
-          const docsResult = await getContextualDocs(chatId);
-          if (docsResult.success && docsResult.contextualDocs) {
-            setContextualDocs(docsResult.contextualDocs);
-            syncIndividualStates(docsResult.contextualDocs);
-            setDocsGenerated(true);
-          }
+          // Set up initial state
+          const userMessage: ChatMessageType = {
+            id: Date.now().toString(),
+            type: 'user',
+            content: firstMessage,
+            timestamp: new Date().toISOString()
+          };
           
-          // If there's an initial message, process it
-          if (chatMessages.length === 1 && chatMessages[0].type === 'user') {
-            // Process the first message that was created when the chat was started
-            const initialMessage = chatMessages[0].content;
-            setInputMessage(''); // Clear input
+          setMessages([userMessage]);
+
+          processInitialMessage(firstMessage, [userMessage]);
+          
+          const createResult = await createChatWithId(chatId, firstMessage);
+            if (!createResult.success) {
+              console.error("Failed to create chat:", createResult.error);
+              localStorage.removeItem('newChatId');
+              localStorage.removeItem('firstMessage');
+              router.push('/');
+              return;
+            }
             
-            // Start processing the initial message
-            processInitialMessage(initialMessage, chatMessages);
-          }
+            // Clear localStorage
+            localStorage.removeItem('newChatId');
+            localStorage.removeItem('firstMessage');
+            localStorage.removeItem('isNewChat');
+            
+            
+            
+            // Process the initial message
+            
+          
         } else {
-          console.error("Failed to load chat:", chatResult.error);
-          router.push('/');
+          // This is an existing chat - load from database
+          const chatResult = await getChat(chatId);
+          if (chatResult.success && chatResult.chat) {
+            const chatMessages = chatResult.chat.messages as unknown as ChatMessageType[];
+            setMessages(chatMessages);
+            setIsChatMode(true);
+            
+            // Load architecture data if it exists
+            const archResult = await getArchitecture(chatId);
+            if (archResult.success && archResult.architecture) {
+              setArchitectureData(archResult.architecture);
+              setComponentPositions(archResult.componentPositions || {});
+              setArchitectureGenerated(true);
+            }
+
+            // Load contextual docs data if it exists
+            const docsResult = await getContextualDocs(chatId);
+            if (docsResult.success && docsResult.contextualDocs) {
+              setContextualDocs(docsResult.contextualDocs);
+              syncIndividualStates(docsResult.contextualDocs);
+              setDocsGenerated(true);
+            }
+          } else {
+            console.error("Failed to load chat:", chatResult.error);
+            // Clear any stale localStorage data
+            localStorage.removeItem('newChatId');
+            localStorage.removeItem('firstMessage');
+            router.push('/');
+          }
         }
       } catch (error) {
         console.error("Error loading chat:", error);
+        // Clear any stale localStorage data
+        localStorage.removeItem('newChatId');
+        localStorage.removeItem('firstMessage');
         router.push('/');
       } finally {
         setIsLoadingChat(false);
@@ -303,7 +347,8 @@ const DevPage = () => {
 
   // Process the initial message when loading a chat
   const processInitialMessage = async (initialMessage: string, currentMessages: ChatMessageType[]) => {
-    setIsLoading(true);
+
+    setIsLoading(true); 
     
     try {
       const isStart = await startOrNot(initialMessage, [], null);
@@ -318,15 +363,15 @@ const DevPage = () => {
       
       const parsedClassifier = typeof cleanedIsStart === 'string' 
         ? JSON.parse(cleanedIsStart) 
-        : cleanedIsStart;
+        : cleanedIsStart; 
+
+      console.log("parsedClassifier: ", parsedClassifier)
+
 
       const isParsedTrue = parsedClassifier.canStart;
       setCurrentStartOrNot(parsedClassifier.canStart);
-
-      if (isParsedTrue) {
-        await genArchitecture(initialMessage, currentMessages);
-      } else {
-        const response = await firstBot(initialMessage, false, [], null, "");
+       
+        const response = await firstBot(initialMessage, false, [], null, parsedClassifier.reason);
         
         const assistantMessage: ChatMessageType = {
           id: Date.now().toString(),
@@ -337,11 +382,13 @@ const DevPage = () => {
 
         const updatedMessages = [...currentMessages, assistantMessage];
         setMessages(updatedMessages);
+        if(isParsedTrue){
+          await genArchitecture(initialMessage, currentMessages);
+        }
         setIsLoading(false);
         
         // Save to database
         await updateChatMessages(chatId, updatedMessages);
-      }
     } catch (error) {
       console.error("Error processing initial message:", error);
     } finally {
