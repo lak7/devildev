@@ -1045,7 +1045,7 @@ const DevPage = () => {
             {isLoading && (
               <div className="flex justify-start items-center space-x-3">
                 <video 
-                  src="/thedevil.mov" 
+                  src="/thethe.mp4" 
                   autoPlay 
                   loop 
                   muted 

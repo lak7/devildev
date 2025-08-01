@@ -766,7 +766,7 @@ export default function Architecture({
               style={{ filter: 'brightness(1.2) contrast(1.1)' }}
             /> */}
              <video 
-                  src="/thedevil.mov" 
+                  src="/thethe.mp4" 
                   autoPlay 
                   loop 
                   muted 
