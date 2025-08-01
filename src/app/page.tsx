@@ -14,17 +14,10 @@ import { generateArchitecture, generateArchitectureWithToolCalling } from '../..
 import { getUserChats } from '../../actions/chat';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
-import { useUser } from '@clerk/nextjs';
+import { UserProfile, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
-// Using ChatMessage from actions/chat.ts
-// export interface ChatMessage { 
-//   id: string;
-//   type: 'user' | 'assistant';
-//   content: string;
-//   timestamp: Date;
-//   isStreaming?: boolean;
-// }
+
 
 interface UserChat {
   id: string;
@@ -156,7 +149,7 @@ export default function Page() {
       {/* Hover-expandable Sidebar for signed in users */}
       {isSignedIn && (
         <div 
-          className={`fixed top-0 left-0 h-full bg-black/20 backdrop-blur-md border-r border-red-500/20 transition-all duration-300 ease-in-out z-20 group hover:w-72 ${
+          className={`fixed top-0 left-0 h-full bg-black/30 backdrop-blur-md border-r border-red-500/20 transition-all duration-300 ease-in-out z-20 group hover:w-72 ${
             isSidebarHovered ? 'w-72' : 'w-16'
           } overflow-hidden`}
           onMouseEnter={() => setIsSidebarHovered(true)}
@@ -167,13 +160,13 @@ export default function Page() {
           
           <div className="relative flex flex-col h-full pt-8 pb-6">
             {/* Top navigation items */}
-            <div className="px-2 space-y-3">
+            <div className="px-2 space-y-2">
               <a
                 href="/about"
-                className="flex items-center space-x-4 px-3 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group/item"
+                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
                 title="About"
               >
-                <Info className="h-5 w-5 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-200" />
+                <Info className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                   isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
@@ -182,10 +175,10 @@ export default function Page() {
               </a>
               <a
                 href="/devlogs"
-                className="flex items-center space-x-4 px-3 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group/item"
+                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
                 title="Community"
               >
-                <Users className="h-5 w-5 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-200" />
+                <Users className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                   isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
@@ -194,10 +187,10 @@ export default function Page() {
               </a>
               <a
                 href="/contact"
-                className="flex items-center space-x-4 px-3 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group/item"
+                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
                 title="Contact"
               >
-                <Phone className="h-5 w-5 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-200" />
+                <Phone className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                   isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
@@ -212,8 +205,8 @@ export default function Page() {
             {/* Chats section */}
             <div className="flex-1 px-2">
               <div className="flex items-center space-x-4 px-3 py-3 mb-3">
-                <MessageCircle className="h-5 w-5 text-red-400/60 flex-shrink-0" />
-                <span className={`text-sm font-medium text-red-400/60 whitespace-nowrap transition-all duration-300 ${
+                <MessageCircle className="h-5 w-5 text-red-400/70 flex-shrink-0" />
+                <span className={`text-sm font-medium text-red-400/90 whitespace-nowrap transition-all duration-300 ${
                   isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
                   Chats
@@ -221,7 +214,7 @@ export default function Page() {
               </div>
               <div className={`space-y-1 transition-all duration-300 ${
                 isSidebarHovered ? 'opacity-100' : 'opacity-0'
-              } max-h-96 overflow-y-auto`}>
+              } max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-500/20`}>
                 {chatsLoading ? (
                   <div className="flex items-center justify-center px-6 py-4">
                     <Loader2 className="h-4 w-4 animate-spin text-red-400/60" />
@@ -231,19 +224,19 @@ export default function Page() {
                     <button
                       key={chat.id}
                       onClick={() => router.push(`/dev/${chat.id}`)} 
-                      className="w-full text-left px-3 py-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group/chat"
+                      className="w-full text-left px-3 py-2.5 rounded-md text-gray-300 hover:text-white hover:bg-black/30 hover:border-red-500/20 border border-transparent transition-all duration-200 group/chat"
                       title={chat.title || 'Untitled Chat'}
                     >
-                      <div className="truncate text-xs font-medium">
+                      <div className="truncate text-sm font-medium">
                         {chat.title || 'Untitled Chat'}
                       </div>
-                      <div className="text-xs text-gray-500 truncate mt-1">
+                      <div className="text-xs text-gray-500 group-hover/chat:text-gray-400 truncate mt-1">
                         {new Date(chat.updatedAt).toLocaleDateString()}
                       </div>
                     </button>
                   ))
                 ) : (
-                  <div className="px-6 py-2 text-gray-500 text-xs italic">
+                  <div className="px-3 py-2 text-gray-500 text-xs italic">
                     No recent chats
                   </div>
                 )}
@@ -252,8 +245,8 @@ export default function Page() {
 
             {/* User avatar at bottom with enhanced design */}
             <div className="px-2 mt-auto">
-              <div className="flex items-center space-x-3 px-3 py-3 rounded-xl backdrop-blur-sm">
-                <Avatar className="size-8 ring-2 ">
+              <div className="flex items-center space-x-3 px-3 py-3 rounded-lg backdrop-blur-sm bg-black/20">
+                <Avatar className="size-8 ring-2 ring-white">
                   <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
                   <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
                     {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
