@@ -6,12 +6,12 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2 } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../../actions/architecture'; 
-import { getChat, addMessageToChat, updateChatMessages, createChatWithId, ChatMessage as ChatMessageType } from '../../../../actions/chat';
+import { getChat, addMessageToChat, updateChatMessages, createChatWithId, ChatMessage as ChatMessageType, getUserChats } from '../../../../actions/chat';
 import { 
   saveArchitecture, 
   getArchitecture, 
@@ -39,6 +39,13 @@ import { useParams } from 'next/navigation';
 //   timestamp: Date;
 //   isStreaming?: boolean;
 // }
+
+interface UserChat {
+  id: string;
+  title: string | null;
+  updatedAt: Date;
+  createdAt: Date;
+}
 
 interface Particle {
   id: number;
@@ -95,6 +102,11 @@ const DevPage = () => {
   
   // Sidebar state - no longer needed as it's hover-based
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  
+  // New sidebar state for dev page
+  const [isDevSidebarHovered, setIsDevSidebarHovered] = useState(false);
+  const [userChats, setUserChats] = useState<UserChat[]>([]);
+  const [chatsLoading, setChatsLoading] = useState(false);
   
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -291,6 +303,37 @@ const DevPage = () => {
     }));
     setParticles(generatedParticles);
   }, []);
+
+  // Function to fetch user's chats
+  const fetchUserChats = async () => {
+    if (!isSignedIn) return;
+    
+    setChatsLoading(true);
+    try {
+      const result = await getUserChats(10); // Get last 10 chats
+      if (result.success && result.chats) {
+        setUserChats(result.chats);
+      } else {
+        console.error('Failed to fetch chats:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching user chats:', error);
+    } finally {
+      setChatsLoading(false);
+    }
+  };
+
+  // Function to handle new chat creation
+  const handleNewChat = () => {
+    router.push('/');
+  };
+
+  // Fetch chats when user is signed in
+  useEffect(() => {
+    if (isSignedIn && isLoaded) {
+      fetchUserChats();
+    }
+  }, [isSignedIn, isLoaded]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -743,17 +786,6 @@ const DevPage = () => {
     );
   }
 
-  // Show loading screen while chat is loading
-  if (isLoadingChat) {
-    return (
-      <div className="h-screen bg-black text-white flex flex-col items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-500 mb-4"></div>
-          <p className="text-gray-400">Loading chat...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Chat mode layout
   return (
@@ -776,6 +808,155 @@ const DevPage = () => {
           </Avatar>
         </div>
       </nav>
+
+      {/* Hover trigger area - invisible but extends to far left */}
+      {isSignedIn && (
+        <div 
+          className="fixed top-12 left-0 w-4 h-[calc(100vh-3rem)] z-30"
+          onMouseEnter={() => setIsDevSidebarHovered(true)}
+        />
+      )}
+
+      {/* Hover-expandable Sidebar for signed in users */}
+      {isSignedIn && (
+        <div 
+          className={`fixed top-12 left-0 h-[calc(100vh-3rem)] bg-black/30 backdrop-blur-md border-r border-red-500/20 transition-all duration-300 ease-in-out z-20 group ${
+            isDevSidebarHovered ? 'w-72' : 'w-0'
+          } overflow-hidden`}
+          onMouseLeave={() => setIsDevSidebarHovered(false)}
+        >
+          
+          {/* Subtle glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          <div className="relative flex flex-col h-full pt-8 pb-6">
+            {/* Top navigation items */}
+            <div className="px-2 space-y-2">
+              <button
+                onClick={handleNewChat}
+                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item w-full"
+                title="New Chat"
+              >
+                <Plus className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  New Chat
+                </span>
+              </button>
+              <a
+                href="/about"
+                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
+                title="About"
+              >
+                <Info className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  About
+                </span>
+              </a>
+              <a
+                href="/devlogs"
+                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
+                title="Community"
+              >
+                <Users className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  Community
+                </span>
+              </a>
+              <a
+                href="/contact"
+                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
+                title="Contact"
+              >
+                <Phone className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  Contact
+                </span>
+              </a>
+            </div>
+
+            {/* Elegant divider */}
+            <div className="mx-4 my-6 h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent"></div>
+
+            {/* Chats section */}
+            <div className="flex-1 px-2">
+              <div className="flex items-center space-x-4 px-3 py-3 mb-3">
+                <MessageCircle className="h-5 w-5 text-red-400/70 flex-shrink-0" />
+                <span className={`text-sm font-medium text-red-400/90 whitespace-nowrap transition-all duration-300 ${
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  Chats
+                </span>
+              </div>
+              <div className={`space-y-1 transition-all duration-300 ${
+                isDevSidebarHovered ? 'opacity-100' : 'opacity-0'
+              } max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-500/20`}>
+                {chatsLoading ? (
+                  <div className="flex items-center justify-center px-6 py-4">
+                    <Loader2 className="h-4 w-4 animate-spin text-red-400/60" />
+                  </div>
+                ) : userChats.length > 0 ? (
+                  userChats.map((chat) => (
+                    <button
+                      key={chat.id}
+                      onClick={() => router.push(`/dev/${chat.id}`)} 
+                      className={`w-full text-left px-3 py-2.5 rounded-md border transition-all duration-200 group/chat ${
+                        chat.id === chatId 
+                          ? 'text-white bg-red-500/20 border-red-500/40' 
+                          : 'text-gray-300 hover:text-white hover:bg-black/30 hover:border-red-500/20 border-transparent'
+                      }`}
+                      title={chat.title || 'Untitled Chat'}
+                    >
+                      <div className="truncate text-sm font-medium">
+                        {chat.title || 'Untitled Chat'}
+                      </div>
+                      <div className="text-xs text-gray-500 group-hover/chat:text-gray-400 truncate mt-1">
+                        {new Date(chat.updatedAt).toLocaleDateString()}
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-gray-500 text-xs italic">
+                    No recent chats
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* User avatar at bottom with enhanced design */}
+            <div className="px-2 mt-auto">
+              <div className="flex items-center space-x-3 px-3 py-3 rounded-lg backdrop-blur-sm bg-black/20">
+                <Avatar className="size-8 ring-2 ring-white">
+                  <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                  <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                    {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className={`flex-1 min-w-0 transition-all duration-300 ${
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  <p className="text-sm font-medium text-white truncate">
+                    {user?.fullName || user?.emailAddresses?.[0]?.emailAddress}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {user?.emailAddresses?.[0]?.emailAddress}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Thin accent line on the right */}
+          <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-red-500/40 to-transparent"></div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div ref={containerRef} className="flex-1 flex gap-0 p-5 min-h-0 relative">
