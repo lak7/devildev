@@ -759,12 +759,19 @@ export default function Architecture({
           {/* Main orb */}
           <div className="relative w-32 h-32">
             {/* Dev image */}
-            <img 
-              src="/favicon.jpg" 
+            {/* <img 
+              src="/favicon.jpg"  
               alt="Developer" 
               className="relative w-full h-full object-cover rounded-full"
               style={{ filter: 'brightness(1.2) contrast(1.1)' }}
-            />
+            /> */}
+             <video 
+                  src="/thedevil.mov" 
+                  autoPlay 
+                  loop 
+                  muted 
+                  className="elative w-full h-full object-cover rounded-full"
+                />
           </div>
         </div>
 

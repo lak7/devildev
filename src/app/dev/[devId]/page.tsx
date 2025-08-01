@@ -762,7 +762,7 @@ const DevPage = () => {
       <nav className="h-12 bg-black flex items-center justify-between px-4 flex-shrink-0">
         <div className="flex items-center space-x-3">
           <Image
-            src="/old.png"
+            src="/favicon.jpg"
             alt="DevilDev Logo"
             width={30}
             height={30}
@@ -801,7 +801,7 @@ const DevPage = () => {
                 {message.type === 'assistant' && (
                   <div className="mr-3 flex-shrink-0">
                     <Image
-                      src="/old.png"
+                      src="/favicon.jpg"
                       alt="Assistant"
                       width={32}
                       height={32}
@@ -862,13 +862,38 @@ const DevPage = () => {
             
             {/* Loading indicator */}
             {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white/10 border border-gray-600/40 rounded-2xl px-4 py-3">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
+              <div className="flex justify-start items-center space-x-3">
+                <video 
+                  src="/thedevil.mov" 
+                  autoPlay 
+                  loop 
+                  muted 
+                  className="w-8 h-8 rounded-full"
+                  style={{ filter: 'brightness(0.69) contrast(1.2)' }}
+                />
+                <div className="text-white/69 text-sm flex items-center">
+                  <span>is thinking</span>
+                  <span className="">
+                    <span 
+                      style={{
+                        animation: 'typing 2s infinite',
+                        animationName: 'typing'
+                      }}
+                    >.</span>
+                    <span 
+                      style={{
+                        animation: 'typing 2s infinite 0.3s',
+                        animationName: 'typing'
+                      }}
+                    >.</span>
+                    <span 
+                      style={{
+                        animation: 'typing 2s infinite 0.6s',
+                        animationName: 'typing'
+                      }}
+                    >.</span>
+                  </span>
+
                 </div>
               </div>
             )}
@@ -1022,8 +1047,14 @@ const DevPage = () => {
 
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
 
-      {/* Custom Scrollbar Styles */}
+      {/* Custom Scrollbar Styles & Animations */}
       <style jsx global>{`
+        @keyframes typing {
+          0%, 20% { opacity: 0; }
+          25%, 75% { opacity: 1; }
+          80%, 100% { opacity: 0; }
+        }
+        
         .scrollbar-thin::-webkit-scrollbar {
           width: 6px;
         }
