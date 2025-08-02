@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2 } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../../actions/agentsFlow';
@@ -108,6 +108,10 @@ const DevPage = () => {
   const [userChats, setUserChats] = useState<UserChat[]>([]);
   const [chatsLoading, setChatsLoading] = useState(false);
   
+  // Feedback dialog state
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -198,7 +202,7 @@ const DevPage = () => {
   // Load chat data and architecture when component mounts
   useEffect(() => {
     const loadChatAndArchitecture = async () => {
-      // alert("Step 0")
+      // alert("Step 0") 
       if (!chatId || !isSignedIn) return;
       
       
@@ -224,7 +228,7 @@ const DevPage = () => {
             timestamp: new Date().toISOString()
           };
           
-          setMessages([userMessage]);
+          setMessages([userMessage]); 
 
           processInitialMessage(firstMessage, [userMessage]);
           
@@ -233,6 +237,7 @@ const DevPage = () => {
               console.error("Failed to create chat:", createResult.error);
               localStorage.removeItem('newChatId');
               localStorage.removeItem('firstMessage');
+              localStorage.removeItem('isNewChat');
               router.push('/');
               return;
             }
@@ -328,6 +333,26 @@ const DevPage = () => {
     router.push('/');
   };
 
+  // Function to handle feedback submission
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim()) return;
+    
+    try {
+      // Here you would typically send the feedback to your backend
+      console.log('Feedback submitted:', feedbackText);
+      
+      // For now, just show success and close dialog
+      setFeedbackText('');
+      setIsFeedbackOpen(false);
+      
+      // You could add a toast notification here
+      alert('Thank you for your feedback!');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('Failed to submit feedback. Please try again.');
+    }
+  };
+
   // Fetch chats when user is signed in
   useEffect(() => {
     if (isSignedIn && isLoaded) {
@@ -342,7 +367,6 @@ const DevPage = () => {
 
   // Function to generate architecture
   const genArchitecture = async (requirement: string, conversationHistory: any[] = []) => {
-    if (architectureGenerated) return; // Don't regenerate if already done
     
     setIsArchitectureLoading(true);
     
@@ -399,7 +423,7 @@ const DevPage = () => {
       if (typeof isStart === 'string') {
         cleanedIsStart = isStart
           .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '')
+          .replace(/^```\s*/, '') 
           .replace(/\s*```\s*$/, '')
           .trim();
       }
@@ -422,10 +446,10 @@ const DevPage = () => {
           content: response,
           timestamp: new Date().toISOString()
         };
-
+ 
         const updatedMessages = [...currentMessages, assistantMessage];
         setMessages(updatedMessages);
-        if(isParsedTrue){
+        if(parsedClassifier.canStart){
           await genArchitecture(initialMessage, currentMessages);
         }
         setIsLoading(false);
@@ -440,7 +464,6 @@ const DevPage = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
@@ -469,6 +492,7 @@ const DevPage = () => {
     }
  
     const isStart = await startOrNot(currentInput, messages, architectureData);
+
      let cleanedIsStart = isStart;
       if (typeof isStart === 'string') {
         // Remove markdown code blocks (```json...``` or ```...```)
@@ -490,6 +514,7 @@ const DevPage = () => {
     setCurrentStartOrNot(parsedClassifier.canStart);
     console.log("This is the classifier: ", parsedClassifier);
 
+
     try {
       // Use firstBot function directly instead of API call
       const assistantResponse = await firstBot(currentInput, isTrue, messages, architectureData, parsedClassifier.reason);
@@ -505,6 +530,9 @@ const DevPage = () => {
       const finalMessages = [...updatedMessagesWithUser, assistantMessage];
       setMessages(finalMessages);
       setIsLoading(false);
+      if(parsedClassifier.canStart){
+        genArchitecture(currentInput, messages);
+      }
       
       // Save assistant message to database
       try {
@@ -536,10 +564,6 @@ const DevPage = () => {
       setIsLoading(false);
     }
 
-     // Generate architecture on first message
-     if (isTrue) {
-      genArchitecture(currentInput, messages);
-    }
   };
 
   const handleGenerateDocs = async () => {
@@ -790,29 +814,73 @@ const DevPage = () => {
   // Chat mode layout
   return (
     <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
-      {/* Thin Navbar */}
-      <nav className="h-12 bg-black flex items-center justify-between px-4 flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <Image
-            src="/favicon.jpg"
-            alt="DevilDev Logo"
-            width={30}
-            height={30}
-            className="w-full h-full"
-          />
+      {/* Enhanced Navbar */}
+      <nav className="h-16 bg-black/90 backdrop-blur-sm border-b border-gray-800/50 flex items-center justify-between px-6 flex-shrink-0 relative">
+        {/* Left side - Burger menu and Logo */}
+        <div className="flex items-center space-x-4">
+          {/* Burger menu indicator - hide when sidebar is open */}
+          <button 
+              onClick={() => setIsDevSidebarHovered(true)}
+              className={`p-2 hover:bg-gray-800/50 rounded-lg transition-all duration-200`}
+              title="Open sidebar"
+            > 
+              <Menu 
+                className={`h-6 w-6 text-gray-400 hover:text-white transition-colors`}
+              />
+            </button>
+        
+          
+          {/* Logo - clickable to home */}
+          <button 
+            onClick={() => router.push('/')}
+            className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
+            title="Go to Home"
+          >
+            <div className="relative">
+              <Image
+                src="/favicon.jpg"
+                alt="DevilDev Logo"
+                width={36}
+                height={36}
+                className="rounded-lg transition-all duration-200"
+              />
+            </div>
+            <span className="text-white font-semibold text-lg hidden sm:block group-hover:text-red-400 transition-colors">
+              DevilDev
+            </span>
+          </button>
         </div>
-        <div className="flex items-center">
-          <Avatar className="size-8">
-            <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
+
+        {/* Right side - Feedback button and User avatar */}
+        <div className="flex items-center space-x-4">
+          {/* Feedback button */}
+          <button
+            onClick={() => setIsFeedbackOpen(true)}
+            className="flex items-center space-x-2 px-3 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/30 hover:border-gray-500/50 rounded-lg transition-all duration-200 group"
+            title="Send Feedback"
+          >
+            <MessageSquare className="h-4 w-4 text-gray-400 group-hover:text-white transition-colors" />
+            <span className="text-sm text-gray-400 group-hover:text-white transition-colors hidden sm:block">
+              Feedback
+            </span>
+          </button>
+
+          {/* User Avatar */}
+          <div className="flex items-center">
+            <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
+              <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+              <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </div>
       </nav>
 
       {/* Hover trigger area - invisible but extends to far left */}
       {isSignedIn && (
         <div 
-          className="fixed top-12 left-0 w-4 h-[calc(100vh-3rem)] z-30"
+          className="fixed top-16 left-0 w-4 h-[calc(100vh-4rem)] z-30"
           onMouseEnter={() => setIsDevSidebarHovered(true)}
         />
       )}
@@ -820,7 +888,7 @@ const DevPage = () => {
       {/* Hover-expandable Sidebar for signed in users */}
       {isSignedIn && (
         <div 
-          className={`fixed top-12 left-0 h-[calc(100vh-3rem)] bg-black/30 backdrop-blur-md border-r border-red-500/20 transition-all duration-300 ease-in-out z-20 group ${
+          className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-black/30 backdrop-blur-md border-r border-red-500/20 transition-all duration-300 ease-in-out z-20 group ${
             isDevSidebarHovered ? 'w-72' : 'w-0'
           } overflow-hidden`}
           onMouseLeave={() => setIsDevSidebarHovered(false)}
@@ -1039,18 +1107,17 @@ const DevPage = () => {
                   )}
                 </div>
               </div>
-            ))}
+            ))} 
             
             {/* Loading indicator */}
             {isLoading && (
-              <div className="flex justify-start items-center space-x-3">
-                <video 
-                  src="/thethe.mp4" 
-                  autoPlay 
-                  loop 
-                  muted 
-                  className="w-8 h-8 rounded-full"
-                  style={{ filter: 'brightness(0.69) contrast(1.2)' }}
+              <div className="flex justify-start items-center space-x-3 animate-pulse">
+                <Image
+                  src="/favicon.jpg"
+                  alt="Assistant"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full "
                 />
                 <div className="text-white/69 text-sm flex items-center">
                   <span>is thinking</span>
@@ -1227,6 +1294,59 @@ const DevPage = () => {
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
+
+      {/* Feedback Dialog */}
+      {isFeedbackOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-600/50 rounded-xl p-6 w-full max-w-md mx-auto shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Send Feedback</h3>
+              <button
+                onClick={() => setIsFeedbackOpen(false)}
+                className="p-1 text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="feedback" className="block text-sm font-medium text-gray-300 mb-2">
+                  Your feedback helps us improve DevilDev
+                </label>
+                <textarea
+                  id="feedback"
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  placeholder="Tell us about your experience, report bugs, or suggest features..."
+                  className="w-full bg-gray-800/50 border border-gray-600/50 rounded-lg px-3 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 resize-none min-h-[120px] max-h-[200px]"
+                  maxLength={1000}
+                />
+                <div className="text-xs text-gray-500 mt-1 text-right">
+                  {feedbackText.length}/1000
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setIsFeedbackOpen(false)}
+                  className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleFeedbackSubmit}
+                  disabled={!feedbackText.trim()}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                >
+                  <Send className="h-4 w-4" />
+                  <span>Send Feedback</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Custom Scrollbar Styles & Animations */}
       <style jsx global>{`

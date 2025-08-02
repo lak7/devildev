@@ -10,7 +10,7 @@ import { aimlComponentsTool } from "./architecture/aimlComponents";
 import { analyticsComponentsTool } from "./architecture/analyticsComponents";
 import { authComponentsTool } from "./architecture/authComponents";
 import { blockchainComponentsTool } from "./architecture/blockchainComponents";
-import { DynamicStructuredTool } from "langchain/tools";
+import { DynamicStructuredTool } from "langchain/tools"; 
 import { databaseComponentsTool } from "./architecture/databaseComponents";
 import { mobileComponentsTool } from "./architecture/mobileComponents";
 import { notificationComponentsTool } from "./architecture/notificationComponents";
