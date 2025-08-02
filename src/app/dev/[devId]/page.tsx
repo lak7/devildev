@@ -112,6 +112,9 @@ const DevPage = () => {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   
+  // How to dialog state
+  const [isHowToOpen, setIsHowToOpen] = useState(false);
+  
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -851,16 +854,28 @@ const DevPage = () => {
           </button>
         </div>
 
-        {/* Right side - Feedback button and User avatar */}
-        <div className="flex items-center space-x-4">
+        {/* Right side - How to, Feedback button and User avatar */}
+        <div className="flex items-center space-x-3">
+          {/* How to button */}
+          <button
+            onClick={() => setIsHowToOpen(true)}
+            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
+            title="How to use DevilDev"
+          >
+            <HelpCircle className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
+            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
+              How to
+            </span>
+          </button>
+
           {/* Feedback button */}
           <button
             onClick={() => setIsFeedbackOpen(true)}
-            className="flex items-center space-x-2 px-3 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/30 hover:border-gray-500/50 rounded-lg transition-all duration-200 group"
+            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
             title="Send Feedback"
           >
-            <MessageSquare className="h-4 w-4 text-gray-400 group-hover:text-white transition-colors" />
-            <span className="text-sm text-gray-400 group-hover:text-white transition-colors hidden sm:block">
+            <MessageSquare className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
+            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
               Feedback
             </span>
           </button>
@@ -1295,53 +1310,148 @@ const DevPage = () => {
 
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
 
-      {/* Feedback Dialog */}
-      {isFeedbackOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-600/50 rounded-xl p-6 w-full max-w-md mx-auto shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Send Feedback</h3>
-              <button
-                onClick={() => setIsFeedbackOpen(false)}
-                className="p-1 text-gray-400 hover:text-white transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+      {/* How to Dialog */}
+      {isHowToOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 border border-blue-500/30 rounded-2xl p-8 w-full max-w-2xl mx-auto shadow-2xl relative overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl"></div>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
             
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="feedback" className="block text-sm font-medium text-gray-300 mb-2">
-                  Your feedback helps us improve DevilDev
-                </label>
-                <textarea
-                  id="feedback"
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="Tell us about your experience, report bugs, or suggest features..."
-                  className="w-full bg-gray-800/50 border border-gray-600/50 rounded-lg px-3 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 resize-none min-h-[120px] max-h-[200px]"
-                  maxLength={1000}
-                />
-                <div className="text-xs text-gray-500 mt-1 text-right">
-                  {feedbackText.length}/1000
+            <div className="relative">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-500/20 rounded-lg">
+                    <HelpCircle className="h-6 w-6 text-blue-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white">How to Use DevilDev</h3>
+                </div>
+                <button
+                  onClick={() => setIsHowToOpen(false)}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-6 text-gray-300">
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 font-bold text-sm">1</div>
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Start a Conversation</h4>
+                      <p className="text-gray-300">Describe your project idea, features you want to build, or ask technical questions. Be as detailed as possible for better results.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 font-bold text-sm">2</div>
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">View Architecture</h4>
+                      <p className="text-gray-300">DevilDev will generate a visual architecture diagram showing how your components connect and interact.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 font-bold text-sm">3</div>
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Generate Documentation</h4>
+                      <p className="text-gray-300">Click "Generate Docs" to create comprehensive project documentation, including PRD, project structure, and implementation phases.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 font-bold text-sm">4</div>
+                    <div>
+                      <h4 className="font-semibold text-white mb-2">Continue Conversation</h4>
+                      <p className="text-gray-300">Ask follow-up questions, request modifications, or dive deeper into specific technical aspects of your project.</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mt-6">
+                  <h4 className="font-semibold text-blue-300 mb-2">💡 Pro Tips</h4>
+                  <ul className="space-y-1 text-sm text-gray-300">
+                    <li>• Be specific about your tech stack preferences</li>
+                    <li>• Mention any constraints or requirements upfront</li>
+                    <li>• Use the fullscreen mode for better architecture viewing</li>
+                    <li>• Access your previous chats from the sidebar</li>
+                  </ul>
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end mt-8">
+                <button
+                  onClick={() => setIsHowToOpen(false)}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Improved Feedback Dialog */}
+      {isFeedbackOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 border border-red-500/30 rounded-2xl p-8 w-full max-w-lg mx-auto shadow-2xl relative overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-orange-500/5 rounded-2xl"></div>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500"></div>
+            
+            <div className="relative">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-red-500/20 rounded-lg">
+                    <MessageSquare className="h-6 w-6 text-red-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white">Send Feedback</h3>
+                </div>
                 <button
                   onClick={() => setIsFeedbackOpen(false)}
-                  className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
                 >
-                  Cancel
+                  <X className="h-5 w-5" />
                 </button>
-                <button
-                  onClick={handleFeedbackSubmit}
-                  disabled={!feedbackText.trim()}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                >
-                  <Send className="h-4 w-4" />
-                  <span>Send Feedback</span>
-                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <label htmlFor="feedback" className="block text-base font-medium text-gray-300 mb-3">
+                    Your feedback helps us improve DevilDev 🚀
+                  </label>
+                  <textarea
+                    id="feedback"
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    placeholder="Share your experience, report bugs, suggest features, or tell us what you love about DevilDev..."
+                    className="w-full bg-gray-800/50 border border-gray-600/50 rounded-xl px-4 py-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 resize-none min-h-[140px] max-h-[240px] transition-all duration-200"
+                    maxLength={1000}
+                  />
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-xs text-gray-500">We read every piece of feedback</span>
+                    <span className="text-xs text-gray-500">{feedbackText.length}/1000</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-4">
+                  <button
+                    onClick={() => setIsFeedbackOpen(false)}
+                    className="px-5 py-2.5 text-gray-400 hover:text-white hover:bg-gray-700/30 rounded-lg transition-all duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleFeedbackSubmit}
+                    disabled={!feedbackText.trim()}
+                    className="flex items-center space-x-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200 font-medium shadow-lg"
+                  >
+                    <Send className="h-4 w-4" />
+                    <span>Send Feedback</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
