@@ -1270,11 +1270,11 @@ const DevPage = () => {
               </div>
             )}
             { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
-               <div className={`"flex h-12 ml-12 ${!docsGenerated ? "z-50" : ""} z-50`}>
+               <div className={`"flex h-12 ml-12 z-[100]`}>
                <button 
                  ref={docsButtonRef}
                  onClick={handleGenerateDocs} 
-                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 ${!docsGenerated ? "z-50" : ""} z-50 ${
+                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200  z-[100] ${
                    isStreamingDocs 
                      ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
                      : docsGenerated

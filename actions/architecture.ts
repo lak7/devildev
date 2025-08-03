@@ -423,7 +423,7 @@ OPTIONAL TOOLS (Use only when explicitly needed):
 ANALYSIS PROCESS:
 1. First, identify the target platform (web vs mobile) - this determines your mandatory tool
 2. Then, scan for specific features that require additional tools
-3. Only call tools for features explicitly mentioned or strongly implied
+3. Only call tools for features mentioned or strongly implied
 4. Avoid calling tools for basic/standard features already covered by platform tools
 5. If the application includes CRUD operations, then call the database_components and auth_components no matter what
 
