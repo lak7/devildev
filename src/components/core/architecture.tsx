@@ -480,6 +480,7 @@ export default function Architecture({
     const scale = getInitialScale(initialData.length);
     return { x: 0, y: 0, scale };
   })
+  const [hasUserAdjustedZoom, setHasUserAdjustedZoom] = useState(false)
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 })
   const [isSpacePressed, setIsSpacePressed] = useState(false)
@@ -507,14 +508,21 @@ export default function Architecture({
       const processedComponents = processComponents(architectureData.components, customPositions)
       setComponents(processedComponents)
       
-      // Update transform scale based on component count
-      const newScale = getInitialScale(architectureData.components.length)
-      setTransform(prev => ({ ...prev, scale: newScale }))
+      // Only update transform scale if user hasn't manually adjusted zoom
+      setTransform(prev => {
+        const newScale = getInitialScale(architectureData.components.length)
+        // Only reset scale if user hasn't manually adjusted the zoom
+        if (!hasUserAdjustedZoom) {
+          return { ...prev, scale: newScale }
+        }
+        // Keep existing scale if user has manually adjusted it
+        return prev
+      })
     }
     if (architectureData?.connectionLabels) {
       setConnectionLabels(architectureData.connectionLabels)
     }
-  }, [architectureData, customPositions])
+  }, [architectureData, customPositions, hasUserAdjustedZoom])
 
   // Idle animation effect - always runs to maintain hook order
   useEffect(() => {
@@ -605,6 +613,7 @@ export default function Architecture({
   }, [transform])
 
   const zoomIn = useCallback(() => {
+    setHasUserAdjustedZoom(true)
     setTransform(prev => ({
       ...prev,
       scale: Math.min(prev.scale * 1.2, MAX_SCALE)
@@ -612,6 +621,7 @@ export default function Architecture({
   }, [])
 
   const zoomOut = useCallback(() => {
+    setHasUserAdjustedZoom(true)
     setTransform(prev => ({
       ...prev,
       scale: Math.max(prev.scale / 1.2, MIN_SCALE)
@@ -620,6 +630,7 @@ export default function Architecture({
 
   const resetView = useCallback(() => {
     const newScale = getInitialScale(components.length)
+    setHasUserAdjustedZoom(false) // Reset the flag when user explicitly resets view
     setTransform({ x: 0, y: 0, scale: newScale })
   }, [components.length])
 
@@ -651,6 +662,7 @@ export default function Architecture({
     const x = container.width / 2 - centerX * scale
     const y = container.height / 2 - centerY * scale
     
+    setHasUserAdjustedZoom(true) // User is fitting to view, so they've adjusted zoom
     setTransform({ x, y, scale })
   }, [components])
 
@@ -667,6 +679,7 @@ export default function Architecture({
     const newScale = Math.min(Math.max(transform.scale * delta, MIN_SCALE), MAX_SCALE)
     
     if (newScale !== transform.scale) {
+      setHasUserAdjustedZoom(true) // User is scrolling to zoom
       const scaleDiff = newScale - transform.scale
       const newX = transform.x - (mouseX - transform.x) * (scaleDiff / transform.scale)
       const newY = transform.y - (mouseY - transform.y) * (scaleDiff / transform.scale)
