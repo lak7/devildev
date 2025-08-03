@@ -27,6 +27,7 @@ import {
 } from '../../../../actions/contextualDocsPersistence';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
+import { CoachMark } from '@/components/CoachMarks';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
@@ -115,6 +116,10 @@ const DevPage = () => {
   
   // How to dialog state
   const [isHowToOpen, setIsHowToOpen] = useState(false);
+  
+  // Coach mark state
+  const [showDocsCoachMark, setShowDocsCoachMark] = useState(false);
+  const docsButtonRef = useRef<HTMLButtonElement>(null);
   
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -368,6 +373,20 @@ const DevPage = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Show coach mark for Generate Docs button when conditions are met
+  useEffect(() => {
+    const shouldShowCoachMark = !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && !docsGenerated;
+    if (shouldShowCoachMark && docsButtonRef.current) {
+      // Small delay to ensure the button is rendered
+      const timer = setTimeout(() => {
+        setShowDocsCoachMark(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowDocsCoachMark(false);
+    }
+  }, [isLoading, isArchitectureLoading, isGeneratingDocs, architectureData, docsGenerated]);
 
   // Function to generate architecture
   const genArchitecture = async (requirement: string, conversationHistory: any[] = []) => {
@@ -1235,10 +1254,11 @@ const DevPage = () => {
               </div>
             )}
             { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
-               <div className="flex h-12 ml-12">
+               <div className="flex h-12 ml-12 z-[100]">
                <button 
+                 ref={docsButtonRef}
                  onClick={handleGenerateDocs} 
-                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 ${
+                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 z-[100] ${
                    isStreamingDocs 
                      ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
                      : docsGenerated
@@ -1247,7 +1267,7 @@ const DevPage = () => {
                  }`}
                  disabled={isStreamingDocs || docsGenerated}
                >
-                 {isStreamingDocs ? "Generating Docs..." : docsGenerated ? "Docs Generated ✓" : "Generate Docs→"}
+                 {docsGenerated ? "Docs Generated ✓" : "Generate Docs→"}
                </button>
              </div> 
             )}
@@ -1566,6 +1586,20 @@ const DevPage = () => {
         /* Disable text selection during resize */
         ${isResizing ? '*{user-select: none !important;}' : ''}
       `}</style>
+
+      {/* Coach Mark for Generate Docs Button */}
+      <CoachMark
+        isVisible={showDocsCoachMark}
+        targetElement={docsButtonRef.current}
+        title="For Context Engineering"
+        message="Click this button to generate your docs for context engineering"
+        position="right"
+        onNext={() => setShowDocsCoachMark(false)}
+        onSkip={() => setShowDocsCoachMark(false)}
+        onClose={() => setShowDocsCoachMark(false)}
+        nextLabel="Got it"
+        showSkip={false}
+      />
     </div>
   );
 };
