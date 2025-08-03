@@ -13,7 +13,7 @@ import {
   Laptop, HardDrive, Wifi, Bluetooth, Headphones, Camera,
   Speaker, Battery, Zap, BarChart, PieChart, TrendingUp, TrendingDown,
   DollarSign, CreditCard, ShoppingCart, Package, Truck, MapPin, Calendar,
-  Clock, Timer, Play, Pause, SkipBack, SkipForward, Volume,
+  Clock, Timer, Play, Pause, SkipBack, SkipForward, Volume, 
   VolumeX, Repeat, Shuffle, Heart, Star, Bookmark, Flag, Tag, Filter, 
   Grid, List, Eye, EyeOff, Edit, Trash, Plus, Minus, X, Check,
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUp, ArrowDown,
