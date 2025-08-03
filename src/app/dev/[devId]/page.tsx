@@ -1270,11 +1270,11 @@ const DevPage = () => {
               </div>
             )}
             { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
-               <div className={`"flex h-12 ml-12 ${!docsGenerated && "z-[100]"}`}>
+               <div className={`"flex h-12 ml-12 ${!docsGenerated ? "z-50" : ""} z-50`}>
                <button 
                  ref={docsButtonRef}
                  onClick={handleGenerateDocs} 
-                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 ${!docsGenerated && "z-[100]"} ${
+                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 ${!docsGenerated ? "z-50" : ""} z-50 ${
                    isStreamingDocs 
                      ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
                      : docsGenerated
@@ -1372,8 +1372,8 @@ const DevPage = () => {
                   activeTab === 'context'
                     ? 'text-white bg-gray-700/50'
                     : 'text-gray-400 hover:text-white'
-                }`}
-                disabled={!docsGenerated || isStreamingDocs || isGeneratingDocs}
+                } ${(!docsGenerated && !isStreamingDocs && !isGeneratingDocs) ? 'disabled:hover:cursor-not-allowed' : ''}`}
+                disabled={!docsGenerated && !isStreamingDocs && !isGeneratingDocs}
               >
                 Contextual Docs
               </button>
