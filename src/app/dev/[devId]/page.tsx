@@ -912,7 +912,7 @@ const DevPage = () => {
           {/* Subtle glow effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
-          <div className="relative flex flex-col h-full pt-8 pb-6">
+          <div className="relative flex flex-col h-full pt-8 pb-3">
             {/* Top navigation items */}
             <div className="px-2 space-y-2">
               <button
@@ -970,7 +970,7 @@ const DevPage = () => {
 
             {/* Chats section */}
             <div className="flex-1 px-2">
-              <div className="flex items-center space-x-4 px-3 py-3 mb-3">
+              <div className="flex items-center space-x-4 px-3 py-2  mb-3">
                 <MessageCircle className="h-5 w-5 text-red-400/70 flex-shrink-0" />
                 <span className={`text-sm font-medium text-red-400/90 whitespace-nowrap transition-all duration-300 ${
                   isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'

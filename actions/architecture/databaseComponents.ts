@@ -104,7 +104,7 @@ const chain = prompt.pipe(llm).pipe(outputParser);
 
 export const databaseComponentsTool = new DynamicStructuredTool({
   name: "database_components",
-  description: "Generate database and storage components with modern data stack",
+  description: "To generate database and data storage architecture components including relational databases (PostgreSQL, MySQL), NoSQL databases (MongoDB, Redis), data warehousing, ETL pipelines, database clustering, backup/recovery systems, data modeling, indexing strategies, caching layers, data analytics infrastructure, and storage optimization. Use when requirements mention complex data relationships, analytics, reporting, data warehousing, large-scale data processing, CRUD operations, or structured data management.",
   schema: z.object({
     requirement: z.string().describe("User's database/storage requirement"),
     conversation_history: z.string().describe("All prior conversation messages as a single formatted string"),

@@ -81,7 +81,7 @@ const chain = prompt.pipe(llm).pipe(outputParser);
 
 export const authComponentsTool = new DynamicStructuredTool({
   name: "auth_components",
-  description: "Generate authentication and security components with modern tech stack",
+  description: "To generate authentication, authorization, and user management architecture components including user registration/login systems, JWT/session management, OAuth/SSO integration, role-based access control (RBAC), multi-factor authentication (MFA), password security, user profiles, account management, API security, and identity providers. Use when requirements mention user accounts, login, signup, authentication, user management, permissions, roles, security, or user access control.",
   schema: z.object({
     requirement: z.string().describe("User's authentication requirement"),
     conversation_history: z.string().describe("All prior conversation messages as a single formatted string"),

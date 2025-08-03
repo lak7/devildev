@@ -133,7 +133,7 @@ const chain = prompt.pipe(llm).pipe(outputParser);
 
 export const blockchainComponentsTool = new DynamicStructuredTool({
   name: "blockchain_components",
-  description: "Generate blockchain and smart contract components with modern Web3 stack",
+  description: "To generate blockchain and Web3 architecture components including smart contracts (Solidity, Rust), wallet integration (MetaMask, WalletConnect), token standards (ERC-20, ERC-721, ERC-1155), DeFi protocols, NFT marketplaces, decentralized storage (IPFS), blockchain networks (Ethereum, Polygon, Solana), cryptocurrency payments, staking mechanisms, governance tokens, and Web3 authentication. Use when requirements mention Web3, blockchain, NFTs, tokens, smart contracts, DeFi, cryptocurrency, wallet integration, or decentralized applications.",
   schema: z.object({
     requirement: z.string().describe("User's blockchain/Web3 requirement"),
     conversation_history: z.string().describe("All prior conversation messages as a single formatted string"),

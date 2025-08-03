@@ -122,7 +122,7 @@ const chain = prompt.pipe(llm).pipe(outputParser);
 
 export const aimlComponentsTool = new DynamicStructuredTool({
   name: "aiml_components",
-  description: "Generate AI/ML components and modern tech stack for artificial intelligence applications",
+  description: "To generate AI/ML architecture components for intelligent features including machine learning models, natural language processing, computer vision, recommendation systems, chatbots, data pipelines, and AI-powered analytics. Use when requirements mention AI, ML, intelligent automation, predictive features, content generation, image/text processing, or smart recommendations.",
   schema: z.object({
     requirement: z.string().describe("User's AI/ML requirement"),
     conversation_history: z.string().describe("All prior conversation messages as a single formatted string"),

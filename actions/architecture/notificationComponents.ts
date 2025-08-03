@@ -123,7 +123,7 @@ const chain = prompt.pipe(llm).pipe(outputParser);
 
 export const notificationComponentsTool = new DynamicStructuredTool({
   name: "notification_components",
-  description: "Generate notification and messaging components with modern email/SMS/push stack",
+  description: "To generate notification and communication architecture components including email delivery systems, SMS messaging, push notifications (web/mobile), in-app alerts, real-time messaging, notification queues, delivery tracking, user preference management, and multi-channel communication workflows. Use when requirements mention email, SMS, push notifications, alerts, messaging, communication features, or user engagement through notifications.",
   schema: z.object({
     requirement: z.string().describe("User's notification system requirement"),
     conversation_history: z.string().describe("All prior conversation messages as a single formatted string"),

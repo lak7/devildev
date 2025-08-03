@@ -129,7 +129,7 @@ const chain = prompt.pipe(llm).pipe(outputParser);
 
 export const paymentComponentsTool = new DynamicStructuredTool({
   name: "payment_components",
-  description: "Generate payment and financial components with modern fintech stack",
+  description: "To generate payment processing and financial architecture components including payment gateways (Stripe, Razorpay, PayPal), checkout systems, subscription billing, UPI, invoice management, fraud detection, PCI compliance infrastructure, multi-currency support, refund/dispute handling, payment webhooks, financial reporting, tax calculation, and wallet integration. Use when requirements mention payments, e-commerce, subscriptions, billing, checkout, transactions, monetization, or financial operations.",
   schema: z.object({
     requirement: z.string().describe("User's payment system requirement"),
     conversation_history: z.string().describe("All prior conversation messages as a single formatted string"),
