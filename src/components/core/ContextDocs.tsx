@@ -30,7 +30,8 @@ export default function FileExplorer({
   projectStructure, 
   uiUX,
   streamingUpdates = [],
-  isGenerating = false
+  isGenerating = false,
+  downloadButtonRef
 }: {
   projectRules: string
   plan: string
@@ -41,6 +42,7 @@ export default function FileExplorer({
   uiUX: string
   streamingUpdates?: StreamingFile[]
   isGenerating?: boolean
+  downloadButtonRef?: React.RefObject<HTMLButtonElement | null>
 }) {
 
   const [selectedFile, setSelectedFile] = React.useState<string>("PROJECT_RULES.md")
@@ -655,21 +657,14 @@ Every decision should support the overall project goals while maintaining consis
           {isCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
         </Button>
         <Button 
+          ref={downloadButtonRef}
           variant="ghost" 
           size="icon" 
-          className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200"
+          className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200 z-[100]"
           onClick={handleDownload}
           disabled={isGenerating}
         >
           <Download className="w-4 h-4" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/30 transition-all duration-200"
-          disabled={isGenerating}
-        >
-          <ExternalLink className="w-4 h-4" />
         </Button>
       </div>
     </div>

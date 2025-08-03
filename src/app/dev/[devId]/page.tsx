@@ -119,7 +119,9 @@ const DevPage = () => {
   
   // Coach mark state
   const [showDocsCoachMark, setShowDocsCoachMark] = useState(false);
+  const [showDownloadCoachMark, setShowDownloadCoachMark] = useState(false);
   const docsButtonRef = useRef<HTMLButtonElement>(null);
+  const downloadButtonRef = useRef<HTMLButtonElement>(null);
   
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -387,6 +389,20 @@ const DevPage = () => {
       setShowDocsCoachMark(false);
     }
   }, [isLoading, isArchitectureLoading, isGeneratingDocs, architectureData, docsGenerated]);
+
+  // Show coach mark for Download button when docs are generated
+  useEffect(() => {
+    if (docsGenerated && !isStreamingDocs && downloadButtonRef.current) {
+      // Small delay to ensure the button is rendered and docs generation is complete
+      const timer = setTimeout(() => {
+        setActiveTab('context')
+        setShowDownloadCoachMark(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowDownloadCoachMark(false);
+    }
+  }, [docsGenerated, isStreamingDocs]);
 
   // Function to generate architecture
   const genArchitecture = async (requirement: string, conversationHistory: any[] = []) => {
@@ -1254,11 +1270,11 @@ const DevPage = () => {
               </div>
             )}
             { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
-               <div className="flex h-12 ml-12 z-[100]">
+               <div className={`"flex h-12 ml-12 ${!docsGenerated && "z-[100]"}`}>
                <button 
                  ref={docsButtonRef}
                  onClick={handleGenerateDocs} 
-                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 z-[100] ${
+                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 ${!docsGenerated && "z-[100]"} ${
                    isStreamingDocs 
                      ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
                      : docsGenerated
@@ -1357,6 +1373,7 @@ const DevPage = () => {
                     ? 'text-white bg-gray-700/50'
                     : 'text-gray-400 hover:text-white'
                 }`}
+                disabled={!docsGenerated || isStreamingDocs || isGeneratingDocs}
               >
                 Contextual Docs
               </button>
@@ -1396,6 +1413,7 @@ const DevPage = () => {
                 uiUX={uiUX}
                 streamingUpdates={streamingUpdates}
                 isGenerating={isStreamingDocs}
+                downloadButtonRef={downloadButtonRef}
               /> 
             </div>
           </div>
@@ -1597,6 +1615,20 @@ const DevPage = () => {
         onNext={() => setShowDocsCoachMark(false)}
         onSkip={() => setShowDocsCoachMark(false)}
         onClose={() => setShowDocsCoachMark(false)}
+        nextLabel="Got it"
+        showSkip={false}
+      />
+
+      {/* Coach Mark for Download Button */}
+      <CoachMark
+        isVisible={showDownloadCoachMark}
+        targetElement={downloadButtonRef.current}
+        title="Download the Docs"
+        message="Just download these docs and copy-paste these into your new project's root folder. Then tell your coding assistant to read PROJECT_RULES.md and start building"
+        position="left"
+        onNext={() => setShowDownloadCoachMark(false)}
+        onSkip={() => setShowDownloadCoachMark(false)}
+        onClose={() => setShowDownloadCoachMark(false)}
         nextLabel="Got it"
         showSkip={false}
       />
