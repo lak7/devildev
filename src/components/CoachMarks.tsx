@@ -138,14 +138,14 @@ export function CoachMark({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[50] transition-opacity duration-300"
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] transition-opacity duration-300"
         onClick={onClose}
       />
 
       {/* Spotlight effect on target */}
       {targetElement && (
         <div
-          className="fixed pointer-events-none z-50 transition-all duration-300"
+          className="fixed pointer-events-none z-[110] transition-all duration-300"
           style={{
             left: targetElement.getBoundingClientRect().left - 8,
             top: targetElement.getBoundingClientRect().top - 8,
@@ -159,7 +159,7 @@ export function CoachMark({
 
       {/* Coach Mark Tooltip */}
       <div
-        className="fixed z-50 transition-all duration-300 ease-out"
+        className="fixed z-[120] transition-all duration-300 ease-out"
         style={{
           left: coords.x,
           top: coords.y,

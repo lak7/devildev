@@ -371,10 +371,22 @@ const DevPage = () => {
     }
   }, [isSignedIn, isLoaded]);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change, or to docs button when it appears
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // Check if docs button should be visible and scroll to it
+    const shouldShowDocsButton = !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData;
+    
+    if (shouldShowDocsButton && docsButtonRef.current) {
+      // Small delay to ensure the button is rendered
+      const timer = setTimeout(() => {
+        docsButtonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      // Default scroll to messages end
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isLoading, isArchitectureLoading, isGeneratingDocs, architectureData]);
 
   // Show coach mark for Generate Docs button when conditions are met
   useEffect(() => {
@@ -1270,11 +1282,11 @@ const DevPage = () => {
               </div>
             )}
             { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
-               <div className={`"flex h-12 ml-12 z-[100]`}>
+               <div className={`flex h-12 ml-12 relative ${!docsGenerated && "z-[115]"} `}>
                <button 
                  ref={docsButtonRef}
                  onClick={handleGenerateDocs} 
-                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200  z-[100] ${
+                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative ${!docsGenerated && "z-[115]"} ${
                    isStreamingDocs 
                      ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
                      : docsGenerated
