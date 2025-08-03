@@ -65,6 +65,7 @@ const DevPage = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [isGeneratingDocs, setIsGeneratingDocs] = useState(false);
   const [currentStartOrNot, setCurrentStartOrNot] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'architecture' | 'context'>('architecture');
@@ -372,10 +373,11 @@ const DevPage = () => {
   const genArchitecture = async (requirement: string, conversationHistory: any[] = []) => {
     
     setIsArchitectureLoading(true);
+    setDocsGenerated(false);
     
     try {
       const architectureResult = await generateArchitectureWithToolCalling(requirement, conversationHistory, architectureData);
-      
+  
       // Clean the result to remove markdown code blocks if present
       let cleanedResult = architectureResult;
       if (typeof architectureResult === 'string') {
@@ -394,6 +396,7 @@ const DevPage = () => {
       
       setArchitectureData(parsedArchitecture);
       setArchitectureGenerated(true);
+      setIsArchitectureLoading(false);
       
       // Save architecture to database
       if (chatId && parsedArchitecture) {
@@ -452,10 +455,10 @@ const DevPage = () => {
  
         const updatedMessages = [...currentMessages, assistantMessage];
         setMessages(updatedMessages);
+        setIsLoading(false);
         if(parsedClassifier.canStart){
           await genArchitecture(initialMessage, currentMessages);
         }
-        setIsLoading(false);
         
         // Save to database
         await updateChatMessages(chatId, updatedMessages);
@@ -570,7 +573,8 @@ const DevPage = () => {
   };
 
   const handleGenerateDocs = async () => {
-    setIsLoading(true);
+    setIsGeneratingDocs(true);
+    // setIsLoading(true);
     setActiveTab('context');
     setIsStreamingDocs(true);
     setStreamingUpdates([]);
@@ -759,7 +763,7 @@ const DevPage = () => {
     } catch (error) {
       console.error('Error generating docs:', error);
     } finally {
-      setIsLoading(false);
+      setIsGeneratingDocs(false);
       setIsStreamingDocs(false);
     }
   }
@@ -1160,7 +1164,77 @@ const DevPage = () => {
                 </div>
               </div>
             )}
-            {currentStartOrNot && !isLoading && !isArchitectureLoading && (
+            {isGeneratingDocs && (
+              <div className="flex justify-start items-center space-x-3 animate-pulse">
+              <Image
+                src="/favicon.jpg"
+                alt="Assistant"
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-full "
+              />
+              <div className="text-white/69 text-sm flex items-center">
+                <span>generating docs </span>
+                <span className="">
+                  <span 
+                    style={{
+                      animation: 'typing 2s infinite',
+                      animationName: 'typing'
+                    }}
+                  >.</span>
+                  <span 
+                    style={{
+                      animation: 'typing 2s infinite 0.3s',
+                      animationName: 'typing'
+                    }}
+                  >.</span>
+                  <span 
+                    style={{
+                      animation: 'typing 2s infinite 0.6s',
+                      animationName: 'typing'
+                    }}
+                  >.</span>
+                </span>
+
+              </div>
+            </div>
+            )}
+            {isArchitectureLoading && (
+                <div className="flex justify-start items-center space-x-3 animate-pulse">
+                <Image
+                  src="/favicon.jpg"
+                  alt="Assistant"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full "
+                />
+                <div className="text-white/69 text-sm flex items-center">
+                  <span>{architectureData ? "updating" : "generating"} architecture</span>
+                  <span className="">
+                    <span 
+                      style={{
+                        animation: 'typing 2s infinite',
+                        animationName: 'typing'
+                      }}
+                    >.</span>
+                    <span 
+                      style={{
+                        animation: 'typing 2s infinite 0.3s',
+                        animationName: 'typing'
+                      }}
+                    >.</span>
+                    <span 
+                      style={{
+                        animation: 'typing 2s infinite 0.6s',
+                        animationName: 'typing'
+                      }}
+                    >.</span>
+                  </span>
+
+                </div>
+              </div>
+            )}
+            { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
                <div className="flex h-12 ml-12">
                <button 
                  onClick={handleGenerateDocs} 
@@ -1175,7 +1249,7 @@ const DevPage = () => {
                >
                  {isStreamingDocs ? "Generating Docs..." : docsGenerated ? "Docs Generated ✓" : "Generate Docs→"}
                </button>
-             </div>
+             </div> 
             )}
              
             
@@ -1203,7 +1277,7 @@ const DevPage = () => {
                   rows={2}
                   style={{ height: textareaHeight }}
                   maxLength={5000}
-                  disabled={isLoading}
+                  disabled={isLoading || isArchitectureLoading}
                 />
               </div>
               
@@ -1212,7 +1286,7 @@ const DevPage = () => {
                 <button 
                   type="submit" 
                   className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  disabled={!inputMessage.trim() || isLoading}
+                  disabled={!inputMessage.trim() || isLoading || isArchitectureLoading}
                 >
                   <BarChart3 className="h-4 w-4" />
                 </button>
