@@ -168,6 +168,66 @@ const DEFAULT_POSITIONS: Record<number, Position[]> = {
     { x: 700, y: 325 },
     { x: 250, y: 600 },
     { x: 750, y: 600 }
+  ],
+  8: [
+    { x: 100, y: 50 },
+    { x: 510, y: 50 },
+    { x: 900, y: 50 },
+    { x: 70, y: 325 },
+    { x: 510, y: 325 },
+    { x: 930, y: 325 },
+    { x: 300, y: 600 },
+    { x: 700, y: 600 }
+  ],
+  9: [
+    { x: 100, y: 50 },
+    { x: 510, y: 50 },
+    { x: 900, y: 50 },
+    { x: 70, y: 325 },
+    { x: 510, y: 325 },
+    { x: 930, y: 325 },
+    { x: 100, y: 600 },
+    { x: 500, y: 600 },
+    { x: 900, y: 600 }
+  ],
+  10: [
+    { x: 50, y: 50 },
+    { x: 400, y: 50 },
+    { x: 750, y: 50 },
+    { x: 1100, y: 50 },
+    { x: 200, y: 350 },
+    { x: 510, y: 350 },
+    { x: 820, y: 350 },
+    { x: 100, y: 650 },
+    { x: 510, y: 650 },
+    { x: 900, y: 650 }
+  ],
+  11: [
+    { x: 50, y: 50 },
+    { x: 400, y: 50 },
+    { x: 750, y: 50 },
+    { x: 1100, y: 50 },
+    { x: 200, y: 325 },
+    { x: 510, y: 325 },
+    { x: 820, y: 325 },
+    { x: 50, y: 650 },
+    { x: 400, y: 650 },
+    { x: 750, y: 650 },
+    { x: 1100, y: 650 }
+  ],
+  12: [
+    { x: 50, y: 50 },
+    { x: 400, y: 50 },
+    { x: 750, y: 50 },
+    { x: 1100, y: 50 },
+    { x: 50, y: 325 },
+    { x: 400, y: 325 },
+    { x: 750, y: 325 },
+    { x: 1100, y: 325 },
+    { x: 50, y: 650 },
+    { x: 400, y: 650 },
+    { x: 750, y: 650 },
+    { x: 1100, y: 650 },
   ]
 }
 
@@ -222,7 +282,7 @@ const getIconComponent = (iconName: string | any) => {
 
 // Helper function to assign colors and positions to components
 const processComponents = (components: ComponentData[], customPositions: Record<string, Position> = {}): ComponentData[] => {
-  const componentCount = Math.min(Math.max(components.length, 3), 7)
+  const componentCount = Math.min(Math.max(components.length, 3), 12)
   const positions = DEFAULT_POSITIONS[componentCount] || DEFAULT_POSITIONS[4]
   
   return components.map((comp, index) => {
@@ -410,7 +470,8 @@ export default function Architecture({
   const getInitialScale = (componentCount: number) => {
     if (componentCount < 5) return 1
     if (componentCount === 5 || componentCount === 6) return 0.83
-    if (componentCount === 7) return 0.75
+    if (componentCount === 7 || componentCount === 8 || componentCount === 9) return 0.75
+    if (componentCount === 10 || componentCount === 11 || componentCount === 12) return 0.67
     return 1 // fallback
   }
   
@@ -1364,14 +1425,6 @@ export default function Architecture({
                   {/* Status */}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-800/50">
                     <div className="flex items-center gap-2">
-                      <div
-                        className={`w-2 h-2 rounded-full bg-gradient-to-r ${component.color} ${
-                          isSelected ? "animate-ping" : "animate-pulse"
-                        }`}
-                      />
-                      <span className="text-xs text-gray-400">
-                        {isSelected ? "Selected" : "Ready"}
-                      </span>
                     </div>
                     <span
                       className={`text-xs transition-colors duration-300 ${
