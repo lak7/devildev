@@ -1097,10 +1097,10 @@ const DevPage = () => {
       <div ref={containerRef} className="flex-1 flex gap-1 p-4 min-h-0 relative">
         {/* Left Chat Panel - Resizable */}
         <div 
-          className="bg-gray-900/30 border border-gray-600/30 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
+          className="bg-black border border-gray-800 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
           style={{ width: `${leftPanelWidth}%` }}
         >
-          <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-600/30">
+          <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-800">
             <div className="flex space-x-1">
               <button
                 className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
@@ -1309,9 +1309,9 @@ const DevPage = () => {
         
 
           {/* Input Area */}
-          <div className="p-0 px-3 pb-3 flex-shrink-0">
+          <div className="p-4 flex-shrink-0">
             <form onSubmit={handleSubmit} className="relative">
-              <div className="bg-white/5 border-t border-x border-gray-600/100 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+              <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
                   placeholder="Continue the conversation..."
                   value={inputMessage}
@@ -1331,7 +1331,7 @@ const DevPage = () => {
               </div>
               
               {/* Button section */}
-              <div className="bg-white/5 border-x border-b border-gray-600/100 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
+              <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
                 <button 
                   type="submit" 
                   className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
@@ -1362,11 +1362,11 @@ const DevPage = () => {
 
         {/* Right Panel with Tabs - Resizable */}
         <div 
-          className="bg-gray-900/30 border border-gray-600/30 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
+          className="bg-black border border-gray-800 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
           style={{ width: `${100 - leftPanelWidth}%` }}
         >
           {/* Clean Tab Headers */}
-          <div className="flex items-center justify-between px-4 py-3 rounded-t-xl border-b border-gray-600/30">
+          <div className="flex items-center justify-between px-4 py-3 rounded-t-xl border-b border-gray-800">
             <div className="flex space-x-1"> 
               <button
                 onClick={() => setActiveTab('architecture')}
