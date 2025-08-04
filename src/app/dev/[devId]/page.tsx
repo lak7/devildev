@@ -922,7 +922,7 @@ const DevPage = () => {
 
           {/* Feedback button */}
           <button
-            onClick={() => setIsFeedbackOpen(true)}
+            onClick={() => window.open("https://survey.zigpoll.com/2ySxPusV6JfJfoecS/2ySxQkwexpUv5fQq8", "_blank")}
             className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
             title="Send Feedback"
           >
