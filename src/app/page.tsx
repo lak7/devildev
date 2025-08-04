@@ -161,18 +161,7 @@ export default function Page() {
           <div className="relative flex flex-col h-full pt-8 pb-6">
             {/* Top navigation items */}
             <div className="px-2 space-y-2">
-              <a
-                href="/about"
-                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
-                title="About"
-              >
-                <Info className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
-                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                }`}>
-                  About
-                </span>
-              </a>
+          
               <a
                 href="/community"
                 className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
@@ -332,8 +321,7 @@ export default function Page() {
              <a href="/contact" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Contact</a>
              <div className="w-px h-6 bg-gray-400 mx-5" />
              <a href="/community" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
-             <div className="w-px h-6 bg-gray-400 mx-5" />
-               <a href="/about" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">About</a>
+             
    
              {/* <span className="text-red-500">Hello</span>
              <h1>Hello</h1> */}
