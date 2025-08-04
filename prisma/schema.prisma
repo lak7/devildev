@@ -133,3 +133,13 @@ model ContextualDocs {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 } 
+
+
+model Feedback {
+  id String @id @default(uuid())
+  userId String
+  chatId String
+  feedback String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

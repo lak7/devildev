@@ -1311,7 +1311,7 @@ const DevPage = () => {
           {/* Input Area */}
           <div className="p-4 flex-shrink-0">
             <form onSubmit={handleSubmit} className="relative">
-              <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+              <div className="bg-black border-t border-x border-gray-5clea00 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
                   placeholder="Continue the conversation..."
                   value={inputMessage}

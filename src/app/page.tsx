@@ -174,7 +174,7 @@ export default function Page() {
                 </span>
               </a>
               <a
-                href="/devlogs"
+                href="/community"
                 className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
                 title="Community"
               >
@@ -331,7 +331,7 @@ export default function Page() {
             <div className="flex w-full h-full justify-center items-center mt-12">
              <a href="/contact" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Contact</a>
              <div className="w-px h-6 bg-gray-400 mx-5" />
-             <a href="/devlogs" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
+             <a href="/community" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
              <div className="w-px h-6 bg-gray-400 mx-5" />
                <a href="/about" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">About</a>
    
