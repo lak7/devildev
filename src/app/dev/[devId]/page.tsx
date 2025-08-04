@@ -919,17 +919,6 @@ const DevPage = () => {
 
         {/* Right side - How to, Feedback button and User avatar */}
         <div className="flex items-center space-x-3">
-          {/* How to button */}
-          <button
-            onClick={() => setIsHowToOpen(true)}
-            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
-            title="How to use DevilDev"
-          >
-            <HelpCircle className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
-            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
-              How to
-            </span>
-          </button>
 
           {/* Feedback button */}
           <button
@@ -1105,13 +1094,13 @@ const DevPage = () => {
       )}
 
       {/* Main Content Area */}
-      <div ref={containerRef} className="flex-1 flex gap-0 p-5 min-h-0 relative">
+      <div ref={containerRef} className="flex-1 flex gap-1 p-4 min-h-0 relative">
         {/* Left Chat Panel - Resizable */}
         <div 
-          className="bg-gray-900/30 border border-gray-600/30 rounded-l-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
+          className="bg-gray-900/30 border border-gray-600/30 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
           style={{ width: `${leftPanelWidth}%` }}
         >
-          <div className="flex items-center px-4 py-3 rounded-tl-xl border-b border-gray-600/30">
+          <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-600/30">
             <div className="flex space-x-1">
               <button
                 className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
@@ -1122,7 +1111,7 @@ const DevPage = () => {
           </div>
           
           {/* Chat Messages with separate scroll and custom scrollbar */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-start'}`}>
                 {message.type === 'assistant' && (
@@ -1294,7 +1283,7 @@ const DevPage = () => {
               </div>
             )}
             { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
-               <div className={`flex h-12 ml-12 relative ${!docsGenerated && "z-[115]"} `}>
+               <div className={`flex h-12 ml-10 relative ${!docsGenerated && "z-[115]"} `}>
                <button 
                  ref={docsButtonRef}
                  onClick={handleGenerateDocs} 
@@ -1373,11 +1362,11 @@ const DevPage = () => {
 
         {/* Right Panel with Tabs - Resizable */}
         <div 
-          className="bg-gray-900/30 border border-gray-600/30 rounded-r-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
+          className="bg-gray-900/30 border border-gray-600/30 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
           style={{ width: `${100 - leftPanelWidth}%` }}
         >
           {/* Clean Tab Headers */}
-          <div className="flex items-center justify-between px-4 py-3 rounded-tr-xl border-b border-gray-600/30">
+          <div className="flex items-center justify-between px-4 py-3 rounded-t-xl border-b border-gray-600/30">
             <div className="flex space-x-1"> 
               <button
                 onClick={() => setActiveTab('architecture')}
@@ -1416,7 +1405,7 @@ const DevPage = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0 p-4">
             <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
               <Architecture 
                 architectureData={architectureData || undefined} 
