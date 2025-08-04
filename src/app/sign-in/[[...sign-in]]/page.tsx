@@ -134,6 +134,12 @@ export default function Page() {
         color: white !important;
         text-shadow: 0 0 8px rgba(255, 255, 255, 0.3) !important;
       }
+      .cl-footerActionLink[href*="sign-up"] {
+        color: black !important;
+      }
+      .cl-footerActionLink[href*="sign-up"]:hover {
+        color: #333 !important;
+      }
     `;
     
     // Append the style element to the document head
