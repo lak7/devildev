@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
             const message = `data: ${data}\n\n`;
             controller.enqueue(encoder.encode(message));
             
-            console.log(`Streamed update for ${fileName}: ${isComplete ? 'completed' : 'in progress'}`);
           } catch (error) {
             console.error('Error encoding streaming update:', error);
           }
@@ -43,7 +42,6 @@ export async function POST(request: NextRequest) {
             const finalMessage = `data: ${finalData}\n\n`;
             controller.enqueue(encoder.encode(finalMessage));
             
-            console.log('Streamed final completion result');
           } catch (error) {
             console.error('Error encoding final result:', error);
           }

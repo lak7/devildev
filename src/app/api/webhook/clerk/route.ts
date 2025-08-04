@@ -51,8 +51,6 @@ export async function POST(req: NextRequest) {
   const { id } = evt.data;
   const eventType = evt.type;
 
-  console.log(`Webhook with and ID of ${id} and type of ${eventType}`);
-  console.log('Webhook body:', body);
 
   // Handle the webhook
   try {
@@ -77,7 +75,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      console.log('User created in database:', user);
     }
 
     if (eventType === 'user.updated') {
@@ -101,7 +98,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      console.log('User updated in database:', user);
     }
 
     if (eventType === 'user.deleted') {
@@ -112,7 +108,6 @@ export async function POST(req: NextRequest) {
         where: { id: id },
       });
 
-      console.log('User deleted from database:', id);
     }
 
     return new NextResponse('', { status: 200 });

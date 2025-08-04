@@ -52,10 +52,7 @@ export default function MinimalistForm() {
     }
   }
 
-  const handleSubmit = () => {
-    console.log("Form submitted:", formData)
-    alert("Profile created successfully!")
-  }
+
 
   const codingLevels = [
     { value: "no-knowledge", label: "No Knowledge" },

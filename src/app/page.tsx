@@ -93,7 +93,6 @@ export default function Page() {
         router.push(`/dev/${chatId}`);
       } catch (error) {
         console.error("Error preparing new chat:", error);
-        alert("An error occurred. Please try again.");
         setIsLoading(false);
       }
     } else {

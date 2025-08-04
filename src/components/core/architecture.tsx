@@ -497,9 +497,6 @@ export default function Architecture({
 
   // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL RETURNS
 
-  useEffect(() => {
-    console.log("THIS IS IT BITCH: ", architectureData)
-  }, [architectureData])
 
   // Update components when architectureData changes
   useEffect(() => {

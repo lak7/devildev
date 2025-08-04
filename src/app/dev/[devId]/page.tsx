@@ -228,7 +228,6 @@ const DevPage = () => {
         
         if (isNewChat && firstMessage) {
           // This is a new chat - create it and process the first message
-          console.log("Creating new chat with localStorage data");
           // alert("Step 2")
 
           // Set up initial state
@@ -354,7 +353,6 @@ const DevPage = () => {
     
     try {
       // Here you would typically send the feedback to your backend
-      console.log('Feedback submitted:', feedbackText);
       
       // For now, just show success and close dialog
       setFeedbackText('');
@@ -489,7 +487,6 @@ const DevPage = () => {
         ? JSON.parse(cleanedIsStart) 
         : cleanedIsStart; 
 
-      console.log("parsedClassifier: ", parsedClassifier)
 
 
       const isParsedTrue = parsedClassifier.canStart;
@@ -569,7 +566,6 @@ const DevPage = () => {
 
     const isTrue = isParsedTrue;
     setCurrentStartOrNot(parsedClassifier.canStart);
-    console.log("This is the classifier: ", parsedClassifier);
 
 
     try {
@@ -680,9 +676,6 @@ const DevPage = () => {
                   try {
                     if (jsonStr) {
                       // Log for debugging
-                      if (jsonStr.length > 1000) {
-                        console.log(`Processing large JSON (${jsonStr.length} chars):`, jsonStr.substring(0, 100) + '...');
-                      }
                       
                       const data = JSON.parse(jsonStr);
                       
@@ -759,10 +752,7 @@ const DevPage = () => {
               
               try {
                 if (jsonStr) {
-                  // Log for debugging
-                  if (jsonStr.length > 1000) {
-                    console.log(`Processing remaining buffer JSON (${jsonStr.length} chars):`, jsonStr.substring(0, 100) + '...');
-                  }
+
                   
                   const data = JSON.parse(jsonStr);
                   

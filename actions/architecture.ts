@@ -22,7 +22,7 @@ import { basicWebComponentsTool } from "./architecture/webComponents";
 
 
 export async function retrieveFunc(question: string, conversationHistory: any[] = []){
-  console.log("question", question);
+
   const openaiKey = process.env.OPENAI_API_KEY;
   const llm = new ChatOpenAI({openAIApiKey: openaiKey})
   
@@ -365,7 +365,6 @@ Generate ONLY this JSON:
     const prompt2 = PromptTemplate.fromTemplate(template2);
     const prompt3 = PromptTemplate.fromTemplate(template3);
     // const context = await retrieveFunc(requirement, conversationHistory);
-    // console.log("This is the context: ", context);
      // Format conversation history for the prompt
      const formattedHistory = conversationHistory.map(msg => 
       `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
@@ -616,9 +615,7 @@ try {
     architecture_data: JSON.stringify(architectureData)
   });
   
-  console.log("Result: ", typeof(result.output), result.output);
   const finalResult = await finalChain.invoke({requirement: requirement, conversation_history: formattedHistory, architectureData: JSON.stringify(architectureData), list_of_required_stacks: JSON.stringify(result.output)});
-  console.log("Final Result: ", typeof(finalResult), finalResult);
   return finalResult;
  
 } catch (error) {
