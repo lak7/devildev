@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Loader2 } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Loader2 } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../actions/agentsFlow';
@@ -62,6 +62,11 @@ export default function Page() {
 
   // Fetch chats when user is signed in
   useEffect(() => {
+    const firstMessage = localStorage.getItem('firstMessage');
+    if (firstMessage) {
+      setInputMessage(firstMessage);
+      localStorage.removeItem('firstMessage');
+    }
     if (isSignedIn && isLoaded) {
       fetchUserChats();
     }
@@ -92,6 +97,7 @@ export default function Page() {
         setIsLoading(false);
       }
     } else {
+      localStorage.setItem('firstMessage', inputMessage.trim());
       router.push('/sign-in');
     }
   }
@@ -311,7 +317,7 @@ export default function Page() {
                   className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                   disabled={!inputMessage.trim() || isLoading}
                 >
-                  <BarChart3 className="h-4 w-4" />
+                  <SendHorizonal className="h-4 w-4" /> 
                 </button>
               </div>
             </form>
