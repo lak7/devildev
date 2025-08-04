@@ -980,18 +980,6 @@ const DevPage = () => {
                 </span>
               </button>
               <a
-                href="/about"
-                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
-                title="About"
-              >
-                <Info className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
-                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                }`}>
-                  About
-                </span>
-              </a>
-              <a
                 href="/devlogs"
                 className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
                 title="Community"
@@ -1311,7 +1299,7 @@ const DevPage = () => {
           {/* Input Area */}
           <div className="p-4 flex-shrink-0">
             <form onSubmit={handleSubmit} className="relative">
-              <div className="bg-black border-t border-x border-gray-5clea00 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+              <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
                   placeholder="Continue the conversation..."
                   value={inputMessage}
