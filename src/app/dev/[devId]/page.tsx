@@ -214,7 +214,7 @@ const DevPage = () => {
   useEffect(() => {
     const loadChatAndArchitecture = async () => {
       // alert("Step 0") 
-      if (!chatId || !isSignedIn) return;
+      if (!chatId || !isSignedIn) return; 
       
       
       try {
@@ -264,6 +264,8 @@ const DevPage = () => {
             
           
         } else {
+
+          setIsLoadingChat(true);
           // This is an existing chat - load from database
           const chatResult = await getChat(chatId);
           if (chatResult.success && chatResult.chat) {
@@ -278,6 +280,7 @@ const DevPage = () => {
               setComponentPositions(archResult.componentPositions || {});
               setArchitectureGenerated(true);
             }
+            setIsLoadingChat(false);
 
             // Load contextual docs data if it exists
             const docsResult = await getContextualDocs(chatId);
@@ -287,6 +290,7 @@ const DevPage = () => {
               setDocsGenerated(true);
             }
           } else {
+            setIsLoadingChat(false);
             console.error("Failed to load chat:", chatResult.error);
             // Clear any stale localStorage data
             localStorage.removeItem('newChatId');
@@ -832,6 +836,14 @@ const DevPage = () => {
       setTextareaHeight(maxHeight + 'px');
     }
   };
+
+  if(isLoadingChat){
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+      </div>
+    );
+  }
  
 
   // Fullscreen Architecture view

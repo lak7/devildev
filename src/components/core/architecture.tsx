@@ -832,13 +832,7 @@ export default function Architecture({
         <div className="relative mb-3">
           {/* Main orb */}
           <div className="relative w-32 h-32">
-            {/* Dev image */}
-            {/* <img 
-              src="/favicon.jpg"  
-              alt="Developer" 
-              className="relative w-full h-full object-cover rounded-full"
-              style={{ filter: 'brightness(1.2) contrast(1.1)' }}
-            /> */}
+
              <video 
                   src="/thethe.mp4" 
                   autoPlay 
@@ -1035,10 +1029,20 @@ export default function Architecture({
     return (
       <div className="min-h-full bg-black text-white p-4 overflow-hidden flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
-          <div className="relative">
+          {/* <div className="relative">
             <div className="w-16 h-16 border-4 border-gray-600 border-t-red-500 rounded-full animate-spin"></div>
             <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-red-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-          </div>
+          </div> */}
+           <div className="relative w-32 h-32">
+
+<video 
+     src="/thethe.mp4" 
+     autoPlay 
+     loop 
+     muted 
+     className="elative w-full h-full object-cover rounded-full"
+   />
+</div>
           <div className="text-center">
             <h3 className="text-lg font-semibold text-white mb-2">Generating Architecture...</h3>
             <p className="text-sm text-gray-400">DevilDev is analyzing your requirements and crafting the perfect architecture</p>
