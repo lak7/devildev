@@ -452,6 +452,10 @@ const DevPage = () => {
     
     setIsArchitectureLoading(true);
     setDocsGenerated(false);
+
+    if(isMobile){
+      setIsMobilePanelOpen(true);
+    }
     
     try {
       const architectureResult = await generateArchitectureWithToolCalling(requirement, conversationHistory, architectureData);
@@ -1293,11 +1297,11 @@ const DevPage = () => {
                   </div>
                 )}
                 { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
-                   <div className={`flex h-12 ml-10 relative ${!docsGenerated && "z-[115]"} `}>
+                   <div className={`flex h-12 ml-10 relative ${!docsGenerated && !isMobile && "z-[115]"} `}>
                    <button 
                      ref={docsButtonRef}
                      onClick={handleGenerateDocs} 
-                     className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative ${!docsGenerated && "z-[115]"} ${
+                     className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative ${!docsGenerated && !isMobile && "z-[115]"} ${
                        isStreamingDocs 
                          ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
                          : docsGenerated
@@ -1998,7 +2002,8 @@ const DevPage = () => {
       `}</style>
 
       {/* Coach Mark for Generate Docs Button */}
-      <CoachMark
+      {!isMobile && (
+        <CoachMark
         isVisible={showDocsCoachMark}
         targetElement={docsButtonRef.current}
         title="For Context Engineering"
@@ -2009,7 +2014,8 @@ const DevPage = () => {
         onClose={() => setShowDocsCoachMark(false)}
         nextLabel="Got it"
         showSkip={false}
-      />
+      />)}
+      
 
       {/* Coach Mark for Download Button */}
       <CoachMark
