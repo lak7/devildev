@@ -1099,7 +1099,7 @@ export default function Architecture({
       </div>
 
       {/* Canvas Instructions */}
-      <div className={`absolute top-4 right-4 z-50 ${showInstructions ? 'block' : 'hidden'}`}>
+      {/* <div className={`absolute top-4 right-4 z-50 ${showInstructions ? 'block' : 'hidden'}`}>
   <div className="bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg p-3 relative">
     <button onClick={() => setShowInstructions(false)} className="absolute -top-2 -right-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-full p-1 transition-colors">
       <Cross className="w-3 h-3 text-red-400 rotate-45 hover:text-red-500" />
@@ -1115,7 +1115,7 @@ export default function Architecture({
       </div>
     </div>
   </div>
-</div>
+</div> */}
 
       {/* Status Panel */}
       {selectedComponent && (
