@@ -123,6 +123,10 @@ const DevPage = () => {
   const docsButtonRef = useRef<HTMLButtonElement>(null);
   const downloadButtonRef = useRef<HTMLButtonElement>(null);
   
+  // Mobile responsive state
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -158,6 +162,31 @@ const DevPage = () => {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isResizing]);
+
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Manage body class for mobile panel
+  useEffect(() => {
+    if (isMobilePanelOpen) {
+      document.body.classList.add('mobile-panel-open');
+    } else {
+      document.body.classList.remove('mobile-panel-open');
+    }
+    
+    return () => {
+      document.body.classList.remove('mobile-panel-open');
+    };
+  }, [isMobilePanelOpen]);
 
   // Handle resize start
   const handleResizeStart = (e: React.MouseEvent) => {
@@ -296,7 +325,7 @@ const DevPage = () => {
             localStorage.removeItem('firstMessage');
             router.push('/');
           }
-        }
+        } 
       } catch (error) {
         console.error("Error loading chat:", error);
         // Clear any stale localStorage data
@@ -876,7 +905,7 @@ const DevPage = () => {
         <div className="flex items-center space-x-4">
           {/* Burger menu indicator - hide when sidebar is open */}
           <button 
-              onClick={() => setIsDevSidebarHovered(true)}
+              onClick={() => setIsDevSidebarHovered(!isDevSidebarHovered)}
               className={`p-2 hover:bg-gray-800/50 rounded-lg transition-all duration-200`}
               title="Open sidebar"
             > 
@@ -1072,342 +1101,724 @@ const DevPage = () => {
       )}
 
       {/* Main Content Area */}
-      <div ref={containerRef} className="flex-1 flex gap-1 p-4 min-h-0 relative">
-        {/* Left Chat Panel - Resizable */}
-        <div 
-          className="bg-black border border-gray-800 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
-          style={{ width: `${leftPanelWidth}%` }}
-        >
-          <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-800">
-            <div className="flex space-x-1">
-              <button
-                className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
-              >
-                Chat
-              </button>
-            </div>
-          </div>
-          
-          {/* Chat Messages with separate scroll and custom scrollbar */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
-            {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-start'}`}>
-                {message.type === 'assistant' && (
-                  <div className="mr-3 flex-shrink-0">
+      <div ref={containerRef} className="flex-1 flex gap-1 p-4 min-h-0 relative pb-0 md:pb-4 h-full">
+        {/* Desktop Layout */}
+        {!isMobile && (
+          <>
+            {/* Left Chat Panel - Resizable */}
+            <div 
+              className="bg-black border border-gray-800 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
+              style={{ width: `${leftPanelWidth}%` }}
+            >
+              <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-800">
+                <div className="flex space-x-1">
+                  <button
+                    className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
+                  >
+                    Chat
+                  </button>
+                </div>
+              </div>
+              
+              {/* Chat Messages with separate scroll and custom scrollbar */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+                {messages.map((message) => (
+                  <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-start'}`}>
+                    {message.type === 'assistant' && (
+                      <div className="mr-3 flex-shrink-0">
+                        <Image
+                          src="/favicon.jpg"
+                          alt="Assistant"
+                          width={32}
+                          height={32}
+                          className="rounded-full"
+                        />
+                      </div>
+                    )}
+                    {message.type === 'user' && (
+                      <div className="mr-1 flex-shrink-0">
+                        <Avatar className="size-8">
+                          <AvatarImage src="https://github.com/shadcn.png" alt="User" />
+                          <AvatarFallback>U</AvatarFallback>
+                        </Avatar>
+                      </div>
+                    )}
+                    <div className={`max-w-[80%] rounded-2xl px-2 py-1 ${
+                      message.type === 'user' 
+                        ? ' text-white' 
+                        : ' text-white'
+                    }`}>
+                      {message.type === 'assistant' ? (
+                        <div className="prose prose-invert prose-sm max-w-none">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeHighlight]}
+                            components={{
+                              h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-red-400">{children}</h1>,
+                              h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-red-300">{children}</h2>,
+                              h3: ({ children }) => <h3 className="text-sm font-medium mb-1 text-red-200">{children}</h3>,
+                              p: ({ children }) => <p className="mb-2 text-gray-200">{children}</p>,
+                              ul: ({ children }) => <ul className="list-disc ml-4 mb-2 text-gray-200">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal ml-4 mb-2 text-gray-200">{children}</ol>,
+                              li: ({ children }) => <li className="mb-1">{children}</li>,
+                              code: ({ children, className, ...props }: any) => {
+                                const match = /language-(\w+)/.exec(className || '');
+                                const inline = props.inline;
+                                return !inline ? (
+                                  <pre className="bg-gray-900 rounded-lg p-3 mb-2 overflow-x-auto">
+                                    <code className={className}>{children}</code>
+                                  </pre>
+                                ) : (
+                                  <code className="bg-gray-700 px-1 py-0.5 rounded text-sm">{children}</code>
+                                );
+                              },
+                              blockquote: ({ children }) => <blockquote className="border-l-4 border-red-500 pl-4 italic text-gray-300">{children}</blockquote>,
+                              strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-sm md:text-base whitespace-pre-wrap">{message.content}</p>
+                      )}
+                    </div>
+                  </div>
+                ))} 
+                
+                {/* Loading indicator */}
+                {isLoading && (
+                  <div className="flex justify-start items-center space-x-3 animate-pulse">
                     <Image
                       src="/favicon.jpg"
                       alt="Assistant"
                       width={32}
                       height={32}
-                      className="rounded-full"
+                      className="w-8 h-8 rounded-full "
+                    />
+                    <div className="text-white/69 text-sm flex items-center">
+                      <span>is thinking</span>
+                      <span className="">
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite 0.3s',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite 0.6s',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                      </span>
+
+                    </div>
+                  </div>
+                )}
+                {isGeneratingDocs && (
+                  <div className="flex justify-start items-center space-x-3 animate-pulse">
+                  <Image
+                    src="/favicon.jpg"
+                    alt="Assistant"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full "
+                  />
+                  <div className="text-white/69 text-sm flex items-center">
+                    <span>generating docs </span>
+                    <span className="">
+                      <span 
+                        style={{
+                          animation: 'typing 2s infinite',
+                          animationName: 'typing'
+                        }}
+                      >.</span>
+                      <span 
+                        style={{
+                          animation: 'typing 2s infinite 0.3s',
+                          animationName: 'typing'
+                        }}
+                      >.</span>
+                      <span 
+                        style={{
+                          animation: 'typing 2s infinite 0.6s',
+                          animationName: 'typing'
+                        }}
+                      >.</span>
+                    </span>
+
+                  </div>
+                </div>
+                )}
+                {isArchitectureLoading && (
+                    <div className="flex justify-start items-center space-x-3 animate-pulse">
+                    <Image
+                      src="/favicon.jpg"
+                      alt="Assistant"
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full "
+                    />
+                    <div className="text-white/69 text-sm flex items-center">
+                      <span>{architectureData ? "updating" : "generating"} architecture</span>
+                      <span className="">
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite 0.3s',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite 0.6s',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                      </span>
+
+                    </div>
+                  </div>
+                )}
+                { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
+                   <div className={`flex h-12 ml-10 relative ${!docsGenerated && "z-[115]"} `}>
+                   <button 
+                     ref={docsButtonRef}
+                     onClick={handleGenerateDocs} 
+                     className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative ${!docsGenerated && "z-[115]"} ${
+                       isStreamingDocs 
+                         ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
+                         : docsGenerated
+                           ? "bg-green-600 border-green-600 text-white cursor-not-allowed"
+                           : "hover:bg-transparent border-white hover:text-white bg-white text-black"
+                     }`}
+                     disabled={isStreamingDocs || docsGenerated}
+                   >
+                     {docsGenerated ? "Docs Generated ✓" : "Generate Docs→"}
+                   </button>
+                 </div> 
+                )}
+                 
+                
+                {/* Auto-scroll target */}
+                <div ref={messagesEndRef} />
+              </div>
+
+            
+
+              {/* Input Area */}
+              <div className="p-4 flex-shrink-0">
+                <form onSubmit={handleSubmit} className="relative">
+                  <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+                    <textarea
+                      placeholder="Continue the conversation..."
+                      value={inputMessage}
+                      onChange={handleTextareaChange}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmit(e);
+                        }
+                      }}
+                      className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
+                      rows={2}
+                      style={{ height: textareaHeight }}
+                      maxLength={5000}
+                      disabled={isLoading || isArchitectureLoading}
                     />
                   </div>
+                  
+                  {/* Button section */}
+                  <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
+                    <button 
+                      type="submit" 
+                      className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading}
+                    >
+                      <SendHorizonal className="h-4 w-4" />
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* Resize Handle */}
+            <div 
+              className={`w-1 bg-transparent hover:bg-gray-500/50 cursor-col-resize transition-all duration-200 relative group ${
+                isResizing ? 'bg-gray-500/70' : ''
+              }`}
+              onMouseDown={handleResizeStart}
+            >
+              {/* Invisible wider hit area for easier grabbing */}
+              <div className="absolute inset-0 -left-2 -right-2 w-5"></div>
+              
+              {/* Visual indicator on hover */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="w-0.5 h-8 bg-gray-400 rounded-full"></div>
+              </div>
+            </div>
+
+            {/* Right Panel with Tabs */}
+            <div 
+              className="bg-black border border-gray-800 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
+              style={{ width: `${100 - leftPanelWidth}%` }}
+            >
+              {/* Clean Tab Headers */}
+              <div className="flex items-center justify-between px-4 py-3 rounded-t-xl border-b border-gray-800">
+                <div className="flex space-x-1"> 
+                  <button
+                    onClick={() => setActiveTab('architecture')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                      activeTab === 'architecture'
+                        ? 'text-white bg-gray-700/50'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Architecture
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveTab('context')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                      activeTab === 'context'
+                        ? 'text-white bg-gray-700/50'
+                        : 'text-gray-400 hover:text-white'
+                    } ${(!docsGenerated && !isStreamingDocs && !isGeneratingDocs) ? 'disabled:hover:cursor-not-allowed' : ''}`}
+                    disabled={!docsGenerated && !isStreamingDocs && !isGeneratingDocs}
+                  >
+                    Contextual Docs
+                  </button>
+                </div>
+                
+                {/* Fullscreen button - only show for architecture tab */}
+                {activeTab === 'architecture' && (
+                  <button
+                    onClick={() => setIsFullscreen(true)}
+                    className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
+                    title="Fullscreen Architecture"
+                  >
+                    <Maximize className="h-4 w-4" />
+                  </button>
                 )}
-                {message.type === 'user' && (
-                  <div className="mr-1 flex-shrink-0">
-                    <Avatar className="size-8">
-                      <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
+              </div>
+
+              {/* Tab Content */}
+              <div className="flex-1 overflow-y-auto min-h-0 p-4">
+                <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
+                  <Architecture 
+                    architectureData={architectureData || undefined} 
+                    isLoading={isArchitectureLoading}
+                    customPositions={componentPositions}
+                    onPositionsChange={handlePositionChange}
+                  />
+                </div>
+                
+                <div className={`h-full ${activeTab === 'context' ? 'block' : 'hidden'}`}>
+                  <FileExplorer 
+                    projectRules={projectRules} 
+                    plan={plan} 
+                    phaseCount={phaseCount} 
+                    phases={phases} 
+                    prd={prd} 
+                    projectStructure={projectStructure} 
+                    uiUX={uiUX}
+                    streamingUpdates={streamingUpdates}
+                    isGenerating={isStreamingDocs}
+                    downloadButtonRef={downloadButtonRef}
+                  /> 
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Mobile Layout */}
+        {isMobile && (
+          <>
+            {/* Chat Panel - 85% height */}
+            <div 
+              className="bg-black border border-gray-800 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out w-full h-[85%]"
+            >
+              <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-800">
+                <div className="flex space-x-1">
+                  <button
+                    className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
+                  >
+                    Chat
+                  </button>
+                </div>
+              </div>
+              
+              {/* Chat Messages with separate scroll and custom scrollbar */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+                {messages.map((message) => (
+                  <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-start'}`}>
+                    {message.type === 'assistant' && (
+                      <div className="mr-3 flex-shrink-0">
+                        <Image
+                          src="/favicon.jpg"
+                          alt="Assistant"
+                          width={32}
+                          height={32}
+                          className="rounded-full"
+                        />
+                      </div>
+                    )}
+                    {message.type === 'user' && (
+                      <div className="mr-1 flex-shrink-0">
+                        <Avatar className="size-8">
+                          <AvatarImage src="https://github.com/shadcn.png" alt="User" />
+                          <AvatarFallback>U</AvatarFallback>
+                        </Avatar>
+                      </div>
+                    )}
+                    <div className={`max-w-[80%] rounded-2xl px-2 py-1 ${
+                      message.type === 'user' 
+                        ? ' text-white' 
+                        : ' text-white'
+                    }`}>
+                      {message.type === 'assistant' ? (
+                        <div className="prose prose-invert prose-sm max-w-none">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeHighlight]}
+                            components={{
+                              h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-red-400">{children}</h1>,
+                              h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-red-300">{children}</h2>,
+                              h3: ({ children }) => <h3 className="text-sm font-medium mb-1 text-red-200">{children}</h3>,
+                              p: ({ children }) => <p className="mb-2 text-gray-200">{children}</p>,
+                              ul: ({ children }) => <ul className="list-disc ml-4 mb-2 text-gray-200">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal ml-4 mb-2 text-gray-200">{children}</ol>,
+                              li: ({ children }) => <li className="mb-1">{children}</li>,
+                              code: ({ children, className, ...props }: any) => {
+                                const match = /language-(\w+)/.exec(className || '');
+                                const inline = props.inline;
+                                return !inline ? (
+                                  <pre className="bg-gray-900 rounded-lg p-3 mb-2 overflow-x-auto">
+                                    <code className={className}>{children}</code>
+                                  </pre>
+                                ) : (
+                                  <code className="bg-gray-700 px-1 py-0.5 rounded text-sm">{children}</code>
+                                );
+                              },
+                              blockquote: ({ children }) => <blockquote className="border-l-4 border-red-500 pl-4 italic text-gray-300">{children}</blockquote>,
+                              strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-sm md:text-base whitespace-pre-wrap">{message.content}</p>
+                      )}
+                    </div>
+                  </div>
+                ))} 
+                
+                {/* Loading indicator */}
+                {isLoading && (
+                  <div className="flex justify-start items-center space-x-3 animate-pulse">
+                    <Image
+                      src="/favicon.jpg"
+                      alt="Assistant"
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full "
+                    />
+                    <div className="text-white/69 text-sm flex items-center">
+                      <span>is thinking</span>
+                      <span className="">
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite 0.3s',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite 0.6s',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                      </span>
+
+                    </div>
                   </div>
                 )}
-                <div className={`max-w-[80%] rounded-2xl px-2 py-1 ${
-                  message.type === 'user' 
-                    ? ' text-white' 
-                    : ' text-white'
-                }`}>
-                  {message.type === 'assistant' ? (
-                    <div className="prose prose-invert prose-sm max-w-none">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight]}
-                        components={{
-                          h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-red-400">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-red-300">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-sm font-medium mb-1 text-red-200">{children}</h3>,
-                          p: ({ children }) => <p className="mb-2 text-gray-200">{children}</p>,
-                          ul: ({ children }) => <ul className="list-disc ml-4 mb-2 text-gray-200">{children}</ul>,
-                          ol: ({ children }) => <ol className="list-decimal ml-4 mb-2 text-gray-200">{children}</ol>,
-                          li: ({ children }) => <li className="mb-1">{children}</li>,
-                          code: ({ children, className, ...props }: any) => {
-                            const match = /language-(\w+)/.exec(className || '');
-                            const inline = props.inline;
-                            return !inline ? (
-                              <pre className="bg-gray-900 rounded-lg p-3 mb-2 overflow-x-auto">
-                                <code className={className}>{children}</code>
-                              </pre>
-                            ) : (
-                              <code className="bg-gray-700 px-1 py-0.5 rounded text-sm">{children}</code>
-                            );
-                          },
-                          blockquote: ({ children }) => <blockquote className="border-l-4 border-red-500 pl-4 italic text-gray-300">{children}</blockquote>,
-                          strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                {isGeneratingDocs && (
+                  <div className="flex justify-start items-center space-x-3 animate-pulse">
+                  <Image
+                    src="/favicon.jpg"
+                    alt="Assistant"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full "
+                  />
+                  <div className="text-white/69 text-sm flex items-center">
+                    <span>generating docs </span>
+                    <span className="">
+                      <span 
+                        style={{
+                          animation: 'typing 2s infinite',
+                          animationName: 'typing'
                         }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
+                      >.</span>
+                      <span 
+                        style={{
+                          animation: 'typing 2s infinite 0.3s',
+                          animationName: 'typing'
+                        }}
+                      >.</span>
+                      <span 
+                        style={{
+                          animation: 'typing 2s infinite 0.6s',
+                          animationName: 'typing'
+                        }}
+                      >.</span>
+                    </span>
+
+                  </div>
+                </div>
+                )}
+                {isArchitectureLoading && (
+                    <div className="flex justify-start items-center space-x-3 animate-pulse">
+                    <Image
+                      src="/favicon.jpg"
+                      alt="Assistant"
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full "
+                    />
+                    <div className="text-white/69 text-sm flex items-center">
+                      <span>{architectureData ? "updating" : "generating"} architecture</span>
+                      <span className="">
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite 0.3s',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                        <span 
+                          style={{
+                            animation: 'typing 2s infinite 0.6s',
+                            animationName: 'typing'
+                          }}
+                        >.</span>
+                      </span>
+
                     </div>
-                  ) : (
-                    <p className="text-sm md:text-base whitespace-pre-wrap">{message.content}</p>
-                  )}
-                </div>
+                  </div>
+                )}
+                { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
+                   <div className={`flex h-12 ml-10 relative ${!docsGenerated && "z-[115]"} `}>
+                   <button 
+                     ref={docsButtonRef}
+                     onClick={handleGenerateDocs} 
+                     className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative ${!docsGenerated && "z-[115]"} ${
+                       isStreamingDocs 
+                         ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
+                         : docsGenerated
+                           ? "bg-green-600 border-green-600 text-white cursor-not-allowed"
+                           : "hover:bg-transparent border-white hover:text-white bg-white text-black"
+                     }`}
+                     disabled={isStreamingDocs || docsGenerated}
+                   >
+                     {docsGenerated ? "Docs Generated ✓" : "Generate Docs→"}
+                   </button>
+                 </div> 
+                )}
+                 
+                
+                {/* Auto-scroll target */}
+                <div ref={messagesEndRef} />
               </div>
-            ))} 
+
             
-            {/* Loading indicator */}
-            {isLoading && (
-              <div className="flex justify-start items-center space-x-3 animate-pulse">
-                <Image
-                  src="/favicon.jpg"
-                  alt="Assistant"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 rounded-full "
-                />
-                <div className="text-white/69 text-sm flex items-center">
-                  <span>is thinking</span>
-                  <span className="">
-                    <span 
-                      style={{
-                        animation: 'typing 2s infinite',
-                        animationName: 'typing'
-                      }}
-                    >.</span>
-                    <span 
-                      style={{
-                        animation: 'typing 2s infinite 0.3s',
-                        animationName: 'typing'
-                      }}
-                    >.</span>
-                    <span 
-                      style={{
-                        animation: 'typing 2s infinite 0.6s',
-                        animationName: 'typing'
-                      }}
-                    >.</span>
-                  </span>
 
-                </div>
-              </div>
-            )}
-            {isGeneratingDocs && (
-              <div className="flex justify-start items-center space-x-3 animate-pulse">
-              <Image
-                src="/favicon.jpg"
-                alt="Assistant"
-                width={32}
-                height={32}
-                className="w-8 h-8 rounded-full "
-              />
-              <div className="text-white/69 text-sm flex items-center">
-                <span>generating docs </span>
-                <span className="">
-                  <span 
-                    style={{
-                      animation: 'typing 2s infinite',
-                      animationName: 'typing'
-                    }}
-                  >.</span>
-                  <span 
-                    style={{
-                      animation: 'typing 2s infinite 0.3s',
-                      animationName: 'typing'
-                    }}
-                  >.</span>
-                  <span 
-                    style={{
-                      animation: 'typing 2s infinite 0.6s',
-                      animationName: 'typing'
-                    }}
-                  >.</span>
-                </span>
-
+              {/* Input Area */}
+              <div className="p-4 flex-shrink-0">
+                <form onSubmit={handleSubmit} className="relative">
+                  <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+                    <textarea
+                      placeholder="Continue the conversation..."
+                      value={inputMessage}
+                      onChange={handleTextareaChange}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmit(e);
+                        }
+                      }}
+                      className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
+                      rows={2}
+                      style={{ height: textareaHeight }}
+                      maxLength={5000}
+                      disabled={isLoading || isArchitectureLoading}
+                    />
+                  </div>
+                  
+                  {/* Button section */}
+                  <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
+                    <button 
+                      type="submit" 
+                      className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading}
+                    >
+                      <SendHorizonal className="h-4 w-4" />
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
-            )}
-            {isArchitectureLoading && (
-                <div className="flex justify-start items-center space-x-3 animate-pulse">
-                <Image
-                  src="/favicon.jpg"
-                  alt="Assistant"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 rounded-full "
-                />
-                <div className="text-white/69 text-sm flex items-center">
-                  <span>{architectureData ? "updating" : "generating"} architecture</span>
-                  <span className="">
-                    <span 
-                      style={{
-                        animation: 'typing 2s infinite',
-                        animationName: 'typing'
-                      }}
-                    >.</span>
-                    <span 
-                      style={{
-                        animation: 'typing 2s infinite 0.3s',
-                        animationName: 'typing'
-                      }}
-                    >.</span>
-                    <span 
-                      style={{
-                        animation: 'typing 2s infinite 0.6s',
-                        animationName: 'typing'
-                      }}
-                    >.</span>
-                  </span>
+          </>
+        )}
 
+        {/* Mobile Bottom Panel */}
+        <div className="md:hidden absolute bottom-0 left-0 right-0 z-40 transition-all duration-300 ease-in-out h-[15%]">
+          {/* Minimized Panel */}
+          {!isMobilePanelOpen && (
+            <div className="bg-black border border-gray-800 rounded-xl mx-4 mb-4 h-full flex flex-col">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      setActiveTab('architecture');
+                      setIsMobilePanelOpen(true);
+                    }}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                      activeTab === 'architecture'
+                        ? 'text-white bg-gray-700/50'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    Architecture
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setActiveTab('context');
+                      setIsMobilePanelOpen(true);
+                    }}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                      activeTab === 'context'
+                        ? 'text-white bg-gray-700/50'
+                        : 'text-gray-400'
+                    } ${(!docsGenerated && !isStreamingDocs && !isGeneratingDocs) ? 'opacity-50' : ''}`}
+                    disabled={!docsGenerated && !isStreamingDocs && !isGeneratingDocs}
+                  >
+                    Docs
+                  </button>
                 </div>
-              </div>
-            )}
-            { !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && (
-               <div className={`flex h-12 ml-10 relative ${!docsGenerated && "z-[115]"} `}>
-               <button 
-                 ref={docsButtonRef}
-                 onClick={handleGenerateDocs} 
-                 className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative ${!docsGenerated && "z-[115]"} ${
-                   isStreamingDocs 
-                     ? "bg-yellow-600 border-yellow-600 text-white cursor-not-allowed" 
-                     : docsGenerated
-                       ? "bg-green-600 border-green-600 text-white cursor-not-allowed"
-                       : "hover:bg-transparent border-white hover:text-white bg-white text-black"
-                 }`}
-                 disabled={isStreamingDocs || docsGenerated}
-               >
-                 {docsGenerated ? "Docs Generated ✓" : "Generate Docs→"}
-               </button>
-             </div> 
-            )}
-             
-            
-            {/* Auto-scroll target */}
-            <div ref={messagesEndRef} />
-          </div>
-
-        
-
-          {/* Input Area */}
-          <div className="p-4 flex-shrink-0">
-            <form onSubmit={handleSubmit} className="relative">
-              <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
-                <textarea
-                  placeholder="Continue the conversation..."
-                  value={inputMessage}
-                  onChange={handleTextareaChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit(e);
-                    }
-                  }}
-                  className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
-                  rows={2}
-                  style={{ height: textareaHeight }}
-                  maxLength={5000}
-                  disabled={isLoading || isArchitectureLoading}
-                />
-              </div>
-              
-              {/* Button section */}
-              <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
-                <button 
-                  type="submit" 
-                  className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  disabled={!inputMessage.trim() || isLoading || isArchitectureLoading}
+                
+                {/* Expand button */}
+                <button
+                  onClick={() => setIsMobilePanelOpen(true)}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
                 >
-                  <SendHorizonal className="h-4 w-4" />
+                  <Maximize className="h-4 w-4" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-
-        {/* Resize Handle */}
-        <div 
-          className={`w-1 bg-transparent hover:bg-gray-500/50 cursor-col-resize transition-all duration-200 relative group ${
-            isResizing ? 'bg-gray-500/70' : ''
-          }`}
-          onMouseDown={handleResizeStart}
-        >
-          {/* Invisible wider hit area for easier grabbing */}
-          <div className="absolute inset-0 -left-2 -right-2 w-5"></div>
-          
-          {/* Visual indicator on hover */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div className="w-0.5 h-8 bg-gray-400 rounded-full"></div>
-          </div>
-        </div>
-
-        {/* Right Panel with Tabs - Resizable */}
-        <div 
-          className="bg-black border border-gray-800 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
-          style={{ width: `${100 - leftPanelWidth}%` }}
-        >
-          {/* Clean Tab Headers */}
-          <div className="flex items-center justify-between px-4 py-3 rounded-t-xl border-b border-gray-800">
-            <div className="flex space-x-1"> 
-              <button
-                onClick={() => setActiveTab('architecture')}
-                className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'architecture'
-                    ? 'text-white bg-gray-700/50'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                Architecture
-              </button>
               
-              <button
-                onClick={() => setActiveTab('context')}
-                className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'context'
-                    ? 'text-white bg-gray-700/50'
-                    : 'text-gray-400 hover:text-white'
-                } ${(!docsGenerated && !isStreamingDocs && !isGeneratingDocs) ? 'disabled:hover:cursor-not-allowed' : ''}`}
-                disabled={!docsGenerated && !isStreamingDocs && !isGeneratingDocs}
-              >
-                Contextual Docs
-              </button>
+              {/* Content preview area */}
+              <div className="flex-1 p-4 flex items-center justify-center">
+                <div className="text-gray-400 text-sm text-center">
+                  {activeTab === 'architecture' ? 'Tap to view architecture' : 'Tap to view documentation'}
+                </div>
+              </div>
             </div>
-            
-            {/* Fullscreen button - only show for architecture tab */}
-            {activeTab === 'architecture' && (
-              <button
-                onClick={() => setIsFullscreen(true)}
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
-                title="Fullscreen Architecture"
-              >
-                <Maximize className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+          )}
 
-          {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto min-h-0 p-4">
-            <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
-              <Architecture 
-                architectureData={architectureData || undefined} 
-                isLoading={isArchitectureLoading}
-                customPositions={componentPositions}
-                onPositionsChange={handlePositionChange}
-              />
+          {/* Full Screen Panel */}
+          {isMobilePanelOpen && (
+            <div className="fixed inset-0 bg-black z-50 flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-black">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setActiveTab('architecture')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                      activeTab === 'architecture'
+                        ? 'text-white bg-gray-700/50'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    Architecture
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveTab('context')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                      activeTab === 'context'
+                        ? 'text-white bg-gray-700/50'
+                        : 'text-gray-400'
+                    } ${(!docsGenerated && !isStreamingDocs && !isGeneratingDocs) ? 'opacity-50' : ''}`}
+                    disabled={!docsGenerated && !isStreamingDocs && !isGeneratingDocs}
+                  >
+                    Contextual Docs
+                  </button>
+                </div>
+                
+                {/* Close button */}
+                <button
+                  onClick={() => setIsMobilePanelOpen(false)}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
+                  <Architecture 
+                    architectureData={architectureData || undefined} 
+                    isLoading={isArchitectureLoading}
+                    customPositions={componentPositions}
+                    onPositionsChange={handlePositionChange}
+                  />
+                </div>
+                
+                <div className={`h-full ${activeTab === 'context' ? 'block' : 'hidden'}`}>
+                  <FileExplorer 
+                    projectRules={projectRules} 
+                    plan={plan} 
+                    phaseCount={phaseCount} 
+                    phases={phases} 
+                    prd={prd} 
+                    projectStructure={projectStructure} 
+                    uiUX={uiUX}
+                    streamingUpdates={streamingUpdates}
+                    isGenerating={isStreamingDocs}
+                    downloadButtonRef={downloadButtonRef}
+                  /> 
+                </div>
+              </div>
             </div>
-            
-            <div className={`h-full ${activeTab === 'context' ? 'block' : 'hidden'}`}>
-              <FileExplorer 
-                projectRules={projectRules} 
-                plan={plan} 
-                phaseCount={phaseCount} 
-                phases={phases} 
-                prd={prd} 
-                projectStructure={projectStructure} 
-                uiUX={uiUX}
-                streamingUpdates={streamingUpdates}
-                isGenerating={isStreamingDocs}
-                downloadButtonRef={downloadButtonRef}
-              /> 
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -1572,6 +1983,18 @@ const DevPage = () => {
         
         /* Disable text selection during resize */
         ${isResizing ? '*{user-select: none !important;}' : ''}
+        
+        /* Mobile specific styles */
+        @media (max-width: 767px) {
+          body {
+            overflow-x: hidden;
+          }
+          
+          /* Prevent body scroll when mobile panel is open */
+          body.mobile-panel-open {
+            overflow: hidden;
+          }
+        }
       `}</style>
 
       {/* Coach Mark for Generate Docs Button */}
