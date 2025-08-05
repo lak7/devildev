@@ -36,6 +36,7 @@ export default function Page() {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [userChats, setUserChats] = useState<UserChat[]>([]);
   const [chatsLoading, setChatsLoading] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
 
   const { isLoaded, isSignedIn, user } = useUser();
@@ -93,7 +94,7 @@ export default function Page() {
         router.push(`/dev/${chatId}`);
       } catch (error) {
         console.error("Error preparing new chat:", error);
-        setIsLoading(false);
+        setIsLoading(false); 
       }
     } else {
       localStorage.setItem('firstMessage', inputMessage.trim());
@@ -151,12 +152,35 @@ export default function Page() {
         />
       </div>
 
+      {/* Mobile burger menu button */}
+      {isSignedIn && (
+        <button
+          onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          className="fixed top-4 left-4 z-30 md:hidden bg-black/50 backdrop-blur-md border border-red-500/20 rounded-lg p-2 text-white hover:bg-black/70 transition-all duration-200"
+        >
+          {isMobileSidebarOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </button>
+      )}
+
+      {/* Mobile overlay */}
+      {isSignedIn && isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Hover-expandable Sidebar for signed in users */}
       {isSignedIn && (
         <div 
-          className={`fixed top-0 left-0 h-full bg-black/30 backdrop-blur-md border-r border-red-500/20 transition-all duration-300 ease-in-out z-20 group hover:w-72 ${
-            isSidebarHovered ? 'w-72' : 'w-16'
-          } overflow-hidden`}
+          className={`fixed top-0 left-0 h-full bg-black/30 backdrop-blur-md border-r border-red-500/20 transition-all duration-300 ease-in-out z-20 group overflow-hidden
+            md:hover:w-72 md:${isSidebarHovered ? 'w-72' : 'w-16'}
+            ${isMobileSidebarOpen ? 'w-72' : 'w-0 md:w-16'}
+          `}
           onMouseEnter={() => setIsSidebarHovered(true)}
           onMouseLeave={() => setIsSidebarHovered(false)}
         >
@@ -174,7 +198,7 @@ export default function Page() {
               >
                 <Users className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
                   Community
                 </span>
@@ -186,7 +210,7 @@ export default function Page() {
               >
                 <Phone className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
                   Contact
                 </span>
@@ -201,13 +225,13 @@ export default function Page() {
               <div className="flex items-center space-x-4 px-3 py-3 mb-3">
                 <MessageCircle className="h-5 w-5 text-red-400/70 flex-shrink-0" />
                 <span className={`text-sm font-medium text-red-400/90 whitespace-nowrap transition-all duration-300 ${
-                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
                   Chats
                 </span>
               </div>
               <div className={`space-y-1 transition-all duration-300 ${
-                isSidebarHovered ? 'opacity-100' : 'opacity-0'
+                (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100' : 'opacity-0'
               } max-h-96 overflow-y-auto chat-scrollbar`}>
                 {chatsLoading ? (
                   <div className="flex items-center justify-center px-6 py-4">
@@ -247,7 +271,7 @@ export default function Page() {
                   </AvatarFallback>
                 </Avatar>
                 <div className={`flex-1 min-w-0 transition-all duration-300 ${
-                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
                   <p className="text-sm font-medium text-white truncate">
                     {user?.fullName || user?.emailAddresses?.[0]?.emailAddress}
@@ -267,18 +291,19 @@ export default function Page() {
 
       <div className="flex h-full w-full justify-center items-center">
         {isSignedIn && (
-          <div className="h-dvh min-w-16 bg-black visible:none  left-0"/>
-
+          <div className="h-dvh min-w-16 bg-black visible:none left-0 hidden md:block"/>
         )}
         {/* Main content */}
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-2 bottom-12">
-          <div className="mb-0 transform hover:scale-105 transition-transform duration-300 flex justify-center">
+        <div className={`relative z-10 flex flex-col items-center justify-center min-h-screen px-2 bottom-12 transition-all duration-300 ${
+          isSignedIn ? 'md:ml-0' : ''
+        } ${isSignedIn && isMobileSidebarOpen ? 'blur-sm md:blur-none' : ''}`}>
+          <div className="mb-0  flex justify-center">
             <Image
               src="/finaldev.png"
               alt="DevilDev Logo"
               width={400}
               height={120}
-              className="w-auto h-24 md:h-32 lg:h-56 drop-shadow-2xl"
+              className="w-auto h-32 md:h-32 lg:h-56 drop-shadow-2xl"
               priority
             />
           </div>
@@ -288,7 +313,9 @@ export default function Page() {
           </h1>
 
           {/* Search Input */}
-          <div className="w-full sm:w-[600px] md:w-[800px] lg:w-[1200px] xl:w-[750px]">
+          <div className={`w-full sm:w-[600px] md:w-[800px] lg:w-[1200px] xl:w-[750px] transition-all duration-300 ${
+            isSignedIn && isMobileSidebarOpen ? 'px-4' : ''
+          }`}>
             <form onSubmit={handleFirstMessage} className="relative">
               <div className="bg-white/5 border-t border-x border-gray-600/100 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
