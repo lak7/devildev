@@ -60,7 +60,7 @@ model User {
 }
 
 model Chat {
-  id             String             @unique
+  id             String            @id @default(uuid())
   userId         String
   user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages       Json[]             // Store messages as JSON objects instead of strings
