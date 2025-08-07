@@ -54,7 +54,7 @@ model User {
   githubConnectedAt DateTime?
   githubEmail       String?
   githubId          String?   @unique
-  githubUsername    String?
+  githubUsername    String?   @unique
   isGithubConnected Boolean   @default(false)
   chats             Chat[]
 }
