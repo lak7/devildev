@@ -15,131 +15,112 @@ model WaitList {
 }
 
 model Devlogs {
-  id              String    @id @default(uuid())
-  title           String    @unique
-  slug            String    @unique
-  content         String
-  coverImage      String?
-  publishedDate   DateTime  @default(now())
-  updatedDate     DateTime  @updatedAt
-  tags            String[]  // Array of tag strings
-  categories      String[]  // Array of category strings
-  readingTime     Int?      // Estimated reading time in minutes
-  excerpt         String?   // Optional short summary
-  
-  // SEO metadata
-  seoTitleTag         String?
-  seoMetaDescription  String?
-  seoCanonicalUrl     String?
-  
-  // Open Graph data for social sharing
-  ogTitle       String?
-  ogDescription String?
-  ogImage       String?
-  
-  // Twitter Card data for social sharing
+  id                 String   @id @default(uuid())
+  title              String   @unique
+  slug               String   @unique
+  content            String
+  coverImage         String?
+  publishedDate      DateTime @default(now())
+  updatedDate        DateTime @updatedAt
+  tags               String[]
+  categories         String[]
+  readingTime        Int?
+  excerpt            String?
+  seoTitleTag        String?
+  seoMetaDescription String?
+  seoCanonicalUrl    String?
+  ogTitle            String?
+  ogDescription      String?
+  ogImage            String?
   twitterCard        String?
   twitterTitle       String?
   twitterDescription String?
   twitterImage       String?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model User {
-  id           String   @id // Clerk's userId as primary key
-  email        String   @unique
-  name         String?
-  username     String?  @unique
-  level        String?  @default("beginner")
-  preferredIde String?  @default("vscode")
-  chats        Chat[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String    @id
+  email             String    @unique
+  name              String?
+  username          String?   @unique
+  level             String?   @default("beginner")
+  preferredIde      String?   @default("vscode")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  githubAccessToken String?
+  githubAvatarUrl   String?
+  githubConnectedAt DateTime?
+  githubEmail       String?
+  githubId          String?   @unique
+  githubUsername    String?
+  isGithubConnected Boolean   @default(false)
+  chats             Chat[]
 }
 
 model Chat {
-  id             String            @id @default(uuid())
+  id             String          @id @default(uuid())
   userId         String
-  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages       Json[]             // Store messages as JSON objects instead of strings
-  title          String?            // Optional chat title
-  architecture   Architecture?      // One-to-one relationship with Architecture
-  contextualDocs ContextualDocs?    // One-to-one relationship with ContextualDocs
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  messages       Json[]
+  title          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  architecture   Architecture?
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contextualDocs ContextualDocs?
 }
 
 model Architecture {
-  id                     String   @id @default(uuid())
-  chatId                 String   @unique
-  chat                   Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  
-  // Architecture metadata
-  domain                 String?  // "web3", "ai", "saas", "ecommerce", "fintech", "other"
-  complexity             String?  // "simple", "medium", "complex"
-  architectureRationale  String?  // Explanation of architecture decisions
-  
-  // Components data (stored as JSON)
-  components             Json     // Array of component objects
-  connectionLabels       Json?    // Object mapping component connections to labels
-  componentPositions     Json?    // Object mapping component IDs to x,y positions
-  
-  // Generation metadata
-  requirement            String?  // Original requirement that generated this architecture
-  generatedAt            DateTime @default(now())
-  lastPositionUpdate     DateTime @default(now())
-  
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  chatId                String   @unique
+  domain                String?
+  complexity            String?
+  architectureRationale String?
+  components            Json
+  connectionLabels      Json?
+  componentPositions    Json?
+  requirement           String?
+  generatedAt           DateTime @default(now())
+  lastPositionUpdate    DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  chat                  Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }
 
 model ContextualDocs {
-  id                  String   @id @default(uuid())
-  chatId              String   @unique
-  chat                Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  
-  // Core documentation content
-  projectRules        String?  @db.Text // PROJECT_RULES.md content
-  humanReview         String?  @db.Text // HUMAN_REVIEW.md content
-  plan                String?  @db.Text // PLAN.md content
-  prd                 String?  @db.Text // PRD.md content (Product Requirements Document)
-  
-  // Docs folder content
-  bugTracking         String?  @db.Text // Docs/Bug_Tracking.md content
-  projectStructure    String?  @db.Text // Docs/Project_Structure.md content
-  uiUX                String?  @db.Text // Docs/UI_UX.md content
-  
-  // Phases content (stored as JSON array of phase strings)
-  phases              Json?    // Array of phase content strings
-  phaseCount          Int?     // Number of phases
-  
-  // Generation metadata
-  requirement         String?  @db.Text // Original requirement that generated these docs
-  generatedAt         DateTime @default(now())
-  lastDocUpdate       DateTime @default(now())
-  
-  // Completion status for each document type
-  isProjectRulesComplete     Boolean @default(false)
-  isHumanReviewComplete      Boolean @default(false)
-  isPlanComplete             Boolean @default(false)
-  isPrdComplete              Boolean @default(false)
-  isBugTrackingComplete      Boolean @default(false)
-  isProjectStructureComplete Boolean @default(false)
-  isUiUXComplete             Boolean @default(false)
-  arePhasesComplete          Boolean @default(false)
-  
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-} 
-
+  id                         String   @id @default(uuid())
+  chatId                     String   @unique
+  projectRules               String?
+  humanReview                String?
+  plan                       String?
+  prd                        String?
+  bugTracking                String?
+  projectStructure           String?
+  uiUX                       String?
+  phases                     Json?
+  phaseCount                 Int?
+  requirement                String?
+  generatedAt                DateTime @default(now())
+  lastDocUpdate              DateTime @default(now())
+  isProjectRulesComplete     Boolean  @default(false)
+  isHumanReviewComplete      Boolean  @default(false)
+  isPlanComplete             Boolean  @default(false)
+  isPrdComplete              Boolean  @default(false)
+  isBugTrackingComplete      Boolean  @default(false)
+  isProjectStructureComplete Boolean  @default(false)
+  isUiUXComplete             Boolean  @default(false)
+  arePhasesComplete          Boolean  @default(false)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  chat                       Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
 
 model Feedback {
-  id String @id @default(uuid())
-  userId String
-  chatId String
-  feedback String
+  id        String   @id @default(uuid())
+  userId    String
+  chatId    String
+  feedback  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
