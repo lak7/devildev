@@ -150,10 +150,10 @@ export default function Page() {
       alert('GitHub successfully connected!');
     }
     
-    if (isSignedIn && isLoaded) {
-      fetchUserChats();
-      fetchGithubStatus();
-    }
+    // if (isSignedIn && isLoaded) {
+    //   fetchUserChats();
+    //   fetchGithubStatus();
+    // }
   }, [isSignedIn, isLoaded]);
 
 
@@ -274,7 +274,7 @@ export default function Page() {
             {/* Top navigation items */}
             <div className="px-2 space-y-2">
               
-              <button
+              {/* <button
                 onClick={handleGithubConnect}
                 disabled={githubLoading}
                 className={`flex items-center space-x-4 px-3 py-3 rounded-lg transition-all duration-200 group/item w-full text-left border ${
@@ -296,7 +296,7 @@ export default function Page() {
                 }`}>
                   {githubStatus.isConnected ? `Connected: ${githubStatus.githubUsername}` : 'Connect Github'}
                 </span>
-              </button>
+              </button> */}
           
               <a
                 href="/community"
