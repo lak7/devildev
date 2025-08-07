@@ -6,10 +6,10 @@ const ContactPage = () => {
         <p className="text-xl">
           Please mail to{' '}
           <a 
-            href="mailto:contact@devildev.com" 
+            href="mailto:lakshay@devildev.com" 
             className="text-red-400 hover:text-red-300 "
           >
-            contact@devildev.com
+            lakshay@devildev.com
           </a>
         </p>
       </div>
