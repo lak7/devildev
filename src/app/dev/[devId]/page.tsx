@@ -10,6 +10,7 @@ import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../../../actions/agentsFlow';
+import { submitFeedback } from '../../../../actions/feedback';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../../actions/architecture'; 
 import { getChat, addMessageToChat, updateChatMessages, createChatWithId, ChatMessage as ChatMessageType, getUserChats } from '../../../../actions/chat';
 import { 
@@ -113,6 +114,8 @@ const DevPage = () => {
   // Feedback dialog state
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
   // How to dialog state
   const [isHowToOpen, setIsHowToOpen] = useState(false);
@@ -378,20 +381,40 @@ const DevPage = () => {
 
   // Function to handle feedback submission
   const handleFeedbackSubmit = async () => {
-    if (!feedbackText.trim()) return;
+    if (!feedbackText.trim() || isSubmittingFeedback) return;
+    
+    setIsSubmittingFeedback(true);
+    setFeedbackMessage(null);
     
     try {
-      // Here you would typically send the feedback to your backend
+      const result = await submitFeedback(chatId, feedbackText);
       
-      // For now, just show success and close dialog
-      setFeedbackText('');
-      setIsFeedbackOpen(false);
-      
-      // You could add a toast notification here
-      alert('Thank you for your feedback!');
+      if (result.success) {
+        setFeedbackMessage({
+          type: 'success',
+          text: 'Thank you for your feedback! We appreciate your input.'
+        });
+        setFeedbackText('');
+        
+        // Close dialog after a short delay to show success message
+        setTimeout(() => {
+          setIsFeedbackOpen(false);
+          setFeedbackMessage(null);
+        }, 2000);
+      } else {
+        setFeedbackMessage({
+          type: 'error',
+          text: result.error || 'Failed to submit feedback. Please try again.'
+        });
+      }
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      alert('Failed to submit feedback. Please try again.');
+      setFeedbackMessage({
+        type: 'error',
+        text: 'Failed to submit feedback. Please try again.'
+      });
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
@@ -945,7 +968,7 @@ const DevPage = () => {
 
           {/* Feedback button */}
           <button
-            onClick={() => window.open("https://survey.zigpoll.com/2ySxPusV6JfJfoecS/2ySxQkwexpUv5fQq8", "_blank")}
+            onClick={() => setIsFeedbackOpen(true)}
             className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
             title="Send Feedback"
           >
@@ -1932,21 +1955,41 @@ const DevPage = () => {
                 placeholder="Share your experience, report bugs, or suggest features..."
                 className="w-full bg-black border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-gray-400 resize-none h-32"
                 maxLength={1000}
+                disabled={isSubmittingFeedback}
               />
+              
+              {/* Success/Error Message */}
+              {feedbackMessage && (
+                <div className={`p-3 rounded-md text-sm ${
+                  feedbackMessage.type === 'success' 
+                    ? 'bg-green-900/50 border border-green-600/50 text-green-300' 
+                    : 'bg-red-900/50 border border-red-600/50 text-red-300'
+                }`}>
+                  {feedbackMessage.text}
+                </div>
+              )}
               
               <div className="flex justify-between">
                 <button
-                  onClick={() => setIsFeedbackOpen(false)}
-                  className="px-4 py-2 text-gray-400 hover:text-white"
+                  onClick={() => {
+                    setIsFeedbackOpen(false);
+                    setFeedbackMessage(null);
+                    setFeedbackText('');
+                  }}
+                  disabled={isSubmittingFeedback}
+                  className="px-4 py-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleFeedbackSubmit}
-                  disabled={!feedbackText.trim()}
-                  className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  disabled={!feedbackText.trim() || isSubmittingFeedback}
+                  className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
-                  Send
+                  {isSubmittingFeedback && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  <span>{isSubmittingFeedback ? 'Sending...' : 'Send'}</span>
                 </button>
               </div>
             </div>
