@@ -6,12 +6,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Loader2 } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Loader2, Github } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../actions/architecture'; 
 import { getUserChats } from '../../actions/chat';
+import { getGitHubStatus, disconnectGitHub, initiateGitHubConnection } from '../../actions/github';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
 import { UserProfile, useUser } from '@clerk/nextjs';
@@ -26,6 +27,13 @@ interface UserChat {
   createdAt: Date;
 }
 
+interface GitHubStatus {
+  isConnected: boolean;
+  githubUsername?: string;
+  githubAvatarUrl?: string;
+  connectedAt?: Date;
+}
+
 
 export default function Page() {
   const [inputMessage, setInputMessage] = useState('');
@@ -37,6 +45,8 @@ export default function Page() {
   const [userChats, setUserChats] = useState<UserChat[]>([]);
   const [chatsLoading, setChatsLoading] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [githubStatus, setGithubStatus] = useState<GitHubStatus>({ isConnected: false });
+  const [githubLoading, setGithubLoading] = useState(false);
   
 
   const { isLoaded, isSignedIn, user } = useUser();
@@ -61,15 +71,88 @@ export default function Page() {
     }
   };
 
-  // Fetch chats when user is signed in
+  // Function to fetch GitHub status
+  const fetchGithubStatus = async () => {
+    if (!isSignedIn) return;
+    
+    try {
+      const result = await getGitHubStatus();
+      if (result.success && result.data) {
+        setGithubStatus(result.data);
+      } else {
+        console.error('Failed to fetch GitHub status:', result.error);
+        // Set default status if fetch fails
+        setGithubStatus({ isConnected: false });
+      }
+    } catch (error) {
+      console.error('Error fetching GitHub status:', error);
+      // Set default status if there's an exception
+      setGithubStatus({ isConnected: false });
+    }
+  };
+
+  // Function to handle GitHub connection
+  const handleGithubConnect = async () => {
+    if (githubStatus.isConnected) {
+      // If already connected, show option to disconnect
+      const confirmed = window.confirm('Are you sure you want to disconnect your GitHub account?');
+      if (!confirmed) return;
+      
+      setGithubLoading(true);
+      try {
+        const result = await disconnectGitHub();
+        if (result.success) {
+          setGithubStatus({ isConnected: false });
+        } else {
+          console.error('Failed to disconnect GitHub:', result.error);
+          alert('Failed to disconnect GitHub. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error disconnecting GitHub:', error);
+        alert('Failed to disconnect GitHub. Please try again.');
+      } finally {
+        setGithubLoading(false);
+      }
+    } else {
+      // Initiate GitHub connection
+      setGithubLoading(true);
+      try {
+        const result = await initiateGitHubConnection();
+        if (result.success && result.redirectUrl) {
+          window.location.href = result.redirectUrl;
+        } else {
+          console.error('Failed to initiate GitHub connection:', result.error);
+          alert('Failed to connect GitHub. Please try again.');
+          setGithubLoading(false);
+        }
+      } catch (error) {
+        console.error('Error connecting GitHub:', error);
+        alert('Failed to connect GitHub. Please try again.');
+        setGithubLoading(false);
+      }
+    }
+  };
+
+  // Fetch chats and GitHub status when user is signed in
   useEffect(() => {
     const firstMessage = localStorage.getItem('firstMessage');
     if (firstMessage) {
       setInputMessage(firstMessage);
       localStorage.removeItem('firstMessage');
     }
+    
+    // Check for GitHub connection success
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('github_connected') === 'true') {
+      // Remove the parameter from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Show success message
+      alert('GitHub successfully connected!');
+    }
+    
     if (isSignedIn && isLoaded) {
       fetchUserChats();
+      fetchGithubStatus();
     }
   }, [isSignedIn, isLoaded]);
 
@@ -190,6 +273,30 @@ export default function Page() {
           <div className="relative flex flex-col h-full pt-8 pb-6">
             {/* Top navigation items */}
             <div className="px-2 space-y-2">
+              
+              <button
+                onClick={handleGithubConnect}
+                disabled={githubLoading}
+                className={`flex items-center space-x-4 px-3 py-3 rounded-lg transition-all duration-200 group/item w-full text-left border ${
+                  githubStatus.isConnected 
+                    ? 'text-green-300 hover:text-green-200 hover:bg-green-900/20 hover:border-green-500/30 border-green-500/20' 
+                    : 'text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border-transparent'
+                } ${githubLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={githubStatus.isConnected ? `Connected as ${githubStatus.githubUsername}` : "Connect Github"}
+              >
+                {githubLoading ? (
+                  <Loader2 className="h-5 w-5 flex-shrink-0 animate-spin text-red-400" />
+                ) : (
+                  <Github className={`h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 ${
+                    githubStatus.isConnected ? 'text-green-400' : 'text-red-400'
+                  }`} />
+                )}
+                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  {githubStatus.isConnected ? `Connected: ${githubStatus.githubUsername}` : 'Connect Github'}
+                </span>
+              </button>
           
               <a
                 href="/community"
@@ -300,7 +407,7 @@ export default function Page() {
           <div className="mb-0  flex justify-center">
             <Image
               src="/finaldev.png"
-              alt="DevilDev Logo"
+              alt="DevilDev Logo" 
               width={400}
               height={120}
               className="w-auto h-32 md:h-32 lg:h-56 drop-shadow-2xl"
