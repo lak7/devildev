@@ -123,6 +123,7 @@ const DevPage = () => {
   // Coach mark state
   const [showDocsCoachMark, setShowDocsCoachMark] = useState(false);
   const [showDownloadCoachMark, setShowDownloadCoachMark] = useState(false);
+  const [isArchitectureGeneratedOnce, setIsArchitectureGeneratedOnce] = useState(false);
   const docsButtonRef = useRef<HTMLButtonElement>(null);
   const downloadButtonRef = useRef<HTMLButtonElement>(null);
   
@@ -464,12 +465,12 @@ const DevPage = () => {
 
   // Show coach mark for Generate Docs button when conditions are met
   useEffect(() => {
-    const shouldShowCoachMark = !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && !docsGenerated;
+    const shouldShowCoachMark = !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && !docsGenerated && !isArchitectureGeneratedOnce;
     if (shouldShowCoachMark && docsButtonRef.current) {
       // Small delay to ensure the button is rendered
       const timer = setTimeout(() => {
         setShowDocsCoachMark(true);
-      }, 500);
+      }, 700);
       return () => clearTimeout(timer);
     } else {
       setShowDocsCoachMark(false);
@@ -633,6 +634,7 @@ const DevPage = () => {
     setTextareaHeight('60px');
 
     if(architectureData){
+      setIsArchitectureGeneratedOnce(true);
       const chatbotResponse = await architectureModificationBot(currentInput, messages, architectureData);
       let cleanedIsStart = chatbotResponse;
       if (typeof cleanedIsStart === 'string') {
