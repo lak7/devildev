@@ -150,10 +150,10 @@ export default function Page() {
       alert('GitHub successfully connected!');
     }
     
-    // if (isSignedIn && isLoaded) {
-    //   fetchUserChats();
-    //   fetchGithubStatus();
-    // }
+    if (isSignedIn && isLoaded) {
+      fetchUserChats();
+      // fetchGithubStatus();
+    }
   }, [isSignedIn, isLoaded]);
 
 
