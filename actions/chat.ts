@@ -130,7 +130,7 @@ export async function addMessageToChat(chatId: string, message: ChatMessage) {
     return { success: false, error: "Failed to add message" };
   }
 }
-
+ 
 // Update multiple messages in chat (for streaming updates)
 export async function updateChatMessages(chatId: string, messages: ChatMessage[]) {
   try {
