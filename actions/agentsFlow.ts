@@ -2,8 +2,12 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
+import { architectureModificationPrompt, chatbotPrompt } from "../prompts/Chatbot";
 const openaiKey = process.env.OPENAI_API_KEY;
-const llm = new ChatOpenAI({openAIApiKey: openaiKey})
+const llm = new ChatOpenAI({
+  openAIApiKey: openaiKey,
+  model: "gpt-5-mini-2025-08-07" // You can change this to any OpenAI model like "gpt-3.5-turbo", "gpt-4-turbo", etc.
+})
 
 export async function startOrNot(userInput: string, conversationHistory: any[] = [], architectureData: any) { 
     
@@ -275,5 +279,41 @@ You are DevilDev Assistant, an expert AI software architect and development cons
         architectureData: JSON.stringify(architectureData),
         reason: reason
     });
-    return result;
+    return result; 
 } 
+
+export async function chatbot(userInput: string, conversationHistory: any[] = []) {
+
+    const template = chatbotPrompt;
+
+    // Format conversation history for the prompt
+    const formattedHistory = conversationHistory.map(msg => 
+        `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+    ).join('\n');
+
+    const prompt = PromptTemplate.fromTemplate(template);
+    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const result = await chain.invoke({
+        userInput: userInput,
+        conversationHistory: formattedHistory
+    });
+    return result;
+}
+
+export async function architectureModificationBot(userInput: string, conversationHistory: any[] = [], architectureData: any) {
+    const template = architectureModificationPrompt;
+
+    // Format conversation history for the prompt
+    const formattedHistory = conversationHistory.map(msg => 
+        `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+    ).join('\n');
+
+    const prompt = PromptTemplate.fromTemplate(template);
+    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const result = await chain.invoke({
+        userInput: userInput,
+        conversationHistory: formattedHistory,
+        architecture_data: JSON.stringify(architectureData)
+    });
+    return result;
+}

@@ -9,7 +9,7 @@ import 'highlight.js/styles/github-dark.css';
 import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { startOrNot, firstBot } from '../../../../actions/agentsFlow';
+import { startOrNot, firstBot, chatbot, architectureModificationBot } from '../../../../actions/agentsFlow';
 import { submitFeedback } from '../../../../actions/feedback';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../../actions/architecture'; 
 import { getChat, addMessageToChat, updateChatMessages, createChatWithId, ChatMessage as ChatMessageType, getUserChats } from '../../../../actions/chat';
@@ -123,6 +123,7 @@ const DevPage = () => {
   // Coach mark state
   const [showDocsCoachMark, setShowDocsCoachMark] = useState(false);
   const [showDownloadCoachMark, setShowDownloadCoachMark] = useState(false);
+  const [isArchitectureGeneratedOnce, setIsArchitectureGeneratedOnce] = useState(false);
   const docsButtonRef = useRef<HTMLButtonElement>(null);
   const downloadButtonRef = useRef<HTMLButtonElement>(null);
   
@@ -197,6 +198,26 @@ const DevPage = () => {
     setIsResizing(true);
     setStartX(e.clientX);
     setStartLeftWidth(leftPanelWidth);
+  };
+
+  // Beautify assistant message content: convert inline bullets to proper Markdown lists
+  const formatAssistantContent = (input: string): string => {
+    if (!input) return '';
+    let text = input.trim();
+
+    // Normalize common bullet characters into Markdown list items
+    text = text
+      .replace(/[\t ]*•[\t ]*/g, '\n- ')
+      .replace(/[\t ]*–[\t ]*/g, '\n- ')
+      .replace(/[\t ]*—[\t ]*/g, '\n- ');
+
+    // Ensure a blank line before the list if preceded by a colon
+    text = text.replace(/:\n- /g, ':\n\n- ');
+
+    // // Collapse excessive newlines
+    text = text.replace(/\n{3,}/g, '\n\n');
+
+    return text;
   };
 
   // Handle component position changes with persistence
@@ -280,7 +301,7 @@ const DevPage = () => {
               localStorage.removeItem('newChatId');
               localStorage.removeItem('firstMessage');
               localStorage.removeItem('isNewChat');
-              router.push('/');
+              // router.push('/');
               return;
             }
             
@@ -394,7 +415,7 @@ const DevPage = () => {
           type: 'success',
           text: 'Thank you for your feedback! We appreciate your input.'
         });
-        setFeedbackText('');
+        setFeedbackText(''); 
         
         // Close dialog after a short delay to show success message
         setTimeout(() => {
@@ -444,12 +465,12 @@ const DevPage = () => {
 
   // Show coach mark for Generate Docs button when conditions are met
   useEffect(() => {
-    const shouldShowCoachMark = !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && !docsGenerated;
+    const shouldShowCoachMark = !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && !docsGenerated && !isArchitectureGeneratedOnce;
     if (shouldShowCoachMark && docsButtonRef.current) {
       // Small delay to ensure the button is rendered
       const timer = setTimeout(() => {
         setShowDocsCoachMark(true);
-      }, 500);
+      }, 700);
       return () => clearTimeout(timer);
     } else {
       setShowDocsCoachMark(false);
@@ -529,10 +550,11 @@ const DevPage = () => {
     setIsLoading(true); 
     
     try {
-      const isStart = await startOrNot(initialMessage, [], null);
-      let cleanedIsStart = isStart;
-      if (typeof isStart === 'string') {
-        cleanedIsStart = isStart
+      const chatbotResponse = await chatbot(initialMessage, currentMessages);
+      // const isStart = await startOrNot(initialMessage, [], null);
+      let cleanedIsStart = chatbotResponse;
+      if (typeof cleanedIsStart === 'string') {
+        cleanedIsStart = cleanedIsStart
           .replace(/^```json\s*/i, '')
           .replace(/^```\s*/, '') 
           .replace(/\s*```\s*$/, '')
@@ -541,31 +563,48 @@ const DevPage = () => {
       
       const parsedClassifier = typeof cleanedIsStart === 'string' 
         ? JSON.parse(cleanedIsStart) 
-        : cleanedIsStart; 
+        : cleanedIsStart;  
 
 
+      setCurrentStartOrNot(parsedClassifier.can_start); 
 
-      const isParsedTrue = parsedClassifier.canStart;
-      setCurrentStartOrNot(parsedClassifier.canStart);
-       
-        const response = await firstBot(initialMessage, false, [], null, parsedClassifier.reason);
-        
+
+      if(!parsedClassifier.can_start && parsedClassifier.need_clarification){
         const assistantMessage: ChatMessageType = {
           id: Date.now().toString(),
           type: 'assistant',
-          content: response,
+          content: parsedClassifier.question,
           timestamp: new Date().toISOString()
         };
- 
         const updatedMessages = [...currentMessages, assistantMessage];
-        setMessages(updatedMessages);
+        setMessages(updatedMessages); 
         setIsLoading(false);
-        if(parsedClassifier.canStart){
-          await genArchitecture(initialMessage, currentMessages);
-        }
-        
-        // Save to database
         await updateChatMessages(chatId, updatedMessages);
+      }else if(parsedClassifier.can_start && !parsedClassifier.need_clarification){
+        const assistantMessage: ChatMessageType = {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: parsedClassifier.verification,
+          timestamp: new Date().toISOString()
+        };
+        const updatedMessages = [...currentMessages, assistantMessage];
+        setMessages(updatedMessages); 
+        setIsLoading(false);
+        await genArchitecture(initialMessage, currentMessages);
+        await updateChatMessages(chatId, updatedMessages);
+      }else{
+        const assistantMessage: ChatMessageType = {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: parsedClassifier.reason,
+          timestamp: new Date().toISOString()
+        };
+        const updatedMessages = [...currentMessages, assistantMessage];
+        setMessages(updatedMessages); 
+        setIsLoading(false);
+        await updateChatMessages(chatId, updatedMessages);
+      }
+
     } catch (error) {
       console.error("Error processing initial message:", error);
     } finally {
@@ -594,60 +633,104 @@ const DevPage = () => {
     setInputMessage('');
     setTextareaHeight('60px');
 
-    // Save user message to database immediately
-    try {
-      await addMessageToChat(chatId, userMessage);
-    } catch (error) {
-      console.error('Error saving user message:', error);
-    }
- 
-    const isStart = await startOrNot(currentInput, messages, architectureData);
-
-     let cleanedIsStart = isStart;
-      if (typeof isStart === 'string') {
-        // Remove markdown code blocks (```json...``` or ```...```)
-        cleanedIsStart = isStart
+    if(architectureData){
+      setIsArchitectureGeneratedOnce(true);
+      const chatbotResponse = await architectureModificationBot(currentInput, messages, architectureData);
+      let cleanedIsStart = chatbotResponse;
+      if (typeof cleanedIsStart === 'string') {
+        cleanedIsStart = cleanedIsStart
           .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '')
+          .replace(/^```\s*/, '') 
           .replace(/\s*```\s*$/, '')
           .trim();
       }
       
-      // Parse the JSON result
       const parsedClassifier = typeof cleanedIsStart === 'string' 
         ? JSON.parse(cleanedIsStart) 
-        : cleanedIsStart;
+        : cleanedIsStart; 
+ 
+    setCurrentStartOrNot(parsedClassifier.is_change);
+    if(parsedClassifier.is_change){
+      const assistantMessage: ChatMessageType = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: parsedClassifier.verification,
+        timestamp: new Date().toISOString()
+      };
+      const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+      setMessages(updatedMessages); 
+      setIsLoading(false);
+      await genArchitecture(currentInput, messages);
+      await updateChatMessages(chatId, updatedMessages);
+    }else{
+      const assistantMessage: ChatMessageType = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: parsedClassifier.general,
+        timestamp: new Date().toISOString()
+      };
+      const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+      setMessages(updatedMessages); 
+      setIsLoading(false); 
+      await updateChatMessages(chatId, updatedMessages);
+    }
+      setIsLoading(false);
+    }else{
 
-      const isParsedTrue = parsedClassifier.canStart;
+      const chatbotResponse = await chatbot(currentInput, messages);
+      // const isStart = await startOrNot(initialMessage, [], null);
+      let cleanedIsStart = chatbotResponse;
+      if (typeof cleanedIsStart === 'string') {
+        cleanedIsStart = cleanedIsStart
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '') 
+          .replace(/\s*```\s*$/, '')
+          .trim();
+      }
+      
+      const parsedClassifier = typeof cleanedIsStart === 'string' 
+        ? JSON.parse(cleanedIsStart) 
+        : cleanedIsStart; 
 
-    const isTrue = isParsedTrue;
     setCurrentStartOrNot(parsedClassifier.canStart);
 
 
     try {
-      // Use firstBot function directly instead of API call
-      const assistantResponse = await firstBot(currentInput, isTrue, messages, architectureData, parsedClassifier.reason);
-
-      // Create assistant message with the response
-      const assistantMessage: ChatMessageType = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: assistantResponse,
-        timestamp: new Date().toISOString()
-      };
-      
-      const finalMessages = [...updatedMessagesWithUser, assistantMessage];
-      setMessages(finalMessages);
-      setIsLoading(false);
-      if(parsedClassifier.canStart){
-        genArchitecture(currentInput, messages);
-      }
-      
-      // Save assistant message to database
-      try {
-        await addMessageToChat(chatId, assistantMessage);
-      } catch (error) {
-        console.error('Error saving assistant message:', error);
+      if(!parsedClassifier.can_start && parsedClassifier.need_clarification){
+        const formattedQuestion = formatAssistantContent(parsedClassifier.question);
+        const assistantMessage: ChatMessageType = {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: formattedQuestion,
+          timestamp: new Date().toISOString()
+        };
+        const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+        setMessages(updatedMessages); 
+        setIsLoading(false); 
+        await updateChatMessages(chatId, updatedMessages);
+      }else if(parsedClassifier.can_start && !parsedClassifier.need_clarification){
+        const assistantMessage: ChatMessageType = { 
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: parsedClassifier.verification,
+          timestamp: new Date().toISOString()
+        };
+        const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+        setMessages(updatedMessages); 
+        setIsLoading(false);
+        await genArchitecture(currentInput, messages);
+        await updateChatMessages(chatId, updatedMessages);
+      }else{
+        const assistantMessage: ChatMessageType = {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: parsedClassifier.reason,
+          timestamp: new Date().toISOString()
+        };
+        const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+        setMessages(updatedMessages); 
+        setIsLoading(false); 
+        await updateChatMessages(chatId, updatedMessages);
       }
       
     } catch (error) {
@@ -672,6 +755,11 @@ const DevPage = () => {
       
       setIsLoading(false);
     }
+
+    }
+
+    
+
 
   };
 
