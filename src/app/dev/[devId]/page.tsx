@@ -206,16 +206,16 @@ const DevPage = () => {
     let text = input.trim();
 
     // Normalize common bullet characters into Markdown list items
-    // text = text
-    //   .replace(/[\t ]*•[\t ]*/g, '\n- ')
-    //   .replace(/[\t ]*–[\t ]*/g, '\n- ')
-    //   .replace(/[\t ]*—[\t ]*/g, '\n- ');
+    text = text
+      .replace(/[\t ]*•[\t ]*/g, '\n- ')
+      .replace(/[\t ]*–[\t ]*/g, '\n- ')
+      .replace(/[\t ]*—[\t ]*/g, '\n- ');
 
     // Ensure a blank line before the list if preceded by a colon
-    // text = text.replace(/:\n- /g, ':\n\n- ');
+    text = text.replace(/:\n- /g, ':\n\n- ');
 
     // // Collapse excessive newlines
-    // text = text.replace(/\n{3,}/g, '\n\n');
+    text = text.replace(/\n{3,}/g, '\n\n');
 
     return text;
   };
@@ -697,10 +697,11 @@ const DevPage = () => {
 
     try {
       if(!parsedClassifier.can_start && parsedClassifier.need_clarification){
+        const formattedQuestion = formatAssistantContent(parsedClassifier.question);
         const assistantMessage: ChatMessageType = {
           id: Date.now().toString(),
           type: 'assistant',
-          content: parsedClassifier.question,
+          content: formattedQuestion,
           timestamp: new Date().toISOString()
         };
         const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
@@ -1290,7 +1291,7 @@ const DevPage = () => {
                               strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
                             }}
                           >
-                            {formatAssistantContent(message.content)}
+                            {message.content}
                           </ReactMarkdown>
                         </div>
                       ) : (
@@ -1631,7 +1632,7 @@ const DevPage = () => {
                               strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
                             }}
                           >
-                            {formatAssistantContent(message.content)}
+                            {message.content}
                           </ReactMarkdown>
                         </div>
                       ) : (
