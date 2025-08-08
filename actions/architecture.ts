@@ -473,7 +473,7 @@ Please analyze this requirement step by step:
 Focus on creating a practical, production-ready architecture that directly addresses the stated requirements.`],
   
   new MessagesPlaceholder("agent_scratchpad")
-]);
+]); 
 
 const finalPrompt = PromptTemplate.fromTemplate(`
   You are an expert Software Architecture Synthesizer. Your job is to take individual technology components and create a cohesive, well-structured architecture diagram with proper connections, positioning, and data flow.
