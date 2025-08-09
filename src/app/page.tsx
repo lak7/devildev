@@ -152,7 +152,7 @@ export default function Page() {
     
     if (isSignedIn && isLoaded) {
       fetchUserChats();
-      fetchGithubStatus();
+      // fetchGithubStatus();
     }
   }, [isSignedIn, isLoaded]);
 
@@ -163,7 +163,7 @@ export default function Page() {
     if (!inputMessage.trim()) return;
     
     if (isSignedIn) {
-      setIsLoading(true);
+      setIsLoading(true); 
       try {
         // Generate UUID for new chat
         const chatId = crypto.randomUUID();
@@ -274,7 +274,7 @@ export default function Page() {
             {/* Top navigation items */}
             <div className="px-2 space-y-2">
               
-              <button
+              {/* <button
                 onClick={handleGithubConnect}
                 disabled={githubLoading}
                 className={`flex items-center space-x-4 px-3 py-3 rounded-lg transition-all duration-200 group/item w-full text-left border ${
@@ -296,7 +296,7 @@ export default function Page() {
                 }`}>
                   {githubStatus.isConnected ? `Connected: ${githubStatus.githubUsername}` : 'Connect Github'}
                 </span>
-              </button>
+              </button> */}
           
               <a
                 href="/community"

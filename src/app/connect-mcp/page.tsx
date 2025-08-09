@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { GlowingEffect } from "@/components/ui/glow-effect"
 import { getGitHubStatus, initiateGitHubConnection, type GitHubStatus } from "../../../actions/github"
+import Image from "next/image"
 
 export default function ConnectMCPPage() {
   const { isSignedIn } = useUser()
@@ -253,40 +254,30 @@ export default function ConnectMCPPage() {
                         <strong>Open Cursor Settings:</strong>
                         <p>
                           Launch Cursor and go to{" "}
-                          <code className="text-yellow-400">File &gt; Preferences &gt; Settings</code> (or{" "}
-                          <code className="text-yellow-400">Code &gt; Preferences &gt; Settings</code> on macOS).
+                          <code className="text-yellow-400">Settings &gt; Cursor Settings &gt; Tools {"&"} Integrations</code>
                         </p>
                       </li>
                       <li>
-                        <strong>Navigate to Extensions:</strong>
-                        <p>In the settings search bar, type "MCP" or navigate to the Extensions section.</p>
+                        <strong>Navigate to MCP Tools Section:</strong>
+                        <p>Click Add a Custom MCP Server.</p>
                       </li>
                       <li>
-                        <strong>Install MCP Connector Extension:</strong>
-                        <p>Search for and install the "MCP Connector" extension from the Cursor Marketplace.</p>
+                        <strong>Configure devildev MCP server in mcp.json file and paste this:</strong>
+                        <pre className="bg-neutral-800 p-4 rounded-lg mt-3 text-sm overflow-x-auto border border-white/5">
+                      <code className="text-green-400">{`{
+    "mcpServers": {
+      "DevilDev-mcp-server": {
+        "url": "https://devildev-mcp-server.laks.workers.dev/mcp"
+      }
+    }
+  }`}</code>
+                    </pre>
                       </li>
                       <li>
-                        <strong>Configure Extension Settings:</strong>
-                        <p>
-                          After installation, click on the gear icon next to the "MCP Connector" extension and select
-                          "Extension Settings".
-                        </p>
-                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-                          <li>
-                            Set <code className="text-yellow-400">MCP Host</code> to{" "}
-                            <code className="text-green-400">https://api.mcp.example.com</code>
-                          </li>
-                          <li>
-                            Enter your <code className="text-yellow-400">API Key</code> obtained from the MCP dashboard.
-                          </li>
-                        </ul>
-                      </li>
-                      <li>
-                        <strong>Restart Cursor:</strong>
-                        <p>Restart Cursor for the changes to take effect.</p>
+                        <strong>Click Needs Login in MCP Tools section:</strong>
+                        <Image src="/cursor-login.png" alt="Cursor MCP Login" width={1000} height={1000} />
                       </li>
                     </ol>
-                    <p className="text-sm text-gray-400">Ensure your network allows connections to the MCP host.</p>
                   </CardContent>
                 </Card>
               </TabsContent>
