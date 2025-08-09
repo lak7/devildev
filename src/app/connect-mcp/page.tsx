@@ -12,7 +12,7 @@ export default function ConnectMCPPage() {
                       <div className="flex gap-8 h-full">
               {/* Left side - 40% width */}
               <div className="w-[40%] flex flex-col h-[calc(100vh-5rem)]">
-                <div className="text-left mb-16">
+                <div className="text-left mb-16 mt-16">
                   <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-4">
                     Connect to MCP
                   </h1>
@@ -25,9 +25,9 @@ export default function ConnectMCPPage() {
              <TabsTrigger
                value="claude-code"
                className="relative aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center
-                          border-gray-800 bg-black text-gray-400 hover:border-gray-700 hover:text-gray-300
-                          data-[state=active]:border-white data-[state=active]:bg-gray-800 data-[state=active]:text-white
-                          focus:outline-none focus:ring-offset-black text-lg font-semibold"
+                          border-gray-500 bg-black text-gray-400 hover:border-gray-300 hover:text-gray-300
+                          data-[state=active]:border-white data-[state=active]:bg-white/69 data-[state=active]:text-black
+                          focus:outline-none focus:ring-offset-black text-3xl font-semibold"
              >
                <GlowingEffect disabled={false} spread={35} proximity={69}
            inactiveZone={0.01} glow={true} className="rounded-lg" />
@@ -36,9 +36,9 @@ export default function ConnectMCPPage() {
              <TabsTrigger
                value="cursor"
                className="relative aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center
-                          border-gray-800 bg-black text-gray-400 hover:border-gray-700 hover:text-gray-300
-                          data-[state=active]:border-white data-[state=active]:bg-gray-800 data-[state=active]:text-white
-                          focus:outline-none focus:ring-offset-black text-lg font-semibold"
+                          border-gray-500 bg-black text-gray-400 hover:border-gray-300 hover:text-gray-300
+                          data-[state=active]:border-white data-[state=active]:bg-white/69 data-[state=active]:text-black
+                          focus:outline-none focus:ring-offset-black text-3xl font-semibold"
              >
                <GlowingEffect disabled={false} spread={35} proximity={69}
            inactiveZone={0.01} glow={true} className="rounded-lg" />
@@ -47,9 +47,9 @@ export default function ConnectMCPPage() {
              <TabsTrigger
                value="windsurf"
                className="relative  aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center
-                          border-gray-800 bg-black text-gray-400 hover:border-gray-700 hover:text-gray-300
-                          data-[state=active]:border-white data-[state=active]:bg-gray-800 data-[state=active]:text-white
-                          focus:outline-none focus:ring-offset-black text-lg font-semibold"
+                          border-gray-500 bg-black text-gray-400 hover:border-gray-300 hover:text-gray-300
+                          data-[state=active]:border-white data-[state=active]:bg-white/69 data-[state=active]:text-black
+                          focus:outline-none focus:ring-offset-black text-3xl font-semibold"
              >
                <GlowingEffect disabled={false} spread={35} proximity={69}
            inactiveZone={0.01} glow={true} className="rounded-lg" />
@@ -61,7 +61,7 @@ export default function ConnectMCPPage() {
             {/* Right side - 60% width */}
             <div className="w-[60%] h-[calc(100vh-5rem)]">
               <TabsContent value="claude-code" className="mt-0 h-full">
-            <Card className="relative bg-neutral-950 border border-white/10 text-white rounded-2xl shadow-2xl h-full flex flex-col">
+            <Card className="relative bg-neutral-950 border border-white/69 text-white rounded-2xl shadow-2xl h-full flex flex-col">
               <GlowingEffect disabled={false} spread={35} proximity={100}
           inactiveZone={0.01} glow={true} className="rounded-2xl" />
               <CardHeader className="p-6 border-b border-white/5 flex-shrink-0">
@@ -117,7 +117,7 @@ export default function ConnectMCPPage() {
           </TabsContent>
 
               <TabsContent value="cursor" className="mt-0 h-full">
-            <Card className="relative bg-neutral-950 border border-white/10 text-white rounded-2xl shadow-2xl h-full flex flex-col">
+            <Card className="relative bg-neutral-950 border border-white/69 text-white rounded-2xl shadow-2xl h-full flex flex-col">
             <GlowingEffect disabled={false} spread={35} proximity={100}
           inactiveZone={0.01} glow={true} className="rounded-2xl" />
               <CardHeader className="p-6 border-b border-white/5 flex-shrink-0">
@@ -172,7 +172,7 @@ export default function ConnectMCPPage() {
           </TabsContent>
 
               <TabsContent value="windsurf" className="mt-0 h-full">
-            <Card className="relative bg-neutral-950 border border-white/10 text-white rounded-2xl shadow-2xl h-full flex flex-col">
+            <Card className="relative bg-neutral-950 border border-white/69 text-white rounded-2xl shadow-2xl h-full flex flex-col">
             <GlowingEffect disabled={false} spread={35} proximity={100}
           inactiveZone={0.01} glow={true} className="rounded-2xl" />
               <CardHeader className="p-6 border-b border-white/5 flex-shrink-0">
