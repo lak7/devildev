@@ -14,6 +14,7 @@ export default function ConnectMCPPage() {
   const [githubStatus, setGithubStatus] = useState<GitHubStatus>({ isConnected: false })
   const [githubLoading, setGithubLoading] = useState(false)
   const [statusLoading, setStatusLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
 
   // Function to fetch GitHub status
   const fetchGithubStatus = async () => {
@@ -195,44 +196,56 @@ export default function ConnectMCPPage() {
                 <p>To connect to MCP using Claude Code, follow these detailed steps:</p>
                 <ol className="list-decimal list-inside space-y-4">
                   <li>
-                    <strong>Install the Claude Code CLI:</strong>
-                    <pre className="bg-neutral-800 p-4 rounded-lg mt-3 text-sm overflow-x-auto border border-white/5">
-                      <code className="text-green-400">npm install -g @claude-code/cli</code>
-                    </pre>
-                  </li>
-                  <li>
-                    <strong>Authenticate with MCP:</strong>
-                    <p>Run the authentication command and follow the browser prompts:</p>
-                    <pre className="bg-neutral-800 p-4 rounded-lg mt-3 text-sm overflow-x-auto">
-                      <code className="text-green-400">claude-code login --mcp</code>
-                    </pre>
-                  </li>
-                  <li>
-                    <strong>Configure Project Settings:</strong>
-                    <p>Navigate to your project directory and initialize Claude Code:</p>
-                    <pre className="bg-neutral-800 p-4 rounded-lg mt-3 text-sm overflow-x-auto">
-                      <code className="text-green-400">
-                        cd my-project
-                        <br />
-                        claude-code init
-                      </code>
-                    </pre>
-                    <p>
-                      This will create a <code className="text-yellow-400">.claude-code.json</code> file. Ensure the{" "}
-                      <code className="text-yellow-400">mcpUrl</code> is correctly set.
-                    </p>
-                  </li>
-                  <li>
-                    <strong>Deploy to MCP:</strong>
-                    <p>Once configured, you can deploy your code directly to MCP:</p>
-                    <pre className="bg-neutral-800 p-4 rounded-lg mt-3 text-sm overflow-x-auto border border-white/5">
-                      <code className="text-green-400">claude-code deploy --target mcp-production</code>
-                    </pre>
+                    <strong>Run this command to add Devilev MCP to claude code:</strong>
+                    <div className="relative">
+                      <pre className="bg-neutral-800 p-6 rounded-lg mt-3 text-sm border border-white/5 min-h-[80px] flex items-center whitespace-pre-wrap break-words">
+                        <code className="text-green-400">claude mcp add --transport http DevilDev{'\n'}https://devildev-mcp-server.laks.workers.dev/mcp</code>
+                      </pre>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText('claude mcp add --transport http DevilDev https://devildev-mcp-server.laks.workers.dev/mcp');
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 1000);
+                        }}
+                        className="absolute top-5 right-3 p-2 bg-neutral-700 hover:bg-neutral-600 rounded-md transition-colors duration-200 border border-white/10 hover:border-white/20"
+                        title={copied ? "Copied!" : "Copy to clipboard"}
+                      >
+                        {copied ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-green-400"
+                          >
+                            <path d="M20 6 9 17l-5-5"/>
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-gray-400 hover:text-white"
+                          >
+                            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                            <path d="m4 16-2-2v-8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2"/>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </li>
                 </ol>
-                <p className="text-sm text-gray-400">
-                  For more advanced configurations, refer to the official Claude Code documentation.
-                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -293,55 +306,103 @@ export default function ConnectMCPPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 lg:p-6 space-y-4 lg:space-y-6 text-gray-300 overflow-y-auto flex-1 max-h-[60vh] lg:max-h-none [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-500">
-                    <p>Windsurf provides a robust way to interact with MCP. Follow these steps:</p>
-                    <ol className="list-decimal list-inside space-y-4">
-                      <li>
-                        <strong>Download Windsurf Client:</strong>
-                        <p>Download the latest Windsurf client from the official website.</p>
-                        <pre className="bg-neutral-800 p-4 rounded-lg mt-3 text-sm overflow-x-auto border border-white/5">
-                          <code className="text-green-400">
-                            curl -O https://downloads.windsurf.com/client.zip
-                            <br />
-                            unzip client.zip
-                          </code>
-                        </pre>
-                      </li>
-                      <li>
-                        <strong>Configure Connection Profile:</strong>
-                        <p>
-                          Open the Windsurf client and go to{" "}
-                          <code className="text-yellow-400">Connection Profiles &gt; Add New</code>.
-                        </p>
-                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-                          <li>
-                            <strong>Profile Name:</strong> <code className="text-yellow-400">MCP Production</code>
-                          </li>
-                          <li>
-                            <strong>Host:</strong> <code className="text-green-400">mcp.your-organization.com</code>
-                          </li>
-                          <li>
-                            <strong>Port:</strong> <code className="text-green-400">443</code> (or as specified by your MCP
-                            admin)
-                          </li>
-                          <li>
-                            <strong>Authentication Method:</strong> Select <code className="text-yellow-400">API Key</code>{" "}
-                            and paste your key.
-                          </li>
-                        </ul>
-                      </li>
-                      <li>
-                        <strong>Test Connection:</strong>
-                        <p>Click the "Test Connection" button to verify your settings.</p>
-                      </li>
-                      <li>
-                        <strong>Connect to MCP:</strong>
-                        <p>Once the test is successful, select your new profile and click "Connect".</p>
-                      </li>
-                    </ol>
-                    <p className="text-sm text-gray-400">
-                      Ensure your firewall allows outbound connections on the specified port.
-                    </p>
-                  </CardContent>
+  <p>Connecting Windsurf to MCP servers expands your development workflow with external tools and data sources. Here's how to add DevilDev MCP server:</p>
+  <ol className="list-decimal list-inside space-y-4">
+    <li>
+      <strong>Open Windsurf Settings:</strong>
+      <p>
+        Launch Windsurf and navigate to{" "}
+        <code className="text-yellow-400">Settings → Cascade → Plugins</code>
+      </p>
+    </li>
+    <li>
+      <strong>Access MCP Configuration:</strong>
+      <p>Click on <strong>Manage Plugins</strong>, then select <strong>View Raw Config</strong> to edit the mcp_config.json file.</p>
+    </li>
+    <li>
+      <strong>Add DevilDev MCP server configuration:</strong>
+      <div className="relative">
+        <pre className="bg-neutral-800 p-6 rounded-lg mt-3 text-sm border border-white/5 min-h-[120px] flex items-center whitespace-pre-wrap break-words">
+          <code className="text-green-400">{`{
+  "mcpServers": {
+    "DevilDev-mcp-server": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://devildev-mcp-server.laks.workers.dev/mcp"
+      ]
+    }
+  }
+}`}</code>
+        </pre>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(`{
+  "mcpServers": {
+    "DevilDev-mcp-server": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://devildev-mcp-server.laks.workers.dev/mcp"
+      ]
+    }
+  }
+}`);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1000);
+          }}
+          className="absolute top-5 right-3 p-2 bg-neutral-700 hover:bg-neutral-600 rounded-md transition-colors duration-200 border border-white/10 hover:border-white/20"
+          title={copied ? "Copied!" : "Copy to clipboard"}
+        >
+          {copied ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-green-400"
+            >
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-gray-400 hover:text-white"
+            >
+              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+              <path d="m4 16-2-2v-8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2"/>
+            </svg>
+          )}
+        </button>
+      </div>
+    </li>
+    <li>
+      <strong>Save and Refresh:</strong>
+      <p>
+        Save the configuration file with <code className="text-yellow-400">Ctrl+S</code> (Windows) or{" "}
+        <code className="text-yellow-400">Cmd+S</code> (Mac), then click <strong>Refresh</strong> in the Manage Plugins section.
+      </p>
+    </li>
+    <li>
+      <strong>Verify Connection:</strong>
+      <p>Your DevilDev MCP server should now appear in the available tools list within Cascade. You can start using it in your chat prompts and development workflow.</p>
+    </li>
+  </ol>
+</CardContent>
+
                 </Card>
               </TabsContent>
             </div>
