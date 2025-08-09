@@ -6,65 +6,71 @@ import { GlowingEffect } from "@/components/ui/glow-effect"
 
 export default function ConnectMCPPage() {
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 sm:p-8 lg:p-12">
-      <div className="w-full max-w-4xl mx-auto">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-4">
-            Connect to MCP
-          </h1>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Choose your preferred development environment and follow the setup instructions to integrate with MCP
-          </p>
-        </div>
-
+    <div className="h-dvh overflow-hidden bg-black text-white p-6 sm:p-8 lg:p-12">
+      <div className="w-full max-w-7xl mx-auto">
         <Tabs defaultValue="claude-code" className="w-full">
-          <TabsList className="flex mx-auto w-fit mb-12 gap-6 bg-transparent">
-            <TabsTrigger
-              value="claude-code"
-              className="relative w-36 h-36 p-4 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center gap-2
-                         border-gray-800 bg-black text-gray-400 hover:border-gray-700 hover:text-gray-300
-                         data-[state=active]:border-white data-[state=active]:bg-gray-800 data-[state=active]:text-white
-                         focus:outline-none  focus:ring-offset-black text-xl font-semibold"
-            >
-              <GlowingEffect disabled={false} spread={35} proximity={69}
-          inactiveZone={0.01} glow={true} className="rounded-xl" />
-              Claude Code
-            </TabsTrigger>
-            <TabsTrigger
-              value="cursor"
-              className="relative w-36 h-36 p-4 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center gap-2
-                         border-gray-800 bg-black text-gray-400 hover:border-gray-700 hover:text-gray-300
-                         data-[state=active]:border-white data-[state=active]:bg-gray-800 data-[state=active]:text-white
-                         focus:outline-none focus:ring-offset-black text-xl font-semibold"
-            >
-              <GlowingEffect disabled={false} spread={35} proximity={69}
-          inactiveZone={0.01} glow={true} className="rounded-xl" />
-              Cursor
-            </TabsTrigger>
-            <TabsTrigger
-              value="windsurf"
-              className="relative w-36 h-36 p-4 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center gap-2
-                         border-gray-800 bg-black text-gray-400 hover:border-gray-700 hover:text-gray-300
-                         data-[state=active]:border-white data-[state=active]:bg-gray-800 data-[state=active]:text-white
-                         focus:outline-none focus:ring-offset-black text-xl font-semibold"
-            >
-              <GlowingEffect disabled={false} spread={35} proximity={69}
-          inactiveZone={0.01} glow={true} className="rounded-xl" />
-              Windsurf
-            </TabsTrigger>
-          </TabsList>
+                      <div className="flex gap-8 h-full">
+              {/* Left side - 40% width */}
+              <div className="w-[40%] flex flex-col h-[calc(100vh-5rem)]">
+                <div className="text-left mb-16">
+                  <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-4">
+                    Connect to MCP
+                  </h1>
+                  <p className="text-gray-400 text-lg">
+                    Choose your preferred development environment and follow the setup instructions to integrate with MCP
+                  </p>
+                </div>
 
-          <TabsContent value="claude-code" className="mt-12">
-            <Card className="relative bg-neutral-950 border border-white/10 text-white rounded-2xl shadow-2xl">
+                <TabsList className="flex flex-col w-full justify-stretch items-stretch gap-4 bg-transparent h-36">
+             <TabsTrigger
+               value="claude-code"
+               className="relative aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center
+                          border-gray-800 bg-black text-gray-400 hover:border-gray-700 hover:text-gray-300
+                          data-[state=active]:border-white data-[state=active]:bg-gray-800 data-[state=active]:text-white
+                          focus:outline-none focus:ring-offset-black text-lg font-semibold"
+             >
+               <GlowingEffect disabled={false} spread={35} proximity={69}
+           inactiveZone={0.01} glow={true} className="rounded-lg" />
+               Claude Code
+             </TabsTrigger>
+             <TabsTrigger
+               value="cursor"
+               className="relative aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center
+                          border-gray-800 bg-black text-gray-400 hover:border-gray-700 hover:text-gray-300
+                          data-[state=active]:border-white data-[state=active]:bg-gray-800 data-[state=active]:text-white
+                          focus:outline-none focus:ring-offset-black text-lg font-semibold"
+             >
+               <GlowingEffect disabled={false} spread={35} proximity={69}
+           inactiveZone={0.01} glow={true} className="rounded-lg" />
+               Cursor
+             </TabsTrigger>
+             <TabsTrigger
+               value="windsurf"
+               className="relative  aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center
+                          border-gray-800 bg-black text-gray-400 hover:border-gray-700 hover:text-gray-300
+                          data-[state=active]:border-white data-[state=active]:bg-gray-800 data-[state=active]:text-white
+                          focus:outline-none focus:ring-offset-black text-lg font-semibold"
+             >
+               <GlowingEffect disabled={false} spread={35} proximity={69}
+           inactiveZone={0.01} glow={true} className="rounded-lg" />
+               Windsurf
+             </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Right side - 60% width */}
+            <div className="w-[60%] h-[calc(100vh-5rem)]">
+              <TabsContent value="claude-code" className="mt-0 h-full">
+            <Card className="relative bg-neutral-950 border border-white/10 text-white rounded-2xl shadow-2xl h-full flex flex-col">
               <GlowingEffect disabled={false} spread={35} proximity={100}
           inactiveZone={0.01} glow={true} className="rounded-2xl" />
-              <CardHeader className="p-6 border-b border-white/5">
+              <CardHeader className="p-6 border-b border-white/5 flex-shrink-0">
                 <CardTitle className="text-3xl font-bold">Claude Code Connection Instructions</CardTitle>
                 <CardDescription className="text-gray-500 mt-2">
                   Steps to configure your environment for Claude Code.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6 space-y-6 text-gray-300">
+              <CardContent className="p-6 space-y-6 text-gray-300 overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-500">
                 <p>To connect to MCP using Claude Code, follow these detailed steps:</p>
                 <ol className="list-decimal list-inside space-y-4">
                   <li>
@@ -110,17 +116,17 @@ export default function ConnectMCPPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="cursor" className="mt-12">
-            <Card className="relative bg-neutral-950 border border-white/10 text-white rounded-2xl shadow-2xl">
+              <TabsContent value="cursor" className="mt-0 h-full">
+            <Card className="relative bg-neutral-950 border border-white/10 text-white rounded-2xl shadow-2xl h-full flex flex-col">
             <GlowingEffect disabled={false} spread={35} proximity={100}
           inactiveZone={0.01} glow={true} className="rounded-2xl" />
-              <CardHeader className="p-6 border-b border-white/5">
+              <CardHeader className="p-6 border-b border-white/5 flex-shrink-0">
                 <CardTitle className="text-3xl font-bold">Cursor Connection Instructions</CardTitle>
                 <CardDescription className="text-gray-500 mt-2">
                   Guide to setting up Cursor for MCP integration.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6 space-y-6 text-gray-300">
+              <CardContent className="p-6 space-y-6 text-gray-300 overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-500">
                 <p>Connecting Cursor to MCP enhances your development workflow. Here's how:</p>
                 <ol className="list-decimal list-inside space-y-4">
                   <li>
@@ -165,17 +171,17 @@ export default function ConnectMCPPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="windsurf" className="mt-12">
-            <Card className="relative bg-neutral-950 border border-white/10 text-white rounded-2xl shadow-2xl">
+              <TabsContent value="windsurf" className="mt-0 h-full">
+            <Card className="relative bg-neutral-950 border border-white/10 text-white rounded-2xl shadow-2xl h-full flex flex-col">
             <GlowingEffect disabled={false} spread={35} proximity={100}
           inactiveZone={0.01} glow={true} className="rounded-2xl" />
-              <CardHeader className="p-6 border-b border-white/5">
+              <CardHeader className="p-6 border-b border-white/5 flex-shrink-0">
                 <CardTitle className="text-3xl font-bold">Windsurf Connection Instructions</CardTitle>
                 <CardDescription className="text-gray-500 mt-2">
                   How to establish a connection to MCP using Windsurf.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6 space-y-6 text-gray-300">
+              <CardContent className="p-6 space-y-6 text-gray-300 overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-500">
                 <p>Windsurf provides a robust way to interact with MCP. Follow these steps:</p>
                 <ol className="list-decimal list-inside space-y-4">
                   <li>
@@ -227,6 +233,8 @@ export default function ConnectMCPPage() {
               </CardContent>
             </Card>
           </TabsContent>
+            </div>
+          </div>
         </Tabs>
       </div>
     </div>
