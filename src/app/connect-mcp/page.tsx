@@ -325,7 +325,7 @@ export default function ConnectMCPPage() {
         <pre className="bg-neutral-800 p-6 rounded-lg mt-3 text-sm border border-white/5 min-h-[120px] flex items-center whitespace-pre-wrap break-words">
           <code className="text-green-400">{`{
   "mcpServers": {
-    "DevilDev-mcp-server": {
+    "DevilDev": {
       "command": "npx",
       "args": [
         "mcp-remote",
