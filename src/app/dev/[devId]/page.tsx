@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send, BrainCircuit } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot, chatbot, architectureModificationBot } from '../../../../actions/agentsFlow';
@@ -1053,6 +1053,17 @@ const DevPage = () => {
 
         {/* Right side - How to, Feedback button and User avatar */}
         <div className="flex items-center space-x-3">
+
+        <button
+            onClick={() => window.open('/connect-mcp', '_blank')}
+            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
+            title="Send Feedback"
+          >
+            <BrainCircuit className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
+            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
+              Connect MCP
+            </span>
+          </button>
 
           {/* Feedback button */}
           <button
