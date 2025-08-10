@@ -70,7 +70,7 @@ export default function Community() {
         <div className="text-center">
           {/* Animated "COMING SOON" text */}
           <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold  bg-clip-text bg-gradient-to-r text-white mb-8 tracking-wider">
-            COMMING SOON
+            COMING SOON
           </h1>
           
           {/* Subtle pulsing dot */}
