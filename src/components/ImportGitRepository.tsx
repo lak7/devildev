@@ -30,7 +30,7 @@ interface Repository {
 
 interface ImportGitRepositoryProps {
   onImport: (repo: Repository) => void;
-}
+} 
 
 export default function ImportGitRepository({ onImport }: ImportGitRepositoryProps) {
   const [repos, setRepos] = useState<Repository[]>([]);
@@ -63,12 +63,12 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const fetchRepos = async (search?: string) => {
     try {
       setSearchLoading(!!search);
-      if (!search) setLoading(true);
+      if (!search) setLoading(true); 
 
       const url = new URL('/api/github/repos', window.location.origin);
       if (search) {
         url.searchParams.set('search', search);
-      }
+      } 
 
       const response = await fetch(url);
       const data = await response.json();
@@ -88,7 +88,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchTerm.trim()) {
+    if (searchTerm.trim()) { 
       fetchRepos(searchTerm.trim());
     } else {
       fetchRepos();

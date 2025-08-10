@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     githubAuthUrl.searchParams.set('client_id', clientId);
     githubAuthUrl.searchParams.set('redirect_uri', redirectUri);
     githubAuthUrl.searchParams.set('scope', 'user:email read:user repo');
-    githubAuthUrl.searchParams.set('state', stateWithUserId);
+    githubAuthUrl.searchParams.set('state', stateWithUserId); 
     
     return NextResponse.redirect(githubAuthUrl.toString());
   } catch (error) {

@@ -4,20 +4,24 @@ import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log("Step 0")
     const { userId } = await auth();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's GitHub access token 
+
+    // Get user's GitHub access token and username
     const user = await db.user.findUnique({
       where: { id: userId },
       select: {
         githubAccessToken: true,
         isGithubConnected: true,
+        githubUsername: true,
       },
     });
+    console.log("Step 1")
 
     if (!user?.isGithubConnected || !user.githubAccessToken) {
       return NextResponse.json({ error: 'GitHub not connected' }, { status: 400 });
@@ -28,12 +32,22 @@ export async function GET(request: NextRequest) {
     const per_page = parseInt(searchParams.get('per_page') || '5');
     const search = searchParams.get('search') || '';
 
+    if (search && !user.githubUsername) {
+      return NextResponse.json({ error: 'GitHub username not available for search' }, { status: 400 });
+    }
+
     let url = `https://api.github.com/user/repos?sort=updated&per_page=${per_page}&page=${page}`;
+
+    console.log("Step 2")
     
     // If search is provided, use the search API instead
     if (search) {
-      url = `https://api.github.com/search/repositories?q=${encodeURIComponent(search)}+user:${user.githubAccessToken}&sort=updated&per_page=${per_page}&page=${page}`;
+      url = `https://api.github.com/search/repositories?q=${encodeURIComponent(search)}+user:${user.githubUsername}`;
     }
+
+    console.log("url", url)
+
+    console.log("Step 3")
 
     const response = await fetch(url, {
       headers: {
@@ -43,13 +57,19 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    console.log("Step 4")
+
     if (!response.ok) {
       console.error('GitHub API error:', response.status, response.statusText);
       return NextResponse.json({ error: 'Failed to fetch repositories' }, { status: response.status });
     }
 
+    console.log("Step 5")
+
     const data = await response.json();
     
+    console.log("Step 6")
+
     // Format the response consistently whether it's search results or direct repos
     const repos = search ? data.items : data;
     
@@ -73,6 +93,8 @@ export async function GET(request: NextRequest) {
         avatarUrl: repo.owner.avatar_url,
       },
     }));
+
+    console.log("Step 7")
 
     return NextResponse.json({
       repos: formattedRepos,
