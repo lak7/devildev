@@ -51,10 +51,6 @@ export default function NewPage() {
 
       if (parsedResponse) {
         alert("Imported successfully");
-        console.log("This is special: ", parsedResponse);
-        alert(parsedResponse.framework);
-        // Redirect to the chat page for the imported repository
-        // router.push(`/dev/${data.chatId}`);
       } else {
         console.error('Import failed:');
       }

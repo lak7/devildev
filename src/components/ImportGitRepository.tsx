@@ -27,7 +27,7 @@ interface Repository {
     avatarUrl: string;
   };
 }
-
+  
 interface ImportGitRepositoryProps {
   onImport: (repo: Repository) => void;
 } 
@@ -98,7 +98,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const handleImport = async (repo: Repository) => {
     setImporting(repo.id);
     try {
-      // Call the parent's import handler
+      // Call the parent's import handler 
       await onImport(repo);
     } catch (error) {
       console.error('Error importing repository:', error);

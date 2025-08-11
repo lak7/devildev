@@ -1,5 +1,4 @@
 "use server"
-import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { ChatOpenAI } from "@langchain/openai";
@@ -61,6 +60,8 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
           console.log("Step 5")
 
            repoContent = await repoContentResponse.json();
+           repoContent = repoContent.map((item: { name: any; }) => item.name);
+           console.log("Step 5.1: ", repoContent)
       }catch(error){
         console.error('Error fetching repository contents:', error);
         return { error: 'Failed to fetch repository contents' };
@@ -70,7 +71,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
       try{ 
         if(repoContent){ 
             console.log("Step 6.1")
-            const packageJsonResponse = repoContent.find((item: any) => item.name === 'package.json');
+            const packageJsonResponse = repoContent.find((item: any) => item === 'package.json');
             console.log("Step 6.2: ", packageJsonResponse)
             if(packageJsonResponse){
                 console.log("Step 6.3")
@@ -85,9 +86,16 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
                       }
                 );
                 console.log("Step 6.4")
-                if(packageJsonContent.ok){
-                    console.log("Step 6.5")
-                    packageJson = await packageJsonContent.json();
+                if (packageJsonContent.ok) {
+                  console.log("Step 6.5")
+                  packageJson = await packageJsonContent.json();
+                  
+                  // Decode the Base64 content to plain text
+                  if (packageJson.content && packageJson.encoding === "base64") {
+                    const decoded = Buffer.from(packageJson.content, "base64").toString("utf-8");
+                    packageJson = JSON.parse(decoded); // Now it's the actual JSON object
+                  }
+                  console.log("Step 6.5.1: ", packageJson)
                 }else{
                     return { error: 'Failed to fetch package.json' };
                 }
@@ -107,7 +115,22 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
       const chain = prompt.pipe(llm).pipe(new StringOutputParser());
       const result = await chain.invoke({repoContent: JSON.stringify(repoContent), packageJson: JSON.stringify(packageJson)});
       console.log("Step 8")
-      return result;
+      const resultObject = JSON.parse(result);
+      if(resultObject.isValid){
+            const project = await db.project.create({
+            data: {
+                name: repoFullName.split('/')[1] || repoFullName, // Use repo name as project name
+                userId: userId,
+                repoId: repositoryId,
+                repoFullName: repoFullName,
+                repoContent: repoContent,
+                packageJson: packageJson,
+                framework: resultObject.framework,
+            }
+            });
+      }
+        return result;
+      
       
      
 

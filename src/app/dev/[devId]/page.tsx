@@ -1049,7 +1049,7 @@ const DevPage = () => {
               DevilDev
             </span>
           </button>
-        </div>
+        </div> 
 
         {/* Right side - How to, Feedback button and User avatar */}
         <div className="flex items-center space-x-3">
