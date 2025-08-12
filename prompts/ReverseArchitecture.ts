@@ -20,3 +20,5 @@ RULES:
 - If neither react nor next is detected, isValid should be false and framework should be an empty string.
 - No explanation or extra text—output the JSON only.
 `
+
+

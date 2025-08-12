@@ -7,6 +7,7 @@ import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, U
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
+import { generateArchitecture } from '../../../../actions/reverse-architecture';
 
 interface Project {
   id: string;
@@ -15,6 +16,7 @@ interface Project {
   createdAt: Date;
   updatedAt: Date;
   ProjectArchitecture: any;
+  userId: string;
 }
 
 const ProjectPage = () => {
@@ -29,6 +31,7 @@ const ProjectPage = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isArchitectureGenerating, setIsArchitectureGenerating] = useState(false);
+  const [architectureData, setArchitectureData] = useState<any>(null);
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(35);
@@ -61,11 +64,35 @@ const ProjectPage = () => {
 
         loadProject();
 
-        if(project?.ProjectArchitecture){
-            setIsArchitectureGenerating(false);
-        }else{
-            setIsArchitectureGenerating(true);
+        const loadArchitecture = async () => {
+            if(project?.ProjectArchitecture){
+                setIsArchitectureGenerating(false);
+            }else{
+                alert("Generating Architecture...");
+                setIsArchitectureGenerating(true);
+                const architectureResult = await generateArchitecture(projectId);
+                setArchitectureData(architectureResult);
+                // Clean the result to remove markdown code blocks if present
+                let cleanedResult = architectureResult;
+                if (typeof architectureResult === 'string') {
+                    // Remove markdown code blocks (```json...``` or ```...```)
+                    cleanedResult = architectureResult
+                    .replace(/^```json\s*/i, '')
+                    .replace(/^```\s*/, '')
+                    .replace(/\s*```\s*$/, '')
+                    .trim();
+                }
+                
+                // Parse the JSON result
+                const parsedArchitecture = typeof cleanedResult === 'string' 
+                    ? JSON.parse(cleanedResult) 
+                    : cleanedResult; 
+                setArchitectureData(parsedArchitecture);
+                console.log(parsedArchitecture);
+                setIsArchitectureGenerating(false);
+            }
         }
+        loadArchitecture();
   }, [projectId, isSignedIn]);
 
   // Check if mobile on mount and resize
@@ -141,6 +168,22 @@ const ProjectPage = () => {
     setTextareaHeight('60px');
   };
 
+  if (!project?.name) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-black text-white">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Project Not Found</h1>
+          <button 
+            onClick={() => router.push('/')}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-black">
@@ -171,21 +214,7 @@ const ProjectPage = () => {
       )
   }
 
-  if (!project) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-black text-white">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Project Not Found</h1>
-          <button 
-            onClick={() => router.push('/')}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-          >
-            Go Home
-          </button>
-        </div>
-      </div>
-    );
-  }
+  
 
   return (
     <div className="h-screen bg-black text-white flex flex-col overflow-hidden">

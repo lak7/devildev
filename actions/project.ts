@@ -12,6 +12,7 @@ export async function getProject(projectId: string) {
         where: { id: projectId, userId: userId },
         select: {
             name: true,
+            userId: true,
             framework: true,
             createdAt: true,
             updatedAt: true,

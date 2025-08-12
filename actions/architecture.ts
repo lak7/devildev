@@ -474,7 +474,7 @@ Focus on creating a practical, production-ready architecture that directly addre
   
   new MessagesPlaceholder("agent_scratchpad")
 ]); 
-
+ 
 const finalPrompt = PromptTemplate.fromTemplate(`
   You are an expert Software Architecture Synthesizer. Your job is to take individual technology components and create a cohesive, well-structured architecture diagram with proper connections, positioning, and data flow.
   
