@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const per_page = parseInt(searchParams.get('per_page') || '5');
+    const per_page = parseInt(searchParams.get('per_page') || '9');
     const search = searchParams.get('search') || '';
 
     if (search && !user.githubUsername) {

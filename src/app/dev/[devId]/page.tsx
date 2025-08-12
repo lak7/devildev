@@ -33,15 +33,6 @@ import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 
-// Using ChatMessage from actions/chat.ts
-// export interface ChatMessage { 
-//   id: string;
-//   type: 'user' | 'assistant';
-//   content: string;
-//   timestamp: Date;
-//   isStreaming?: boolean;
-// }
-
 interface UserChat {
   id: string;
   title: string | null;
