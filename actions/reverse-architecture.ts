@@ -135,3 +135,10 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
      
 
 }
+
+export async function generateArchitecture(projectId: string){
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+}

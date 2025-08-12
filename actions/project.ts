@@ -10,6 +10,13 @@ export async function getProject(projectId: string) {
 
     const project = await db.project.findUnique({
         where: { id: projectId, userId: userId },
+        select: {
+            name: true,
+            framework: true,
+            createdAt: true,
+            updatedAt: true,
+            ProjectArchitecture: true,
+        }
     });
     return project;
 }
