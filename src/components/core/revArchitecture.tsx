@@ -508,7 +508,6 @@ export default function RevArchitecture({
 
   // Update components when architectureData changes
   useEffect(() => {
-    alert("hi")
     if (architectureData?.components) {
       // Process components with predefined colors and positions, preserving custom positions
       const processedComponents = processComponents(architectureData.components, customPositions)

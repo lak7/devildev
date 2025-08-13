@@ -427,77 +427,169 @@ export async function generateArchitecture(projectId: string){
         });
         console.log("Step 10")
             // Create the final architecture synthesis prompt
-    const finalPrompt = PromptTemplate.fromTemplate(`
-      Based on the repository analysis findings, generate a comprehensive software architecture diagram in JSON format.
-      
-      ANALYSIS FINDINGS:
-      {analysis_findings}
-      
-      REPOSITORY CONTEXT:
-      - Name: {name}
-      - Framework: {framework}  
-      - Repository: {repoFullName}
-      
-      ARCHITECTURE GENERATION RULES:
-      
-      1. **Component Identification**: Based on the analysis findings, identify 4-8 main architectural components
-      2. **Technology Mapping**: Use the exact technologies found in the codebase analysis
-      3. **Connection Logic**: Define how components communicate based on the code structure
-      4. **Modern Architecture Patterns**: Apply current best practices for the identified framework
-      
-      COMPONENT CATEGORIES & ICONS:
-      - Frontend: "monitor", "smartphone", "globe"
-      - Backend/API: "server", "cpu", "database"
-      - Database: "database", "hard-drive"
-      - Authentication: "shield", "key", "lock" 
-      - External Services: "cloud", "link", "globe"
-      - State Management: "zap", "layers"
-      - File Storage: "folder", "hard-drive"
-      
-      COLORS (Tailwind format):
-      Use: blue, green, purple, orange, red, yellow, indigo, pink
-      
-      POSITIONING STRATEGY:
-      - Frontend components: Left side (x: 100-300)
-      - Backend/API: Center (x: 400-600)  
-      - Database/Storage: Right side (x: 700-900)
-      - External services: Top/bottom as needed
-      
-      Generate ONLY this JSON structure:
-      {{
-        "components": [
-          {{
-            "id": "kebab-case-id",
-            "title": "Component Name", 
-            "icon": "lucide-icon-name",
-            "color": "from-color-500 to-color-600",
-            "borderColor": "border-color-500/30",
-            "technologies": {{
-              "primary": "Primary technology from analysis",
-              "framework": "Supporting framework", 
-              "additional": "Additional tools and libraries"
-            }},
-            "connections": ["connected-component-ids"],
-            "position": {{ "x": number, "y": number }},
-            "dataFlow": {{
-              "sends": ["data types sent"],
-              "receives": ["data types received"]
-            }},
-            "purpose": "Component's role in the architecture"
-          }}
-        ],
-        "connectionLabels": {{
-          "component1-component2": "Connection protocol/method"
-        }},
-        "architectureRationale": "Explanation of the architecture based on the analyzed codebase"
-      }}`);
+        // Enhanced Architecture Generation Prompt - Dynamic & Analysis-Driven
+const finalPrompt = PromptTemplate.fromTemplate(`
+  You are an elite software architect specializing in creating professional, production-ready architecture diagrams for React or Next.js applications. Transform the provided analysis into a technically accurate JSON architecture diagram by intelligently extracting components from the actual codebase analysis.
+  
+  ANALYSIS FINDINGS:
+  {analysis_findings}
+  
+  PROJECT CONTEXT:
+  - Name: {name}
+  - Framework: {framework} 
+  
+  INTELLIGENT COMPONENT EXTRACTION GUIDELINES:
+  
+  ## 🧠 ANALYSIS-DRIVEN COMPONENT IDENTIFICATION
+  
+  **PRIMARY RULE**: Extract components ONLY from what exists in the analysis findings. Do not assume or hardcode standard components.
+  
+  ### Component Discovery Strategy:
+  1. **Parse the analysis findings** for actual technologies, services, and architectural patterns
+  2. **Identify distinct functional layers** mentioned in the analysis
+  3. **Extract external integrations** explicitly found in the codebase
+  4. **Map database/storage solutions** actually implemented
+  5. **Discover authentication mechanisms** present in the code
+  6. **Find state management patterns** used in the application
+  
+  ### Example Component Categories (Use only if found in analysis):
+  - **Frontend Layer**: React App, Next.js Application, Client Interface, Web Dashboard
+  - **API/Backend**: API Routes, Server Functions, Backend Service, Microservice
+  - **Database**: PostgreSQL Database, MongoDB, Supabase Database, Redis Cache
+  - **Authentication**: NextAuth Provider, Supabase Auth, Custom Auth Service, JWT Service
+  - **External APIs**: Stripe Integration, SendGrid Service, AWS S3, Third-party API
+  - **State Management**: Zustand Store, Redux Store, React Context, Global State
+  - **Real-time**: WebSocket Service, Pusher Integration, Socket.io Server
+  
+  ## 🔗 CONNECTION INTELLIGENCE
+  
+  ### Connection Logic:
+  - **Analyze data flow** mentioned in the findings
+  - **Identify API calls** between frontend and backend
+  - **Map database connections** from backend services
+  - **Trace authentication flows** through the system
+  - **Connect external service integrations**
+  
+  ### Professional Connection Labels:
+  - **API Communication**: "REST API", "GraphQL Queries", "HTTP Requests", "Server Actions"
+  - **Database Operations**: "SQL Queries", "Prisma ORM", "Database Connection", "Data Persistence"
+  - **Authentication**: "OAuth Flow", "JWT Validation", "Session Management", "Token Exchange"
+  - **Real-time**: "WebSocket Connection", "Real-time Updates", "Live Data Sync"
+  - **External Services**: "API Integration", "Service Calls", "Webhook Events", "File Upload"
+  
+  ## 🎯 ARCHITECTURE RATIONALE EXCELLENCE
+  
+  Write a comprehensive 4-6 paragraph analysis:
+  
+  **Paragraph 1 - System Overview**
+  - Describe the actual system based on analysis findings
+  - Identify the primary architectural pattern discovered
+  - Explain the core business functionality
+  
+  **Paragraph 2 - Technology Stack Deep Dive**
+  - Detail the specific technologies found in the analysis
+  - Explain technology choices and their integration
+  - Highlight framework-specific implementations (React/Next.js)
+  
+  **Paragraph 3 - Data Architecture & Flow**
+  - Describe how data moves through the discovered components
+  - Detail database/storage solutions actually implemented
+  - Explain API design patterns and data management
+  
+  **Paragraph 4 - Integration & External Services**
+  - Map out external service integrations found
+  - Describe authentication and security implementations
+  - Detail third-party API usage and patterns
+  
+  **Paragraph 5 - Performance & Development Patterns**
+  - Analyze performance optimizations discovered
+  - Describe development and deployment workflows
+  - Highlight code organization and best practices
+  
+  **Paragraph 6 - Architectural Recommendations**
+  - Provide 2-3 specific, actionable improvements
+  - Suggest performance optimizations based on current stack
+  - Recommend architectural enhancements or modernization opportunities
+  
+  ### Writing Standards:
+  - **Evidence-based**: Every statement must be supported by analysis findings
+  - **Specific and technical**: Use exact technology names and versions
+  - **Professional tone**: Business-focused yet technically detailed
+  - **Constructive**: Improvement suggestions should be practical and valuable
+  
+  ## 📊 COMPONENT SPECIFICATIONS
+  
+  ### Component Structure Requirements:
+  json
+  {{
+    "id": "descriptive-kebab-case-based-on-actual-component",
+    "title": "Actual Component Name from Analysis", 
+    "icon": "appropriate-lucide-icon",
+    "color": "random-tailwind-gradient",
+    "borderColor": "matching-border-color",
+    "technologies": {{
+      "primary": "Main technology extracted from analysis",
+      "framework": "Supporting framework found", 
+      "additional": "Other libraries/tools discovered"
+    }},
+    "connections": ["array-of-actual-connected-components"],
+    "position": {{ "x": "random-appropriate-value", "y": "random-appropriate-value" }},
+    "dataFlow": {{
+      "sends": ["specific-data-types-from-analysis"],
+      "receives": ["actual-data-inputs-identified"]
+    }},
+    "purpose": "Specific role based on analysis findings"
+}}
+  
+  ### Icon Selection Guide (Lucide):
+  Choose icons that match the actual component function:
+  - **Web Apps**: monitor, globe, smartphone, layout-dashboard, app-window
+  - **APIs/Services**: server, cloud, cpu, network, api, database
+  - **Databases**: database, hard-drive, archive, folder, layers
+  - **Auth Systems**: shield, key, lock, user-check, fingerprint
+  - **External APIs**: cloud, link, external-link, zap, globe
+  - **State/Cache**: refresh-cw, layers, memory-stick, hard-drive
+  
+  ## ⚡ DYNAMIC COMPONENT COUNT
+  
+  **Adaptive Sizing**:
+  - **Simple Projects**: 4-5 components (basic React app with API)
+  - **Medium Projects**: 6-7 components (Next.js with database and auth)
+  - **Complex Projects**: 8-10 components (multiple services and integrations)
+  
+  **Quality Rule**: Each component must represent a distinct architectural concern found in the analysis.
+  
+  ## 🎨 OUTPUT REQUIREMENTS
+  
+  Generate ONLY this JSON structure with components extracted from analysis findings:
+  
+  {{
+    "components": [
+      // Array of components based on actual analysis findings
+    ],
+    "connectionLabels": {{
+      // Connections between actual components with specific protocols
+    }},
+    "architectureRationale": "4-6 paragraph comprehensive analysis based on actual findings with specific improvement recommendations"
+}}
+  
+  ## 🚀 SUCCESS CRITERIA
+  
+  ✅ **Analysis-Driven**: All components must be based on actual findings, not assumptions
+  ✅ **Technology Accuracy**: Use exact technologies and versions from analysis
+  ✅ **Logical Connections**: Connect components based on actual data flow patterns
+  ✅ **Professional Naming**: Use clear, business-appropriate component names
+  ✅ **Comprehensive Rationale**: Detailed analysis with evidence-based insights
+  ✅ **Actionable Improvements**: Specific, practical architectural recommendations
+  ✅ **Framework Awareness**: Leverage React/Next.js specific patterns and best practices
+  
+  **CRITICAL**: Do not create generic "Frontend", "Backend", "Database" components. Instead, create specific components like "Next.js App Router", "Supabase Database", "Stripe Payment API" based on what's actually found in the analysis.`);
         // Generate final architecture based on analysis
         const finalChain = finalPrompt.pipe(llm2).pipe(new StringOutputParser());
         const architecture = await finalChain.invoke({
             analysis_findings: JSON.stringify(analysisResult.output),
             name: name,
-            framework: framework,
-            repoFullName: repoFullName
+            framework: framework
         });
         console.log("Step 10")
         return architecture;

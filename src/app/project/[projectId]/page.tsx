@@ -48,46 +48,28 @@ const ProjectPage = () => {
   const { isLoaded, isSignedIn, user } = useUser();
 
     useEffect(() => {
-      alert("I am called - isLoaded: " + isLoaded + " isSignedIn: " + isSignedIn + " projectId: " + projectId)
       
       // Only run when Clerk is fully loaded
-      if (!isLoaded) {
-        alert("Clerk not loaded yet, skipping")
-        return;
-      }
+      if (!isLoaded)return;
       
       setIsLoading(true);
 
       const loadProject = async () => {
         if (!projectId || !isSignedIn) {
-          alert("Missing projectId or not signed in")
           setIsLoading(false);
           return;
         }
         
         try {
-          alert("Getting project data")
           const projectData = await getProject(projectId);
-          console.log("Project data: ", projectData)
-          alert("Project data awaited")
      
           if (projectData) { 
-            alert("Project data loaded")
-            console.log("Project data: ", projectData)
-            alert(typeof projectData)
             setProject(projectData);
-            alert("Project data set")
-            // Note: project state won't be updated immediately here due to React's async state updates
-            console.log("Project state (will be previous value): ", project)
-            console.log("Project data name (current): ", projectData?.name)
-            alert("Project data name: " + projectData?.name)
             setIsLoading(false);
 
             loadArchitecture(projectData);
           }
         } catch (error) {
-          console.error("Error loading project:", error);
-          alert("Error loading project: " + error)
         } finally { 
           setIsLoading(false);
         }
@@ -95,7 +77,7 @@ const ProjectPage = () => {
 
       const loadArchitecture = async (theProjectData: any) => {
         if(theProjectData?.ProjectArchitecture && theProjectData.ProjectArchitecture.length > 0){
-          alert("Not again bitch")
+
                   // Load existing architecture
                   const existingArchitecture = theProjectData.ProjectArchitecture[0];
                   const architectureData = {
@@ -108,9 +90,7 @@ const ProjectPage = () => {
                   setIsArchitectureGenerating(false);
               }else{
                 setIsArchitectureGenerating(true);
-                  alert("Generating Architecture...");
                   const architectureResult = await generateArchitecture(projectId);
-                  alert("Architecture done");
                   setArchitectureData(architectureResult);
                   // Clean the result to remove markdown code blocks if present
                   let cleanedResult = architectureResult;
@@ -130,11 +110,9 @@ const ProjectPage = () => {
                   setArchitectureData(parsedArchitecture);
                   console.log(parsedArchitecture);
 
-                  alert("Before save");
                   
                   // Save the architecture to the database
                   if (parsedArchitecture && parsedArchitecture.components && parsedArchitecture.architectureRationale) {
-                      alert("In save");
                       const saveResult = await saveProjectArchitecture(
                           projectId,
                           parsedArchitecture.architectureRationale,
@@ -142,11 +120,9 @@ const ProjectPage = () => {
                           parsedArchitecture.connectionLabels || {},
                           parsedArchitecture.componentPositions || {}
                       ); 
-                      alert("Save done");
                       
                       if (saveResult.error) {
                           console.error("Failed to save architecture:", saveResult.error);
-                          alert("Architecture generated but failed to save. Please try again.");
                       } else {
                           console.log("Architecture saved successfully:", saveResult.architecture);
                       }
@@ -157,7 +133,6 @@ const ProjectPage = () => {
           }
 
       loadProject();
-      alert("ALL DONE")
       
         
   }, [projectId, isSignedIn, isLoaded]);
