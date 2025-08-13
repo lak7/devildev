@@ -87,3 +87,49 @@ export async function saveProjectArchitecture(
         return { error: 'Failed to save project architecture' };
     }
 }
+
+// Update only component positions for a project (for performance during dragging)
+export async function updateProjectComponentPositions(
+    projectId: string, 
+    positions: Record<string, { x: number; y: number }>
+) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        // First verify the project belongs to the user
+        const project = await db.project.findUnique({
+            where: { id: projectId, userId: userId },
+            select: { id: true }
+        });
+        
+        if (!project) {
+            return { error: 'Project not found' };
+        }
+
+        // Check if ProjectArchitecture exists
+        const existingArchitecture = await db.projectArchitecture.findUnique({
+            where: { projectId: projectId }
+        });
+        
+        if (!existingArchitecture) {
+            return { error: 'Architecture not found' };
+        }
+
+        // Update only positions
+        const savedArchitecture = await db.projectArchitecture.update({
+            where: { projectId: projectId },
+            data: {
+                componentPositions: positions,
+                updatedAt: new Date()
+            }
+        });
+
+        return { success: true, architecture: savedArchitecture };
+    } catch (error) {
+        console.error("Error updating component positions:", error);
+        return { error: 'Failed to update positions' };
+    }
+}

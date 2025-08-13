@@ -1071,7 +1071,7 @@ export default function RevArchitecture({
   }
 
   return (
-    <div className="min-h-full bg-black text-white overflow-hidden relative">
+    <div className="min-h-full bg-black text-white overflow-hidden relative w-full h-full">
       {/* Canvas Controls */}
       <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
         <div className="bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg p-2 flex items-center gap-2">
@@ -1431,7 +1431,7 @@ export default function RevArchitecture({
                   <CardTitle
                     className={`text-xl font-bold transition-colors duration-300 ${
                       isSelected ? "text-cyan-300" : "text-white"
-                    }`}
+                    }`} 
                     title={component.title}
                   >
                     <div className="truncate">

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getProject, saveProjectArchitecture } from "../../../../actions/project";
+import { getProject, saveProjectArchitecture, updateProjectComponentPositions } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
@@ -33,6 +33,7 @@ const ProjectPage = () => {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isArchitectureGenerating, setIsArchitectureGenerating] = useState(false);
   const [architectureData, setArchitectureData] = useState<any>(null);
+  const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(35);
@@ -49,6 +50,39 @@ const ProjectPage = () => {
   const [isArchitectureFullscreen, setIsArchitectureFullscreen] = useState(false);
 
   const { isLoaded, isSignedIn, user } = useUser();
+
+  // Ref to store the debounce timer
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handler for component position changes
+  const handlePositionsChange = (positions: Record<string, { x: number; y: number }>) => {
+    setCustomPositions(positions);
+    
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Debounced save to database (only save after user stops dragging for 500ms)
+    debounceTimerRef.current = setTimeout(async () => {
+      if (projectId) {
+        try {
+          await updateProjectComponentPositions(projectId, positions);
+        } catch (error) {
+          console.error('Failed to save positions:', error);
+        }
+      }
+    }, 500);
+  };
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
     useEffect(() => {
       
@@ -90,6 +124,8 @@ const ProjectPage = () => {
                       architectureRationale: existingArchitecture.architectureRationale
                   };
                   setArchitectureData(architectureData);
+                  // Load custom positions from the database
+                  setCustomPositions(existingArchitecture.componentPositions || {});
                   setIsArchitectureGenerating(false);
               }else{
                 setIsArchitectureGenerating(true);
@@ -130,6 +166,9 @@ const ProjectPage = () => {
                           console.log("Architecture saved successfully:", saveResult.architecture);
                       }
                   }
+                  
+                  // Initialize custom positions for newly generated architecture
+                  setCustomPositions(parsedArchitecture.componentPositions || {});
                   
                   setIsArchitectureGenerating(false);
               }
@@ -583,16 +622,21 @@ const ProjectPage = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto min-h-0 p-6">
+          <div className="flex-1 overflow-hidden min-h-0">
             
             {/* Architecture Tab */}
             <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
-              <RevArchitecture architectureData={architectureData} isFullscreen={false} />
+              <RevArchitecture 
+                architectureData={architectureData} 
+                isFullscreen={false}
+                customPositions={customPositions}
+                onPositionsChange={handlePositionsChange}
+              />
             </div>
             
             {/* Documentation Tab */}
             <div className={`h-full ${activeTab === 'docs' ? 'block' : 'hidden'}`}>
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center justify-center h-full p-6">
                 <div className="text-center space-y-4">
                   <div className="w-16 h-16 bg-gray-800/50 rounded-2xl flex items-center justify-center mx-auto">
                     <FileText className="h-8 w-8 text-gray-400" />
@@ -652,6 +696,8 @@ const ProjectPage = () => {
             <RevArchitecture 
               architectureData={architectureData} 
               isFullscreen={true}
+              customPositions={customPositions}
+              onPositionsChange={handlePositionsChange}
             />
           </div>
         </div>
