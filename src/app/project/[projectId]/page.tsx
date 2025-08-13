@@ -5,12 +5,13 @@ import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getProject } from "../../../../actions/project";
+import { getProject, saveProjectArchitecture } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
+import { Json } from 'langchain/tools';
+import RevArchitecture from '@/components/core/revArchitecture';
 
 interface Project {
-  id: string;
   name: string;
   framework: string;
   createdAt: Date;
@@ -23,9 +24,9 @@ const ProjectPage = () => {
     const params = useParams();
   const router = useRouter();
   const projectId = params?.projectId as string;
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'architecture' | 'docs'>('overview');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'docs'>('architecture');
   const [inputMessage, setInputMessage] = useState('');
   const [textareaHeight, setTextareaHeight] = useState('60px');
   const [messages, setMessages] = useState<any[]>([]);
@@ -47,53 +48,119 @@ const ProjectPage = () => {
   const { isLoaded, isSignedIn, user } = useUser();
 
     useEffect(() => {
-        const loadProject = async () => {
-      if (!projectId || !isSignedIn) return;
+      alert("I am called - isLoaded: " + isLoaded + " isSignedIn: " + isSignedIn + " projectId: " + projectId)
       
-      try {
-        const projectData = await getProject(projectId);
-        if (projectData) {
-          setProject(projectData as Project);
-        }
-      } catch (error) {
-        console.error("Error loading project:", error);
-      } finally { 
-        setIsLoading(false);
+      // Only run when Clerk is fully loaded
+      if (!isLoaded) {
+        alert("Clerk not loaded yet, skipping")
+        return;
       }
-    };
+      
+      setIsLoading(true);
 
-        loadProject();
-
-        const loadArchitecture = async () => {
-            if(project?.ProjectArchitecture){
-                setIsArchitectureGenerating(false);
-            }else{
-                alert("Generating Architecture...");
-                setIsArchitectureGenerating(true);
-                const architectureResult = await generateArchitecture(projectId);
-                setArchitectureData(architectureResult);
-                // Clean the result to remove markdown code blocks if present
-                let cleanedResult = architectureResult;
-                if (typeof architectureResult === 'string') {
-                    // Remove markdown code blocks (```json...``` or ```...```)
-                    cleanedResult = architectureResult
-                    .replace(/^```json\s*/i, '')
-                    .replace(/^```\s*/, '')
-                    .replace(/\s*```\s*$/, '')
-                    .trim();
-                }
-                
-                // Parse the JSON result
-                const parsedArchitecture = typeof cleanedResult === 'string' 
-                    ? JSON.parse(cleanedResult) 
-                    : cleanedResult; 
-                setArchitectureData(parsedArchitecture);
-                console.log(parsedArchitecture);
-                setIsArchitectureGenerating(false);
-            }
+      const loadProject = async () => {
+        if (!projectId || !isSignedIn) {
+          alert("Missing projectId or not signed in")
+          setIsLoading(false);
+          return;
         }
-        loadArchitecture();
-  }, [projectId, isSignedIn]);
+        
+        try {
+          alert("Getting project data")
+          const projectData = await getProject(projectId);
+          console.log("Project data: ", projectData)
+          alert("Project data awaited")
+     
+          if (projectData) { 
+            alert("Project data loaded")
+            console.log("Project data: ", projectData)
+            alert(typeof projectData)
+            setProject(projectData);
+            alert("Project data set")
+            // Note: project state won't be updated immediately here due to React's async state updates
+            console.log("Project state (will be previous value): ", project)
+            console.log("Project data name (current): ", projectData?.name)
+            alert("Project data name: " + projectData?.name)
+            setIsLoading(false);
+
+            loadArchitecture(projectData);
+          }
+        } catch (error) {
+          console.error("Error loading project:", error);
+          alert("Error loading project: " + error)
+        } finally { 
+          setIsLoading(false);
+        }
+      };
+
+      const loadArchitecture = async (theProjectData: any) => {
+        if(theProjectData?.ProjectArchitecture && theProjectData.ProjectArchitecture.length > 0){
+          alert("Not again bitch")
+                  // Load existing architecture
+                  const existingArchitecture = theProjectData.ProjectArchitecture[0];
+                  const architectureData = {
+                      components: existingArchitecture.components,
+                      connectionLabels: existingArchitecture.connectionLabels,
+                      componentPositions: existingArchitecture.componentPositions,
+                      architectureRationale: existingArchitecture.architectureRationale
+                  };
+                  setArchitectureData(architectureData);
+                  setIsArchitectureGenerating(false);
+              }else{
+                setIsArchitectureGenerating(true);
+                  alert("Generating Architecture...");
+                  const architectureResult = await generateArchitecture(projectId);
+                  alert("Architecture done");
+                  setArchitectureData(architectureResult);
+                  // Clean the result to remove markdown code blocks if present
+                  let cleanedResult = architectureResult;
+                  if (typeof architectureResult === 'string') {
+                      // Remove markdown code blocks (```json...``` or ```...```)
+                      cleanedResult = architectureResult
+                      .replace(/^```json\s*/i, '')
+                      .replace(/^```\s*/, '')
+                      .replace(/\s*```\s*$/, '')
+                      .trim();
+                  }
+                  
+                  // Parse the JSON result
+                  const parsedArchitecture = typeof cleanedResult === 'string' 
+                      ? JSON.parse(cleanedResult) 
+                      : cleanedResult;  
+                  setArchitectureData(parsedArchitecture);
+                  console.log(parsedArchitecture);
+
+                  alert("Before save");
+                  
+                  // Save the architecture to the database
+                  if (parsedArchitecture && parsedArchitecture.components && parsedArchitecture.architectureRationale) {
+                      alert("In save");
+                      const saveResult = await saveProjectArchitecture(
+                          projectId,
+                          parsedArchitecture.architectureRationale,
+                          parsedArchitecture.components,
+                          parsedArchitecture.connectionLabels || {},
+                          parsedArchitecture.componentPositions || {}
+                      ); 
+                      alert("Save done");
+                      
+                      if (saveResult.error) {
+                          console.error("Failed to save architecture:", saveResult.error);
+                          alert("Architecture generated but failed to save. Please try again.");
+                      } else {
+                          console.log("Architecture saved successfully:", saveResult.architecture);
+                      }
+                  }
+                  
+                  setIsArchitectureGenerating(false);
+              }
+          }
+
+      loadProject();
+      alert("ALL DONE")
+      
+        
+  }, [projectId, isSignedIn, isLoaded]);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -139,7 +206,7 @@ const ProjectPage = () => {
     e.preventDefault();
     setIsResizing(true);
   };
-
+  
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
      
@@ -168,6 +235,14 @@ const ProjectPage = () => {
     setTextareaHeight('60px');
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-black">
+        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+      </div>
+    );
+  }
+
   if (!project?.name) {
     return (
       <div className="flex items-center justify-center h-screen bg-black text-white">
@@ -184,13 +259,7 @@ const ProjectPage = () => {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-black">
-        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
-      </div>
-    );
-  }
+ 
 
   if(isArchitectureGenerating){
     return (
@@ -496,16 +565,9 @@ const ProjectPage = () => {
           {/* Tab Headers */}
           <div className="flex items-center justify-between px-4 py-3 rounded-t-xl border-b border-gray-800">
             <div className="flex space-x-1"> 
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'overview'
-                    ? 'text-white bg-gray-700/50'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                Overview
-              </button>
+              {/* <button
+              
+              */}
               
               <button
                 onClick={() => setActiveTab('architecture')}
@@ -541,102 +603,10 @@ const ProjectPage = () => {
 
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto min-h-0 p-6">
-            {/* Overview Tab */}
-            <div className={`h-full ${activeTab === 'overview' ? 'block' : 'hidden'}`}>
-              <div className="space-y-6">
-                {/* Project Header */}
-                <div className="text-center space-y-4">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-2xl">
-                    <Code className="h-8 w-8 text-red-400" />
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">{project.name}</h1>
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-sm font-medium">
-                        {project.framework}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Project Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-blue-500/20 rounded-lg">
-                        <Database className="h-5 w-5 text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-400">Created</p>
-                        <p className="text-white font-medium">
-                          {new Date(project.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-green-500/20 rounded-lg">
-                        <Server className="h-5 w-5 text-green-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-400">Last Updated</p>
-                        <p className="text-white font-medium">
-                          {new Date(project.updatedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    <button className="flex items-center space-x-3 p-4 bg-gray-800/30 hover:bg-gray-800/50 border border-gray-700/50 hover:border-gray-600/50 rounded-xl transition-all duration-200 group">
-                      <FileText className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
-                      <div className="text-left">
-                        <p className="text-white font-medium">Generate Documentation</p>
-                        <p className="text-sm text-gray-400">Create comprehensive project docs</p>
-                      </div>
-                    </button>
-                    
-                    <button className="flex items-center space-x-3 p-4 bg-gray-800/30 hover:bg-gray-800/50 border border-gray-700/50 hover:border-gray-600/50 rounded-xl transition-all duration-200 group">
-                      <BarChart3 className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
-                      <div className="text-left">
-                        <p className="text-white font-medium">View Analytics</p>
-                        <p className="text-sm text-gray-400">Track project metrics and performance</p>
-                      </div>
-                    </button>
-                    
-                    <button className="flex items-center space-x-3 p-4 bg-gray-800/30 hover:bg-gray-800/50 border border-gray-700/50 hover:border-gray-600/50 rounded-xl transition-all duration-200 group">
-                      <Globe className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
-                      <div className="text-left">
-                        <p className="text-white font-medium">Deploy Project</p>
-                        <p className="text-sm text-gray-400">Deploy to production environment</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
             
             {/* Architecture Tab */}
             <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-gray-800/50 rounded-2xl flex items-center justify-center mx-auto">
-                    <BarChart3 className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white mb-2">Architecture View</h3>
-                    <p className="text-gray-400 max-w-md">
-                      Project architecture visualization will be displayed here. Connect with the chat to generate your project's architecture diagram.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <RevArchitecture architectureData={architectureData} />
             </div>
             
             {/* Documentation Tab */}
