@@ -22,7 +22,7 @@ import {
   ExternalLink, Home, User, MessageSquare, MessageCircle, Send, Phone,
   Mic, MicOff, VideoOff, Volume2, MoreHorizontal, MoreVertical,
   ZoomIn, ZoomOut, Hand, MousePointer,
-  Cross
+  Cross, Info
 } from "lucide-react"
 
 interface Position {
@@ -137,7 +137,7 @@ const DEFAULT_POSITIONS: Record<number, Position[]> = {
   3: [
     { x: 100, y: 150 },
     { x: 500, y: 100 },
-    { x: 300, y: 350 }
+    { x: 300, y: 370 }
   ],
   4: [
     { x: 100, y: 100 },
@@ -149,85 +149,85 @@ const DEFAULT_POSITIONS: Record<number, Position[]> = {
     { x: 100, y: 125 },
     { x: 475, y: 250 },
     { x: 850, y: 125 },
-    { x: 100, y: 450 },
-    { x: 850, y: 450 }
+    { x: 100, y: 440 },
+    { x: 850, y: 440 }
   ],
   6: [
     { x: 100, y: 100 },
     { x: 475, y: 225 },
     { x: 850, y: 100 },
-    { x: 100, y: 450 },
-    { x: 475, y: 575 },
+    { x: 100, y: 440 },
+    { x: 475, y: 565 },
     { x: 850, y: 400 }
   ],
   7: [
     { x: 100, y: 50 },
     { x: 510, y: 50 },
     { x: 900, y: 50 },
-    { x: 300, y: 325 },
-    { x: 700, y: 325 },
-    { x: 250, y: 600 },
-    { x: 750, y: 600 }
+    { x: 300, y: 330 },
+    { x: 700, y: 330 },
+    { x: 250, y: 610 },
+    { x: 750, y: 610 }
   ],
   8: [
     { x: 100, y: 50 },
     { x: 510, y: 50 },
     { x: 900, y: 50 },
-    { x: 70, y: 325 },
-    { x: 510, y: 325 },
-    { x: 930, y: 325 },
-    { x: 300, y: 600 },
-    { x: 700, y: 600 }
+    { x: 70, y: 330 },
+    { x: 510, y: 330 },
+    { x: 930, y: 330 },
+    { x: 300, y: 610 },
+    { x: 700, y: 610 }
   ],
   9: [
     { x: 100, y: 50 },
     { x: 510, y: 50 },
     { x: 900, y: 50 },
-    { x: 70, y: 325 },
-    { x: 510, y: 325 },
-    { x: 930, y: 325 },
-    { x: 100, y: 600 },
-    { x: 500, y: 600 },
-    { x: 900, y: 600 }
+    { x: 70, y: 330 },
+    { x: 510, y: 330 },
+    { x: 930, y: 330 },
+    { x: 100, y: 610 },
+    { x: 500, y: 610 },
+    { x: 900, y: 610 }
   ],
   10: [
     { x: 50, y: 50 },
     { x: 400, y: 50 },
     { x: 750, y: 50 },
     { x: 1100, y: 50 },
-    { x: 200, y: 350 },
-    { x: 510, y: 350 },
-    { x: 820, y: 350 },
-    { x: 100, y: 650 },
-    { x: 510, y: 650 },
-    { x: 900, y: 650 }
+    { x: 200, y: 330 },
+    { x: 510, y: 330 },
+    { x: 820, y: 330 },
+    { x: 100, y: 610 },
+    { x: 510, y: 610 },
+    { x: 900, y: 610 }
   ],
   11: [
     { x: 50, y: 50 },
     { x: 400, y: 50 },
     { x: 750, y: 50 },
     { x: 1100, y: 50 },
-    { x: 200, y: 325 },
-    { x: 510, y: 325 },
-    { x: 820, y: 325 },
-    { x: 50, y: 650 },
-    { x: 400, y: 650 },
-    { x: 750, y: 650 },
-    { x: 1100, y: 650 }
+    { x: 200, y: 290 },
+    { x: 510, y: 290 },
+    { x: 820, y: 290 },
+    { x: 50, y: 530 },
+    { x: 400, y: 530 },
+    { x: 750, y: 530 },
+    { x: 1100, y: 530 }
   ],
   12: [
     { x: 50, y: 50 },
     { x: 400, y: 50 },
     { x: 750, y: 50 },
     { x: 1100, y: 50 },
-    { x: 50, y: 325 },
-    { x: 400, y: 325 },
-    { x: 750, y: 325 },
-    { x: 1100, y: 325 },
-    { x: 50, y: 650 },
-    { x: 400, y: 650 },
-    { x: 750, y: 650 },
-    { x: 1100, y: 650 },
+    { x: 50, y: 290 },
+    { x: 400, y: 290 },
+    { x: 750, y: 290 },
+    { x: 1100, y: 290 },
+    { x: 50, y: 530 },
+    { x: 400, y: 530 },
+    { x: 750, y: 530 },
+    { x: 1100, y: 530 },
   ]
 }
 
@@ -261,7 +261,7 @@ const iconMap: Record<string, any> = {
   RefreshCw, Maximize, Minimize, Copy, Scissors, Clipboard, Link,
   ExternalLink, Home, User, MessageSquare, MessageCircle, Send, Phone,
   Mic, MicOff, VideoOff, Volume2, MoreHorizontal, MoreVertical,
-  ZoomIn, ZoomOut, Hand, MousePointer,
+  ZoomIn, ZoomOut, Hand, MousePointer, Info,
   // Add aliases for common variations
   Microphone: Mic,
   Sort: Filter // Using Filter as Sort alias since Sort icon doesn't exist in lucide-react
@@ -473,6 +473,8 @@ export default function RevArchitecture({
   const [isDragging, setIsDragging] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 })
   const [animationKey, setAnimationKey] = useState(0)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [detailsComponent, setDetailsComponent] = useState<ComponentData | null>(null)
   
   // Canvas transform state
   const getInitialScale = (componentCount: number) => {
@@ -498,8 +500,8 @@ export default function RevArchitecture({
   const canvasRef = useRef<HTMLDivElement>(null)
 
   // Component dimensions
-  const COMPONENT_WIDTH = 280
-  const COMPONENT_HEIGHT = 210
+  const COMPONENT_WIDTH = 325
+  const COMPONENT_HEIGHT = 250
   const MIN_SCALE = 0.1
   const MAX_SCALE = 3
 
@@ -829,6 +831,13 @@ export default function RevArchitecture({
     setComponents(processComponents(initialComponents, {}))
     setSelectedComponent(null) 
   }
+
+  const handleShowDetails = useCallback((e: React.MouseEvent, component: ComponentData) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setDetailsComponent(component)
+    setShowDetailsModal(true)
+  }, [])
 
   // NOW ALL HOOKS ARE DECLARED - SAFE TO DO CONDITIONAL RETURNS
 
@@ -1398,8 +1407,8 @@ export default function RevArchitecture({
                   <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-lg animate-pulse" />
                 )}
 
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between mb-2">
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <div className="flex items-center justify-between mb-3">
                     <div
                       className={`w-10 h-10 rounded-lg bg-gradient-to-r ${component.color} flex items-center justify-center shadow-lg transition-transform duration-300 ${
                         isSelected ? "scale-125" : isHighlighted ? "scale-110" : ""
@@ -1408,57 +1417,53 @@ export default function RevArchitecture({
                       <IconComponent className="w-5 h-5 text-white" />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Move className="w-4 h-4 text-gray-500" />
-                      {isSelected && (
-                        <div className="flex items-center gap-1">
-                          <Activity className="w-4 h-4 text-cyan-400 animate-pulse" />
-                        </div>
-                      )}
-                    </div>
+                    {/* Info Button */}
+                    <button
+                      onClick={(e) => handleShowDetails(e, component)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      className="shadow-[0_0_0_2px_#ffffff_inset] px-3 py-1 bg-transparent border border-white text-white rounded-lg font-medium transform hover:-translate-y-1 transition duration-400 cursor-pointer z-30 pointer-events-auto flex items-center gap-1.5 text-sm"
+                    >
+                      <Info className="w-3.5 h-3.5 pointer-events-none" />
+                      Info
+                    </button>
                   </div>
 
                   <CardTitle
-                    className={`text-lg font-bold transition-colors duration-300 ${
+                    className={`text-xl font-bold transition-colors duration-300 ${
                       isSelected ? "text-cyan-300" : "text-white"
                     }`}
+                    title={component.title}
                   >
-                    {component.title}
-                    {isSelected && <span className="text-xs text-cyan-400 ml-2">ACTIVE</span>}
+                    <div className="truncate">
+                      {component.title.length > 25 ? `${component.title.slice(0, 25)}...` : component.title}
+                      {isSelected && <span className="text-sm text-cyan-400 ml-2">ACTIVE</span>}
+                    </div>
                   </CardTitle>
                 </CardHeader>
 
-                <CardContent className="pt-0 space-y-2">
-                  {/* Tech Stack */}
-                  <div className="grid grid-cols-1 gap-1">
-                    {Object.entries(component.technologies).map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500 capitalize">{key}:</span>
+                <CardContent className="pt-0 px-4 pb-4 space-y-3">
+                  {/* Tech Stack - Clean and minimal */}
+                  <div className="space-y-2.5">
+                    {Object.entries(component.technologies).slice(0, 2).map(([key, value]) => (
+                      <div key={key} className="flex items-center justify-between gap-2">
+                        <span className="text-gray-400 capitalize text-sm font-medium flex-shrink-0">
+                          {key}:
+                        </span>
                         <Badge
                           variant="outline"
-                          className={`text-xs px-2 py-0 transition-colors duration-300 ${
+                          className={`text-sm px-2 py-1 transition-colors duration-300 max-w-[180px] ${
                             isSelected
                               ? "bg-cyan-900/40 border-cyan-500/50 text-cyan-300"
                               : "bg-gray-800/40 border-gray-700/50 text-gray-300"
                           }`}
+                          title={value}
                         >
-                          {value}
+                          <span className="truncate">
+                            {value}
+                          </span>
                         </Badge>
                       </div>
                     ))}
-                  </div>
-
-                  {/* Status */}
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-800/50">
-                    <div className="flex items-center gap-2">
-                    </div>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isSelected ? "text-cyan-400" : "text-gray-400"
-                      }`}
-                    >
-                      {component.connections.length} connection{component.connections.length !== 1 ? "s" : ""}
-                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -1466,6 +1471,117 @@ export default function RevArchitecture({
           })}
           </div>
         </div>
+
+      {/* Component Details Modal */}
+      {showDetailsModal && detailsComponent && (
+        <div 
+          className="fixed inset-0 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          onClick={() => setShowDetailsModal(false)}
+        >
+          <div 
+            className="bg-black border border-gray-600 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${detailsComponent.color} flex items-center justify-center`}>
+                    {(() => {
+                      const IconComponent = getIconComponent(detailsComponent.icon)
+                      return <IconComponent className="w-6 h-6 text-white" />
+                    })()}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">{detailsComponent.title}</h2>
+                    <p className="text-gray-400 text-sm">Component Details</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Technologies Section */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-3">Technologies</h3>
+                  <div className="space-y-2">
+                    {Object.entries(detailsComponent.technologies).map(([key, value]) => (
+                      <div key={key} className="flex items-center justify-start gap-4">
+                        <span className="text-gray-400 capitalize min-w-[80px]">{key}:</span>
+                        <span className="text-white font-medium">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Separator */}
+                <div className="h-px bg-gray-800"></div>
+
+                {/* Data Flow Section */}
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-3">Data Flow</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Sends */}
+                    <div>
+                      <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                        <ArrowRight className="w-4 h-4 text-gray-400" />
+                        Sends
+                      </h4>
+                      <ul className="space-y-1">
+                        {detailsComponent.dataFlow.sends.map((item, index) => (
+                          <li key={index} className="text-sm text-gray-400">• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Receives */}
+                    <div>
+                      <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                        <ArrowLeft className="w-4 h-4 text-gray-400" />
+                        Receives
+                      </h4>
+                      <ul className="space-y-1">
+                        {detailsComponent.dataFlow.receives.map((item, index) => (
+                          <li key={index} className="text-sm text-gray-400">• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Separator */}
+                <div className="h-px bg-gray-800"></div>
+
+                {/* Connections Section */}
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-3">Connections</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-400">Connected to {detailsComponent.connections.length} component{detailsComponent.connections.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {detailsComponent.connections.map((connectionId) => {
+                        const connectedComponent = components.find(c => c.id === connectionId)
+                        return connectedComponent ? (
+                          <span key={connectionId} className="text-white bg-gray-800 px-2 py-1 rounded text-sm">
+                            {connectedComponent.title}
+                          </span>
+                        ) : null
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CSS for animations */}
       <style jsx>{`
