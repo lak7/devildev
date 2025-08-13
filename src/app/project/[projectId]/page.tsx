@@ -44,6 +44,9 @@ const ProjectPage = () => {
   
   // Mobile responsive state
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Fullscreen architecture state
+  const [isArchitectureFullscreen, setIsArchitectureFullscreen] = useState(false);
 
   const { isLoaded, isSignedIn, user } = useUser();
 
@@ -567,13 +570,16 @@ const ProjectPage = () => {
               </button>
             </div>
             
-            {/* Fullscreen button */}
-            <button
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
-              title="Fullscreen View"
-            >
-              <Maximize className="h-4 w-4" />
-            </button>
+            {/* Fullscreen button - only show for architecture tab */}
+            {activeTab === 'architecture' && (
+              <button
+                onClick={() => setIsArchitectureFullscreen(true)}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
+                title="Fullscreen Architecture View"
+              >
+                <Maximize className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           {/* Tab Content */}
@@ -581,7 +587,7 @@ const ProjectPage = () => {
             
             {/* Architecture Tab */}
             <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
-              <RevArchitecture architectureData={architectureData} />
+              <RevArchitecture architectureData={architectureData} isFullscreen={false} />
             </div>
             
             {/* Documentation Tab */}
@@ -603,6 +609,53 @@ const ProjectPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Architecture Modal */}
+      {isArchitectureFullscreen && (
+        <div className="fixed inset-0 z-50 bg-black">
+          {/* Fullscreen Header */}
+          <div className="h-16 bg-black/90 backdrop-blur-sm border-b border-gray-800/50 flex items-center justify-between px-6 flex-shrink-0">
+            {/* Left side - Project Info */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 hover:opacity-80 transition-opacity group">
+                <div className="relative">
+                  <Image
+                    src="/favicon.jpg"
+                    alt="DevilDev Logo"
+                    width={32}
+                    height={32}
+                    className="rounded-lg"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-white font-semibold text-lg">
+                    {project.name}
+                  </span>
+                  <span className="text-gray-400 text-sm">•</span>
+                  <span className="text-gray-400 text-sm">Architecture</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right side - Close button */}
+            <button
+              onClick={() => setIsArchitectureFullscreen(false)}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+              title="Exit Fullscreen"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Fullscreen Architecture Content */}
+          <div className="h-[calc(100vh-4rem)] overflow-hidden">
+            <RevArchitecture 
+              architectureData={architectureData} 
+              isFullscreen={true}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Custom Scrollbar Styles */}
       <style jsx global>{`

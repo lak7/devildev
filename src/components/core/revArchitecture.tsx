@@ -1436,7 +1436,6 @@ export default function RevArchitecture({
                   >
                     <div className="truncate">
                       {component.title.length > 25 ? `${component.title.slice(0, 25)}...` : component.title}
-                      {isSelected && <span className="text-sm text-cyan-400 ml-2">ACTIVE</span>}
                     </div>
                   </CardTitle>
                 </CardHeader>
