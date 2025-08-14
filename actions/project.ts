@@ -14,6 +14,7 @@ const llm = new ChatOpenAI({
 export interface ProjectMessage {
     id: string;
     type: 'user' | 'assistant';
+    prompt?: string;
     content: string;
     timestamp: string;
 }

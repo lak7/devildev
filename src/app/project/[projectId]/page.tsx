@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
-import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server } from 'lucide-react';
+import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
@@ -59,6 +59,9 @@ const ProjectPage = () => {
   
   // Fullscreen architecture state
   const [isArchitectureFullscreen, setIsArchitectureFullscreen] = useState(false);
+  
+  // Copy state for prompts
+  const [copiedPrompts, setCopiedPrompts] = useState<Record<string, boolean>>({});
 
   const { isLoaded, isSignedIn, user } = useUser();
 
@@ -94,6 +97,21 @@ const ProjectPage = () => {
       }
     };
   }, []);
+
+  // Copy prompt function
+  const copyPrompt = async (messageId: string, prompt: string) => {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopiedPrompts(prev => ({ ...prev, [messageId]: true }));
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedPrompts(prev => ({ ...prev, [messageId]: false }));
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy prompt:', error);
+    }
+  };
 
     useEffect(() => {
       
@@ -323,8 +341,9 @@ const ProjectPage = () => {
         console.log("This is reponse butch: ", parsedResponse);
       // For now, just add a simple response
       const assistantMessage: ProjectMessage = {
-        id: generateMessageId(),
+        id: generateMessageId(), 
         type: 'assistant',
+        prompt: parsedResponse.prompt,
         content: parsedResponse.response,
         timestamp: new Date().toISOString()
       };
@@ -566,29 +585,58 @@ const ProjectPage = () => {
 
             {/* Display actual messages from database */}
             {messages.map((message, index) => (
-              <div key={message.id || `fallback-${index}`} className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-start'}`}>
-                {message.type === 'assistant' && (
-                  <div className="mr-3 flex-shrink-0">
-                    <Image
-                      src="/favicon.jpg"
-                      alt="Assistant"
-                      width={32}
-                      height={32}
-                      className="rounded-full"
-                    />
+              <div key={message.id || `fallback-${index}`} className={`flex flex-col ${message.type === 'user' ? 'items-start' : 'items-start'}`}>
+                <div className="flex w-full">
+                  {message.type === 'assistant' && (
+                    <div className="mr-3 flex-shrink-0">
+                      <Image
+                        src="/favicon.jpg"
+                        alt="Assistant"
+                        width={32}
+                        height={32}
+                        className="rounded-full"
+                      />
+                    </div>
+                  )}
+                  {message.type === 'user' && (
+                    <div className="mr-1 flex-shrink-0">
+                      <Avatar className="size-8">
+                        <AvatarImage src={user?.imageUrl} alt="User" />
+                        <AvatarFallback>U</AvatarFallback>
+                      </Avatar>
+                    </div>
+                  )}
+                  <div className="max-w-[80%] rounded-2xl px-2 py-1 text-white">
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   </div>
-                )}
-                {message.type === 'user' && (
-                  <div className="mr-1 flex-shrink-0">
-                    <Avatar className="size-8">
-                      <AvatarImage src={user?.imageUrl} alt="User" />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                  </div>
-                )}
-                <div className="max-w-[80%] rounded-2xl px-2 py-1 text-white">
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
+                
+                {/* Prompt box - only show for assistant messages with prompt */}
+                {message.type === 'assistant' && message.prompt && (
+                  <div className="w-full mt-3 ml-11">
+                    <div className="border border-gray-600 rounded-lg bg-gray-900/30 relative">
+                      {/* Copy button */}
+                      <button
+                        onClick={() => copyPrompt(message.id, message.prompt!)}
+                        className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200 z-10"
+                        title="Copy prompt"
+                      >
+                        {copiedPrompts[message.id] ? (
+                          <Check className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </button>
+                      
+                      {/* Prompt content with scrollbar */}
+                      <div className="p-3 pr-12 max-h-60 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+                        <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono break-words">
+                          {message.prompt}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
 
