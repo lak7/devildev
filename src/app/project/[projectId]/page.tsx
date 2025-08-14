@@ -65,6 +65,9 @@ const ProjectPage = () => {
 
   const { isLoaded, isSignedIn, user } = useUser();
 
+  // Auto-scroll ref for messages
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   // Ref to store the debounce timer
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -247,6 +250,11 @@ const ProjectPage = () => {
     
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isChatLoading]);
 
   // Handle mouse events for resizing
   useEffect(() => {
@@ -459,10 +467,8 @@ const ProjectPage = () => {
         {/* Center - Project Info */}
         <div className="flex items-center space-x-3">
           <div className="hidden md:flex items-center space-x-2 px-3 py-1 bg-gray-800/50 rounded-lg border border-gray-700/50">
-            <Code className="h-4 w-4 text-red-400" />
+          {project.framework === "react" ? <Image src="/react.png" alt="Project" width={25} height={25} /> : <Image src="/nextjs.png" alt="Project" width={25} height={25} />}
             <span className="text-sm font-medium">{project.name}</span>
-            <span className="text-xs text-gray-400">•</span>
-            <span className="text-xs text-gray-400">{project.framework}</span>
           </div>
         </div>
 
@@ -613,7 +619,7 @@ const ProjectPage = () => {
                 
                 {/* Prompt box - only show for assistant messages with prompt */}
                 {message.type === 'assistant' && message.prompt && (
-                  <div className="w-full mt-3 ml-11">
+                  <div className="w-full mt-3 ">
                     <div className="border border-gray-600 rounded-lg bg-gray-900/30 relative">
                       {/* Copy button */}
                       <button
@@ -656,6 +662,9 @@ const ProjectPage = () => {
                 </div>
               </div>
             )}
+            
+            {/* Auto-scroll target */}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Input Area */}
