@@ -135,6 +135,7 @@ model Project {
   language  String?
   repoId String? @unique
   repoFullName String?
+  messages Json[] @default([])
   packageJson Json?
   framework String?
   repoContent Json?
@@ -143,19 +144,10 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  ProjectChat ProjectChat?
   ProjectArchitecture ProjectArchitecture[]
 }
 
-model ProjectChat {
-  id        String   @id @default(uuid())
-  projectId String   @unique
-  messages  Json[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-}
+
 
 model ProjectArchitecture {
   id        String   @id @default(uuid())

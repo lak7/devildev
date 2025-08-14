@@ -592,7 +592,7 @@ const finalPrompt = PromptTemplate.fromTemplate(`
             framework: framework
         });
         console.log("Step 10")
-        return architecture;
+        return {architecture: architecture, detailedAnalysis: JSON.stringify(analysisResult.output)};
 
     } catch (error) {
         console.error("Error in generateArchitecture:", error);

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getProject, saveProjectArchitecture, updateProjectComponentPositions } from "../../../../actions/project";
+import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
@@ -18,18 +18,29 @@ interface Project {
   updatedAt: Date;
   ProjectArchitecture: any;
   userId: string;
+  messages: ProjectMessage[];
 }
 
 const ProjectPage = () => {
     const params = useParams();
   const router = useRouter();
   const projectId = params?.projectId as string;
+  
+  // Counter for unique message IDs
+  const messageIdCounterRef = useRef(0);
+  
+  // Helper function to generate unique message IDs
+  const generateMessageId = () => {
+    messageIdCounterRef.current += 1;
+    return `${Date.now()}-${messageIdCounterRef.current}`;
+  };
+  
   const [project, setProject] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'architecture' | 'docs'>('architecture');
   const [inputMessage, setInputMessage] = useState('');
   const [textareaHeight, setTextareaHeight] = useState('60px');
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ProjectMessage[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isArchitectureGenerating, setIsArchitectureGenerating] = useState(false);
   const [architectureData, setArchitectureData] = useState<any>(null);
@@ -100,8 +111,18 @@ const ProjectPage = () => {
         try {
           const projectData = await getProject(projectId);
      
-          if (projectData) { 
+          if (projectData && !('error' in projectData)) { 
             setProject(projectData);
+            
+            // Load existing messages from the project
+            if (projectData.messages && Array.isArray(projectData.messages)) {
+              const loadedMessages = (projectData.messages as unknown as ProjectMessage[]).map((msg, index) => ({
+                ...msg,
+                id: msg.id || generateMessageId() // Ensure every message has an ID
+              }));
+              setMessages(loadedMessages);
+            }
+            
             setIsLoading(false);
 
             loadArchitecture(projectData);
@@ -117,11 +138,12 @@ const ProjectPage = () => {
 
                   // Load existing architecture
                   const existingArchitecture = theProjectData.ProjectArchitecture[0];
-                  const architectureData = {
+                  const architectureData = { 
                       components: existingArchitecture.components,
                       connectionLabels: existingArchitecture.connectionLabels,
                       componentPositions: existingArchitecture.componentPositions,
-                      architectureRationale: existingArchitecture.architectureRationale
+                      architectureRationale: existingArchitecture.architectureRationale,
+                      detailedAnalysis: existingArchitecture.detailedAnalysis
                   };
                   setArchitectureData(architectureData);
                   // Load custom positions from the database
@@ -129,10 +151,9 @@ const ProjectPage = () => {
                   setIsArchitectureGenerating(false);
               }else{
                 setIsArchitectureGenerating(true);
-                  const architectureResult = await generateArchitecture(projectId);
-                  setArchitectureData(architectureResult);
+                  const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
                   // Clean the result to remove markdown code blocks if present
-                  let cleanedResult = architectureResult;
+                  let cleanedResult = architectureResult; 
                   if (typeof architectureResult === 'string') {
                       // Remove markdown code blocks (```json...``` or ```...```)
                       cleanedResult = architectureResult
@@ -146,8 +167,16 @@ const ProjectPage = () => {
                   const parsedArchitecture = typeof cleanedResult === 'string' 
                       ? JSON.parse(cleanedResult) 
                       : cleanedResult;  
+                  parsedArchitecture.detailedAnalysis = detailedAnalysis;
                   setArchitectureData(parsedArchitecture);
-                  console.log(parsedArchitecture);
+                  console.log(parsedArchitecture); 
+
+                  const architectureRationaleParagraphs = parsedArchitecture.architectureRationale.split(/\n\s*\n/);
+                  // Get first and last paragraphs
+                  const firstParagraph = architectureRationaleParagraphs[0].trim();
+                  const lastParagraph = architectureRationaleParagraphs[architectureRationaleParagraphs.length - 1].trim();
+
+                  const initialMessage = firstParagraph + "\n\n" + lastParagraph;
 
                   
                   // Save the architecture to the database
@@ -157,13 +186,23 @@ const ProjectPage = () => {
                           parsedArchitecture.architectureRationale,
                           parsedArchitecture.components,
                           parsedArchitecture.connectionLabels || {},
-                          parsedArchitecture.componentPositions || {}
+                          parsedArchitecture.componentPositions || {},
+                          initialMessage
                       ); 
                       
                       if (saveResult.error) {
                           console.error("Failed to save architecture:", saveResult.error);
                       } else {
                           console.log("Architecture saved successfully:", saveResult.architecture);
+                          
+                          // Add the initial message to local state
+                          const assistantMessage: ProjectMessage = {
+                              id: generateMessageId(),
+                              type: 'assistant',
+                              content: initialMessage,
+                              timestamp: new Date().toISOString()
+                          };
+                          setMessages([assistantMessage]);
                       }
                   }
                   
@@ -242,14 +281,76 @@ const ProjectPage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isChatLoading) return;
     
-    // Mock message handling - not functional as requested
-    console.log("Chat message:", inputMessage);
+    const userMessage: ProjectMessage = {
+      id: generateMessageId(),
+      type: 'user',
+      content: inputMessage.trim(),
+      timestamp: new Date().toISOString()
+    };
+
+    // Add user message to local state immediately
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+    
+    const currentInput = inputMessage;
     setInputMessage('');
     setTextareaHeight('60px');
+    setIsChatLoading(true);
+
+    try {
+      // Save user message to database
+      await addMessageToProject(projectId, userMessage);
+      
+      // TODO: Add AI response handling here when implementing chat functionality
+      // here
+      const chatbotResponse = await projectChatBot(inputMessage.trim() ,project.framework, messages, architectureData, project.detailedAnalysis);
+      let cleanedResponse = chatbotResponse;
+      if (typeof cleanedResponse === 'string') {
+        cleanedResponse = cleanedResponse
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '') 
+          .replace(/\s*```\s*$/, '')
+          .trim();
+      }
+      
+      const parsedResponse = typeof cleanedResponse === 'string' 
+        ? JSON.parse(cleanedResponse) 
+        : cleanedResponse; 
+
+        console.log("This is reponse butch: ", parsedResponse);
+      // For now, just add a simple response
+      const assistantMessage: ProjectMessage = {
+        id: generateMessageId(),
+        type: 'assistant',
+        content: parsedResponse.response,
+        timestamp: new Date().toISOString()
+      };
+
+      // Add assistant message to local state
+      setMessages(prevMessages => [...prevMessages, assistantMessage]);
+      setIsChatLoading(false);
+      
+      // Save assistant message to database
+      await addMessageToProject(projectId, assistantMessage);
+      
+    } catch (error) {
+      console.error('Error handling message:', error);
+      
+      // Add error message to local state
+      const errorMessage: ProjectMessage = {
+        id: generateMessageId(),
+        type: 'assistant',
+        content: 'Sorry, there was an error processing your message. Please try again.',
+        timestamp: new Date().toISOString()
+      };
+      
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -461,27 +562,11 @@ const ProjectPage = () => {
           
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
-            {/* Welcome message */}
-            <div className="flex justify-start">
-              <div className="mr-3 flex-shrink-0">
-                <Image
-                  src="/favicon.jpg"
-                  alt="Assistant"
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
-              </div>
-              <div className="max-w-[80%] rounded-2xl px-2 py-1 text-white">
-                <p className="text-sm text-gray-300">
-                  Welcome to your project workspace! Ask me anything about <span className="font-semibold text-white">{project.name}</span> built with <span className="font-semibold text-red-400">{project.framework}</span>.
-                </p>
-              </div>
-            </div>
 
-            {/* Display chat messages here */}
+
+            {/* Display actual messages from database */}
             {messages.map((message, index) => (
-              <div key={index} className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-start'}`}>
+              <div key={message.id || `fallback-${index}`} className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-start'}`}>
                 {message.type === 'assistant' && (
                   <div className="mr-3 flex-shrink-0">
                     <Image
