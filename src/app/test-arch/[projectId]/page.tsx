@@ -5,9 +5,9 @@ import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt } from "../../../../actions/project";
+import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
-import { generateArchitecture } from '../../../../actions/reverse-architecture';
+import { generateArchitecture, testGenerateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 
@@ -45,7 +45,6 @@ const ProjectPage = () => {
   const [isArchitectureGenerating, setIsArchitectureGenerating] = useState(false);
   const [architectureData, setArchitectureData] = useState<any>(null);
   const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
-  const [isPromptGenerating, setIsPromptGenerating] = useState(false);
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30);
@@ -118,7 +117,7 @@ const ProjectPage = () => {
   };
 
     useEffect(() => {
-      
+      alert("Step 0")
       // Only run when Clerk is fully loaded
       if (!isLoaded)return;
       
@@ -126,6 +125,9 @@ const ProjectPage = () => {
 
       const loadProject = async () => {
         if (!projectId || !isSignedIn) {
+          alert(projectId)
+          alert(isSignedIn)
+          alert("Returned")
           setIsLoading(false);
           return;
         }
@@ -153,27 +155,15 @@ const ProjectPage = () => {
         } finally { 
           setIsLoading(false);
         }
-      };
+      }; 
 
       const loadArchitecture = async (theProjectData: any) => {
-        if(theProjectData?.ProjectArchitecture && theProjectData.ProjectArchitecture.length > 0){
-
-                  // Load existing architecture
-                  const existingArchitecture = theProjectData.ProjectArchitecture[0];
-                  const architectureData = { 
-                      components: existingArchitecture.components,
-                      connectionLabels: existingArchitecture.connectionLabels,
-                      componentPositions: existingArchitecture.componentPositions,
-                      architectureRationale: existingArchitecture.architectureRationale,
-                      detailedAnalysis: existingArchitecture.detailedAnalysis
-                  };
-                  setArchitectureData(architectureData);
-                  // Load custom positions from the database
-                  setCustomPositions(existingArchitecture.componentPositions || {});
-                  setIsArchitectureGenerating(false);
-              }else{
-                setIsArchitectureGenerating(true);
-                  const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
+        alert("Step 1")
+        setIsArchitectureGenerating(true);
+        alert("Step 2")
+        const analysis = JSON.stringify(theProjectData.detailedAnalysis)
+                  const  architectureResult = await testGenerateArchitecture(analysis, theProjectData.name, theProjectData.framework);
+                  alert("Step 3")
                   // Clean the result to remove markdown code blocks if present
                   let cleanedResult = architectureResult; 
                   if (typeof architectureResult === 'string') {
@@ -189,7 +179,6 @@ const ProjectPage = () => {
                   const parsedArchitecture = typeof cleanedResult === 'string' 
                       ? JSON.parse(cleanedResult) 
                       : cleanedResult;  
-                  parsedArchitecture.detailedAnalysis = detailedAnalysis;
                   setArchitectureData(parsedArchitecture);
                   console.log(parsedArchitecture); 
 
@@ -232,7 +221,6 @@ const ProjectPage = () => {
                   setCustomPositions(parsedArchitecture.componentPositions || {});
                   
                   setIsArchitectureGenerating(false);
-              }
           }
 
       loadProject();
@@ -348,12 +336,11 @@ const ProjectPage = () => {
         : cleanedResponse; 
 
         console.log("This is reponse butch: ", parsedResponse);
-
-        
       // For now, just add a simple response
       const assistantMessage: ProjectMessage = {
         id: generateMessageId(), 
         type: 'assistant',
+        prompt: parsedResponse.prompt,
         content: parsedResponse.response,
         timestamp: new Date().toISOString()
       };
@@ -361,34 +348,6 @@ const ProjectPage = () => {
       // Add assistant message to local state
       setMessages(prevMessages => [...prevMessages, assistantMessage]);
       setIsChatLoading(false);
-
-
-      if(parsedResponse.prompt && parsedResponse.wannaStart){
-        setIsPromptGenerating(true);
-        //here
-        const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
-        console.log("This is prompt: ", prompt);
-        
-        // Only update the assistant message if prompt is a string
-        if (typeof prompt === 'string') {
-          // Update the assistant message with the generated prompt
-          const updatedAssistantMessage: ProjectMessage = {
-            ...assistantMessage,
-            prompt: prompt
-          };
-          
-          // Update the message in local state
-          setMessages(prevMessages => 
-            prevMessages.map(msg => 
-              msg.id === assistantMessage.id ? updatedAssistantMessage : msg
-            )
-          );
-          
-          // Update the assistant message variable for database save
-          Object.assign(assistantMessage, updatedAssistantMessage);
-          setIsPromptGenerating(false);
-        }
-      } 
       
       // Save assistant message to database
       await addMessageToProject(projectId, assistantMessage);
@@ -688,22 +647,6 @@ const ProjectPage = () => {
                 />
                 <div className="text-white/69 text-sm flex items-center">
                   <span>thinking</span>
-                  <span className="ml-1">...</span>
-                </div>
-              </div>
-            )}
-
-{isPromptGenerating && (
-              <div className="flex justify-start items-center space-x-3 animate-pulse">
-                <Image
-                  src="/favicon.jpg"
-                  alt="Assistant"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 rounded-full"
-                />
-                <div className="text-white/69 text-sm flex items-center">
-                  <span>generating prompt</span>
                   <span className="ml-1">...</span>
                 </div>
               </div>
