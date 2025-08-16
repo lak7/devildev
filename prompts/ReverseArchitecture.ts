@@ -56,15 +56,20 @@ export const mainGenerateArchitecturePrompt = `
     
     ### 3. COMPONENT CREATION RULES
     
-    **Rule 1: Business Value Test**
+    **Rule 1: Evidence-Based Components Only**
+    - ONLY create components that are explicitly mentioned or clearly evident in the analysis findings
+    - Do NOT create "recommended", "suggested", or "optional" components
+    - Do NOT create components for missing pieces - only represent what actually exists
+    
+    **Rule 2: Business Value Test**
     - Can a non-technical stakeholder understand what this component does?
     - Does it represent a distinct business capability?
     
-    **Rule 2: Architectural Significance Test**
+    **Rule 3: Architectural Significance Test**
     - If this component failed, would it require a different technical solution?
     - Does it handle a specific type of data or business logic?
     
-    **Rule 3: Independence Test**
+    **Rule 4: Independence Test**
     - Could this component theoretically be replaced with a different technology?
     - Does it have clear inputs/outputs and responsibilities?
     
@@ -77,25 +82,27 @@ export const mainGenerateArchitecturePrompt = `
     
     ## COMPONENT IDENTIFICATION STRATEGY
     
-    ### Step 1: Map Business Functions
-    From the analysis, identify distinct business capabilities:
+    ### Step 1: Map EXISTING Business Functions
+    From the analysis, identify ONLY the distinct business capabilities that actually exist:
     - User interaction layer (web app, mobile app, admin panel)
     - Business logic processing (APIs, serverless functions, background jobs)
     - Data persistence (databases, file storage, caching)
     - External integrations (payment, email, AI services, analytics)
     - Infrastructure services (authentication, monitoring, CDN)
     
+    **CRITICAL**: If the analysis states "No database", "No caching", or "No authentication", do NOT create components for these missing pieces.
+    
     ### Step 2: Group Related Technologies
     Combine technologies that work together toward the same business goal:
     - **Frontend Technologies** → Single "Web Application" component
     - **Backend Technologies** → Single "API Service" or "Backend Service" component
-    - **Database + Cache + Search** → Single "Data Layer" component
+    - **Database + Cache + Search** → Single "Data Layer" component (ONLY if they exist)
     
-    ### Step 3: Identify Integration Points
-    External services that provide specific business value:
-    - Payment processing, email delivery, AI/ML services
-    - Third-party APIs that provide core functionality
-    - Authentication providers (if external)
+    ### Step 3: Identify ACTUAL Integration Points
+    External services that are actually being used and provide specific business value:
+    - Payment processing, email delivery, AI/ML services (ONLY if mentioned in analysis)
+    - Third-party APIs that provide core functionality (ONLY if actively used)
+    - Authentication providers (ONLY if external auth is implemented)
     
     ## NAMING CONVENTIONS
     
@@ -129,13 +136,13 @@ export const mainGenerateArchitecturePrompt = `
     Describe how data moves through the system. What are the main user journeys and how does the architecture support them?
     
     **Paragraph 4 - External Integrations**
-    Detail the external services and how they integrate. Why were these services chosen and how do they add business value?
+    Detail the external services and how they integrate. Why were these services chosen and how do they add business value? (ONLY mention services that are actually implemented)
     
     **Paragraph 5 - Performance & Scalability**
     Analyze the performance characteristics of the current architecture. What are the strengths and potential bottlenecks?
     
-    **Paragraph 6 - Strategic Recommendations**
-    Provide 2-3 specific, actionable improvements that would enhance the architecture for business goals.
+    **Paragraph 6 - Current Architecture Assessment**
+    Assess the current architecture's strengths and limitations based on what actually exists. Do NOT suggest improvements or additions - focus on describing the current state.
     
     ## COMPONENT SPECIFICATION
     
@@ -163,14 +170,19 @@ export const mainGenerateArchitecturePrompt = `
     ## QUALITY CHECKLIST
     
     Before finalizing, verify:
-    - [ ] Each component represents a distinct business capability
+    - [ ] Each component exists in the actual project (based on analysis findings)
+    - [ ] No "recommended", "optional", or "future" components are included
     - [ ] Component names are understandable to non-technical stakeholders
-    - [ ] The architecture tells a coherent story about how the business goals are achieved
+    - [ ] The architecture represents the current state, not an idealized version
     - [ ] Implementation details are grouped into logical architectural layers
-    - [ ] External services are only included if they provide core business value
-    - [ ] The diagram would help someone understand the system at a high level
+    - [ ] External services are only included if they are actively being used
+    - [ ] The diagram accurately reflects what was analyzed
     
-    ## COMMON ANTI-PATTERNS TO AVOID
+    ## STRICT ANTI-PATTERNS TO AVOID
+    
+    **❌ Hypothetical Components**: Never create components marked as "recommended", "optional", "suggested", or "future"
+    
+    **❌ Missing Service Components**: Never create components for services that don't exist (e.g., if analysis says "no database", don't create a database component)
     
     **❌ Over-granulation**: Creating separate components for UI widgets, individual npm packages, or small utilities
     
@@ -182,32 +194,36 @@ export const mainGenerateArchitecturePrompt = `
     
     **❌ Technology showcase**: Trying to highlight every interesting technology instead of the architectural story
     
+    **❌ Wishful architecture**: Adding components that would be "nice to have" but don't actually exist
+    
     ## OUTPUT FORMAT
     
     Generate ONLY this JSON structure:
     
     {{
       "components": [
-        // 3-8 components representing core architectural concerns
+        // 3-8 components representing ONLY the actual architectural concerns that exist
       ],
       "connectionLabels": {{
-        // Business-focused connection descriptions
+        // Business-focused connection descriptions for actual data flows
         "component1-to-component2": "Business data/process description"
 }},
-      "architectureRationale": "6-paragraph analysis focusing on architectural decisions and business value"
+      "architectureRationale": "6-paragraph analysis focusing on the current architecture and what actually exists"
     }}
     
     ## SUCCESS CRITERIA
     
     Your architecture diagram should:
+    ✅ **Accurately represent** the current system based on analysis findings
     ✅ **Tell a clear story** about how the application achieves its business goals
     ✅ **Use business language** that stakeholders can understand
     ✅ **Show architectural layers** rather than implementation details
     ✅ **Highlight key decisions** that differentiate this system
-    ✅ **Provide actionable insights** for technical and business stakeholders
+    ✅ **Provide accurate insights** for technical and business stakeholders
     ✅ **Be appropriately abstracted** for the complexity level of the system
+    ✅ **Include ONLY existing components** - no recommendations or future additions
     
-    Remember: You're creating an architectural overview, not a detailed technical implementation diagram. Focus on the "what" and "why" of the system, not the "how" of every implementation detail.
+    Remember: You're creating an architectural overview of the CURRENT system, not a roadmap or idealized version. Focus on accurately representing what exists, not what could exist.
 `
 
 export const projectChatBotPrompt = `
