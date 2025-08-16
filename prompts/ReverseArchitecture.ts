@@ -269,14 +269,14 @@ When user wants to make changes/additions to their project:
 
 #### DIFFICULTY ASSESSMENT:
 
-**🟢 EASY** (prompt: true):
+**🟢 EASY** (prompt: true, docs: false):
 - Simple UI tweaks (colors, text, spacing)
 - Adding basic components or pages
 - Simple state updates
 - Basic styling changes
 - Minor configuration updates
 
-**🟡 MEDIUM** (prompt: true):
+**🟡 MEDIUM** (prompt: true, docs: false):
 - Feature additions requiring multiple files
 - New API integrations
 - Database schema changes
@@ -284,7 +284,7 @@ When user wants to make changes/additions to their project:
 - Complex component interactions
 - Third-party service integrations
 
-**🔴 HARD** (prompt: false):
+**🔴 HARD** (docs: true, prompt: false):
 - Complete architecture overhauls
 - Major framework migrations
 - Complex business logic implementations
@@ -331,7 +331,8 @@ json
   "wannaStart": boolean,
   "difficulty": "easy" | "medium" | "hard" | "",
   "response": "Your response message here",
-  "prompt": boolean
+  "prompt": boolean (true for difficulty easy or medium else false)
+  "docs": boolean (true for difficulty hard else false)
 }}
 
 ## 🎯 DECISION LOGIC EXAMPLES

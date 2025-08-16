@@ -10,6 +10,7 @@ import { useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
+import ProjectContextDocs from '@/components/core/ProjectContextDocs';
 
 interface Project {
   name: string;
@@ -46,6 +47,7 @@ const ProjectPage = () => {
   const [architectureData, setArchitectureData] = useState<any>(null);
   const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [isPromptGenerating, setIsPromptGenerating] = useState(false);
+  const [isDocsGenerating, setIsDocsGenerating] = useState(false);
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30);
@@ -348,7 +350,7 @@ const ProjectPage = () => {
         : cleanedResponse; 
 
         console.log("This is reponse butch: ", parsedResponse);
-
+ 
         
       // For now, just add a simple response
       const assistantMessage: ProjectMessage = {
@@ -361,7 +363,7 @@ const ProjectPage = () => {
       // Add assistant message to local state
       setMessages(prevMessages => [...prevMessages, assistantMessage]);
       setIsChatLoading(false);
-
+ 
 
       if(parsedResponse.prompt && parsedResponse.wannaStart){
         setIsPromptGenerating(true);
@@ -388,7 +390,11 @@ const ProjectPage = () => {
           Object.assign(assistantMessage, updatedAssistantMessage);
           setIsPromptGenerating(false);
         }
-      } 
+      }else if(parsedResponse.docs && parsedResponse.wannaStart){
+        setIsDocsGenerating(true); 
+         // Here Docs generation logic
+        
+      }
       
       // Save assistant message to database
       await addMessageToProject(projectId, assistantMessage);
@@ -674,7 +680,7 @@ const ProjectPage = () => {
                   </div>
                 )}
               </div>
-            ))}
+            ))} 
 
             {/* Loading indicator */}
             {isChatLoading && (
@@ -824,19 +830,7 @@ const ProjectPage = () => {
             
             {/* Documentation Tab */}
             <div className={`h-full ${activeTab === 'docs' ? 'block' : 'hidden'}`}>
-              <div className="flex items-center justify-center h-full p-6">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-gray-800/50 rounded-2xl flex items-center justify-center mx-auto">
-                    <FileText className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white mb-2">Documentation</h3>
-                    <p className="text-gray-400 max-w-md">
-                      Project documentation, guides, and resources will be available here. Generate docs through the chat interface.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <ProjectContextDocs />
             </div>
           </div>
         </div>

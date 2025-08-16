@@ -145,17 +145,29 @@ model Project {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ProjectArchitecture ProjectArchitecture[]
+  ProjectContextDocs ProjectContextDocs[]
 }
-
-
 
 model ProjectArchitecture {
   id        String   @id @default(uuid())
-  projectId String   @unique
+  projectId String   
   architectureRationale String?
   components            Json
   connectionLabels      Json?
   componentPositions    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectContextDocs {
+  id        String   @id @default(uuid())
+  projectId String   
+  projectRules String?
+  humanReview String?
+  plan String?
+  phases Json?
+  phaseCount Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

@@ -17,6 +17,8 @@ export interface ProjectMessage {
     type: 'user' | 'assistant';
     prompt?: string;
     content: string;
+    projectDocsId?: string;
+    docsName?: string;
     timestamp: string;
 }
 

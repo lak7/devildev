@@ -755,7 +755,7 @@ const DevPage = () => {
   };
 
   const handleGenerateDocs = async () => {
-    setIsGeneratingDocs(true);
+    setIsGeneratingDocs(true); 
     // setIsLoading(true);
     setActiveTab('context');
     setIsStreamingDocs(true);
