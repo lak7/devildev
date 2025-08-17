@@ -150,7 +150,7 @@ model Project {
 
 model ProjectArchitecture {
   id        String   @id @default(uuid())
-  projectId String   
+  projectId String   @unique
   architectureRationale String?
   components            Json
   connectionLabels      Json?

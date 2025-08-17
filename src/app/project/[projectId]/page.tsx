@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt } from "../../../../actions/project";
+import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
@@ -332,10 +332,12 @@ const ProjectPage = () => {
     try {
       // Save user message to database
       await addMessageToProject(projectId, userMessage);
+
+      // alert(currentInput.trim())
       
       // TODO: Add AI response handling here when implementing chat functionality
       // here
-      const chatbotResponse = await projectChatBot(inputMessage.trim() ,project.framework, messages, architectureData, project.detailedAnalysis);
+      const chatbotResponse = await projectChatBot(currentInput.trim() ,project.framework, messages, architectureData, project.detailedAnalysis);
       let cleanedResponse = chatbotResponse;
       if (typeof cleanedResponse === 'string') {
         cleanedResponse = cleanedResponse
@@ -363,8 +365,12 @@ const ProjectPage = () => {
       // Add assistant message to local state
       setMessages(prevMessages => [...prevMessages, assistantMessage]);
       setIsChatLoading(false);
+
+      // alert(parsedResponse.docs)
+      // alert(parsedResponse.wannaStart)
  
 
+      
       if(parsedResponse.prompt && parsedResponse.wannaStart){
         setIsPromptGenerating(true);
         //here
@@ -391,9 +397,11 @@ const ProjectPage = () => {
           setIsPromptGenerating(false);
         }
       }else if(parsedResponse.docs && parsedResponse.wannaStart){
+        // alert("FUCK! This is HARD")
         setIsDocsGenerating(true); 
          // Here Docs generation logic
-        
+         const initialDocsRes = await initialDocsGeneration(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
+         console.log("This is initial docs response: ", initialDocsRes);
       }
       
       // Save assistant message to database

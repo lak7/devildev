@@ -5,12 +5,19 @@ import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { architectureModificationPrompt, chatbotPrompt } from "../prompts/Chatbot";
-import { generateEasyMediumPrompt, projectChatBotPrompt } from "../prompts/ReverseArchitecture";
+import { generateEasyMediumPrompt, initialDocsGenerationPrompt, projectChatBotPrompt } from "../prompts/ReverseArchitecture";
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
   openAIApiKey: openaiKey,
   model: "gpt-5-mini-2025-08-07" 
 })
+
+const llm2 = new ChatOpenAI({
+  openAIApiKey: openaiKey,
+  model: "gpt-5-mini-2025-08-07"
+})
+const tool = {"type": "web_search_preview"}
+const llmWithWeb = llm2.bindTools([tool])
 
 export interface ProjectMessage {
     id: string;
@@ -74,7 +81,7 @@ export async function saveProjectArchitecture(
 
         // Check if ProjectArchitecture already exists
         const existingArchitecture = await db.projectArchitecture.findUnique({
-            where: { projectId: projectId }
+            where: { projectId: projectId } 
         });
         console.log("In saveProjectArchitecture Step 3");
         let savedArchitecture;
@@ -386,7 +393,7 @@ export async function projectChatBot( userInput: string, projectFramework: strin
 
     
     const prompt = PromptTemplate.fromTemplate(projectChatBotPrompt);
-    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const chain = prompt.pipe(llmWithWeb).pipe(new StringOutputParser());
     const response = await chain.invoke({
         userQuery: userInput,
         framework: projectFramework,
@@ -417,3 +424,24 @@ export async function generatePrompt(userInput: string, projectFramework: string
         });
     return response;
 }
+
+export async function initialDocsGeneration(userInput: string, projectFramework: string, conversationHistory: any[], projectAnalysis: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+    // Format conversation history for the prompt
+    const formattedHistory = conversationHistory.map(msg => 
+        `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+    ).join('\n');
+
+    const prompt = PromptTemplate.fromTemplate(initialDocsGenerationPrompt);
+    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const response = await chain.invoke({
+        userQuery: userInput,
+        framework: projectFramework,
+        projectAnalysis: projectAnalysis,
+        conversationHistory: formattedHistory
+    });
+    return response;
+} 
