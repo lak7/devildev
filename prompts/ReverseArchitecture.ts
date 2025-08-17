@@ -1419,10 +1419,10 @@ You are an expert software development lead creating actionable execution plans 
 - [ ] Existing functionality baseline testing completed
 
 [If phaseNum > 1:]
-- [ ] **HUMAN APPROVAL REQUIRED:** Phase {phaseNum-1} must be reviewed and approved in HUMAN_REVIEW.md
-- [ ] All deliverables from Phase {phaseNum-1} tested and confirmed working with existing system
+- [ ] **HUMAN APPROVAL REQUIRED:** Phase {{phaseNum-1}} must be reviewed and approved in HUMAN_REVIEW.md
+- [ ] All deliverables from Phase {{phaseNum-1}} tested and confirmed working with existing system
 - [ ] No regressions in existing functionality from previous phase changes
-- [ ] All reported issues from Phase {phaseNum-1} resolved without breaking existing features
+- [ ] All reported issues from Phase {{phaseNum-1}} resolved without breaking existing features
 - [ ] Existing project state maintained and enhanced from previous phase
 
 **⚠️ CRITICAL: DO NOT START THIS PHASE WITHOUT HUMAN APPROVAL OF PREVIOUS PHASE ⚠️**
@@ -1431,7 +1431,7 @@ You are an expert software development lead creating actionable execution plans 
 
 ### Pre-Phase Validation
 [If phaseNum > 1:]
-- [ ] **Verify Human Approval**: Check HUMAN_REVIEW.md for Phase {phaseNum-1} approval status
+- [ ] **Verify Human Approval**: Check HUMAN_REVIEW.md for Phase {{phaseNum-1} } approval status
 - [ ] **Regression Testing**: Confirm previous phase changes don't break existing functionality
 - [ ] **Integration Validation**: Ensure previous enhancements integrate properly with existing system
 - [ ] **Performance Check**: Validate that existing system performance is maintained or improved

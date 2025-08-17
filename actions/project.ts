@@ -5,7 +5,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { architectureModificationPrompt, chatbotPrompt } from "../prompts/Chatbot";
-import { generateEasyMediumPrompt, initialDocsGenerationPrompt, projectChatBotPrompt } from "../prompts/ReverseArchitecture";
+import { generateEasyMediumPrompt, generateNthProjectPhase, generateProjectPlanDocs, initialDocsGenerationPrompt, projectChatBotPrompt } from "../prompts/ReverseArchitecture";
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
   openAIApiKey: openaiKey,
@@ -517,3 +517,38 @@ export async function getProjectContextDocs(projectContextDocsId: string) {
         return { error: 'Failed to get project context docs' };
     }
 } 
+
+export async function generateProjectPlan(framework: string, phaseCount: string, detailedAnalysis: string, requirement: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    const prompt = PromptTemplate.fromTemplate(generateProjectPlanDocs);
+    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const response = await chain.invoke({
+        framework: framework,
+        phaseCount: phaseCount,
+        projectAnalysis: detailedAnalysis,
+        requirement: requirement
+    });
+    return response;
+}
+
+export async function generateNthPhase(plan: string, framework: string, detailedAnalysis: string, requirement: string, phaseNum: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    const prompt = PromptTemplate.fromTemplate(generateNthProjectPhase);
+    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const response = await chain.invoke({
+        plan: plan,
+        framework: framework,
+        projectAnalysis: detailedAnalysis,
+        requirement: requirement,
+        phaseNum: phaseNum
+    });
+    return response;
+}

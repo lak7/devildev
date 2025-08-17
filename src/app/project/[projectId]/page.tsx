@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs } from "../../../../actions/project";
+import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
@@ -440,6 +440,17 @@ const ProjectPage = () => {
              // Update the assistant message variable for database save
              Object.assign(assistantMessage, updatedAssistantMessage);
            }
+
+           //Here generate plan
+           const plan = await generateProjectPlan(project.framework, parsedInitialDocsRes.phaseCount, project.detailedAnalysis, parsedInitialDocsRes.requirement);
+           console.log("This is plan: ", plan);
+           
+           for(let i = 0; i< parsedInitialDocsRes.phaseCount; i++){
+            const nthPhase = await generateNthPhase(JSON.stringify(plan), project.framework, project.detailedAnalysis, parsedInitialDocsRes.requirement, i.toString());
+            console.log("This is nth phase: ", nthPhase);
+           }
+           
+           
          } catch (error) {
            console.error('Error creating project context docs:', error);
          }
