@@ -444,4 +444,76 @@ export async function initialDocsGeneration(userInput: string, projectFramework:
         conversationHistory: formattedHistory
     });
     return response;
+}
+
+// Create project context docs
+export async function createProjectContextDocs(
+    projectId: string,
+    contextName: string,
+    projectRules?: string,
+    humanReview?: string,
+    plan?: string,
+    phases?: any[],
+    phaseCount?: number
+) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+
+        // Create new project context docs
+        const projectContextDocs = await db.projectContextDocs.create({
+            data: {
+                projectId,
+                contextName,
+                projectRules,
+                humanReview, 
+                plan,
+                phases: phases as any,
+                phaseCount
+            }
+        });
+
+        return { success: true, projectContextDocs };
+    } catch (error) {
+        console.error("Error creating project context docs:", error);
+        return { error: 'Failed to create project context docs' };
+    }
+}
+
+// Get project context docs by ID
+export async function getProjectContextDocs(projectContextDocsId: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        const projectContextDocs = await db.projectContextDocs.findUnique({
+            where: { id: projectContextDocsId },
+            include: {
+                project: {
+                    select: {
+                        userId: true
+                    }
+                }
+            }
+        });
+        
+        if (!projectContextDocs) {
+            return { error: 'Project context docs not found' };
+        }
+
+        // Verify the project belongs to the user
+        if (projectContextDocs.project.userId !== userId) {
+            return { error: 'Unauthorized' };
+        }
+
+        return { success: true, projectContextDocs };
+    } catch (error) {
+        console.error("Error getting project context docs:", error);
+        return { error: 'Failed to get project context docs' };
+    }
 } 

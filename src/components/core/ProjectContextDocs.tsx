@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import JSZip from "jszip"
+import { getProjectContextDocs } from "../../../actions/project"
 
 interface FileNode {
   type: "file" | "folder"
@@ -15,20 +16,55 @@ interface FileNode {
   isComplete?: boolean
 }
 
-export default function ProjectContextDocs() {
-  const [selectedFile, setSelectedFile] = React.useState<string>("BigChanges/PROJECT_RULES.md")
+interface ProjectContextDocsProps {
+  projectDocsId?: string;
+  docsName?: string;
+}
+
+export default function ProjectContextDocs({ projectDocsId, docsName }: ProjectContextDocsProps = {}) {
+  const [selectedFile, setSelectedFile] = React.useState<string>(`${docsName || "BigChanges"}/PROJECT_RULES.md`)
   const [selectedContent, setSelectedContent] = React.useState<string>("")
   const [isCopied, setIsCopied] = React.useState<boolean>(false)
+  const [projectContextData, setProjectContextData] = React.useState<any>(null)
 
-  // Hardcoded file structure as per instructions
+  // Load project context data when projectDocsId changes
+  React.useEffect(() => {
+    const loadProjectContextData = async () => {
+      if (projectDocsId) {
+        try {
+          const result = await getProjectContextDocs(projectDocsId);
+          if (result.success) {
+            setProjectContextData(result.projectContextDocs);
+          }
+        } catch (error) {
+          console.error('Error loading project context docs:', error);
+        }
+      } else {
+        setProjectContextData(null);
+      }
+    };
+
+    loadProjectContextData();
+  }, [projectDocsId]);
+
+  // Update selected file when docsName changes
+  React.useEffect(() => {
+    if (docsName) {
+      setSelectedFile(`${docsName}/PROJECT_RULES.md`);
+    }
+  }, [docsName]);
+
+  // Create file structure that supports dynamic folders
   const createFileStructure = React.useCallback((): Record<string, FileNode> => {
-    return {
-      BigChanges: {
+    const folderName = docsName || "BigChanges";
+    
+    const baseStructure: Record<string, FileNode> = {};
+    baseStructure[folderName] = {
         type: "folder" as const,
         children: {
           "PROJECT_RULES.md": {
             type: "file" as const,
-            content: `# Development Agent Workflow
+            content: projectContextData?.projectRules || `# Development Agent Workflow
 
 ## Primary Directive
 You are a development agent implementing a project based on established documentation. Your goal is to build a cohesive, well-documented, and maintainable software product. **ALWAYS** consult documentation before taking any action and maintain strict consistency with project standards.
@@ -372,7 +408,7 @@ Every decision should support the overall project goals while maintaining consis
           },
           "PLAN.md": {
             type: "file" as const,
-            content: "# Development Plan\n\nThis is the plan for BigChanges.",
+            content: projectContextData?.plan || `# Development Plan\n\nThis is the plan for ${folderName}.`,
             isComplete: true
           },
           Phases: {
@@ -380,15 +416,16 @@ Every decision should support the overall project goals while maintaining consis
             children: {
               "PHASE_1.md": {
                 type: "file" as const,
-                content: "# Phase 1\n\nInitial phase details for BigChanges.",
+                content: `# Phase 1\n\nInitial phase details for ${folderName}.`,
                 isComplete: true
               },
             },
           },
         },
-      },
-    };
-  }, []);
+      };
+
+      return baseStructure;
+  }, [docsName, projectContextData]);
 
   const fileStructure = createFileStructure();
 

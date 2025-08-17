@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration } from "../../../../actions/project";
+import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
@@ -48,6 +48,8 @@ const ProjectPage = () => {
   const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [isPromptGenerating, setIsPromptGenerating] = useState(false);
   const [isDocsGenerating, setIsDocsGenerating] = useState(false);
+  const [selectedProjectDocsId, setSelectedProjectDocsId] = useState<string | undefined>(undefined);
+  const [selectedDocsName, setSelectedDocsName] = useState<string | undefined>(undefined);
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30);
@@ -397,11 +399,52 @@ const ProjectPage = () => {
           setIsPromptGenerating(false);
         }
       }else if(parsedResponse.docs && parsedResponse.wannaStart){
-        // alert("FUCK! This is HARD")
-        setIsDocsGenerating(true); 
+        setIsDocsGenerating(true);  
          // Here Docs generation logic
          const initialDocsRes = await initialDocsGeneration(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
          console.log("This is initial docs response: ", initialDocsRes);
+         const parsedInitialDocsRes = typeof initialDocsRes === 'string' 
+          ? JSON.parse(initialDocsRes) 
+          : initialDocsRes;
+         console.log("This is parsed docs: ", parsedInitialDocsRes);
+         
+         try {
+           // Create project context docs in database with BigChanges content
+           const bigChangesContent = `# Development Agent Workflow\n\n## Primary Directive\nYou are a development agent implementing a project based on established documentation. Your goal is to build a cohesive, well-documented, and maintainable software product. **ALWAYS** consult documentation before taking any action and maintain strict consistency with project standards.\n\n[This is a truncated version of the BigChanges content for ${parsedInitialDocsRes.nameDocs}]`;
+           
+           const projectContextDocsResult = await createProjectContextDocs(
+             projectId, 
+             parsedInitialDocsRes.nameDocs,
+             bigChangesContent,
+             undefined, // human review
+             undefined, // plan
+             undefined, // phases  
+             parsedInitialDocsRes.phaseCount
+           );
+           
+           if (projectContextDocsResult.success) {
+             // Update the assistant message with projectDocsId
+             const updatedAssistantMessage: ProjectMessage = {
+               ...assistantMessage,
+               projectDocsId: projectContextDocsResult.projectContextDocs.id,
+               docsName: parsedInitialDocsRes.nameDocs
+             };
+             
+             // Update the message in local state
+             setMessages(prevMessages => 
+               prevMessages.map(msg => 
+                 msg.id === assistantMessage.id ? updatedAssistantMessage : msg
+               )
+             );
+             
+             // Update the assistant message variable for database save
+             Object.assign(assistantMessage, updatedAssistantMessage);
+           }
+         } catch (error) {
+           console.error('Error creating project context docs:', error);
+         }
+         
+         setIsDocsGenerating(false);
       }
       
       // Save assistant message to database
@@ -661,6 +704,22 @@ const ProjectPage = () => {
                   </div>
                 </div>
                 
+                {/* Project Docs button - only show for assistant messages with projectDocsId */}
+                {message.type === 'assistant' && message.projectDocsId && (
+                  <div className="flex justify-start items-center space-x-3 ml-12 h-12  my-2 relative">
+                    <button
+                      onClick={() => {
+                        setSelectedProjectDocsId(message.projectDocsId);
+                        setSelectedDocsName(message.docsName);
+                        setActiveTab('docs');
+                      }}
+                      className="px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative hover:bg-transparent border-white hover:text-white bg-white text-black"
+                    >
+                      <span>View Docs</span>
+                    </button>
+                  </div>
+                )}
+                
                 {/* Prompt box - only show for assistant messages with prompt */}
                 {message.type === 'assistant' && message.prompt && (
                   <div className="w-full mt-3 ">
@@ -718,6 +777,22 @@ const ProjectPage = () => {
                 />
                 <div className="text-white/69 text-sm flex items-center">
                   <span>generating prompt</span>
+                  <span className="ml-1">...</span>
+                </div>
+              </div>
+            )}
+
+{isDocsGenerating && (
+              <div className="flex justify-start items-center space-x-3 animate-pulse">
+                <Image
+                  src="/favicon.jpg"
+                  alt="Assistant"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full"
+                />
+                <div className="text-white/69 text-sm flex items-center">
+                  <span>generating docs</span>
                   <span className="ml-1">...</span>
                 </div>
               </div>
@@ -838,7 +913,10 @@ const ProjectPage = () => {
             
             {/* Documentation Tab */}
             <div className={`h-full ${activeTab === 'docs' ? 'block' : 'hidden'}`}>
-              <ProjectContextDocs />
+              <ProjectContextDocs 
+                projectDocsId={selectedProjectDocsId}
+                docsName={selectedDocsName}
+              />
             </div>
           </div>
         </div>
