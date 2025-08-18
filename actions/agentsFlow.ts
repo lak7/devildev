@@ -6,7 +6,7 @@ import { architectureModificationPrompt, chatbotPrompt } from "../prompts/Chatbo
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
   openAIApiKey: openaiKey,
-  model: "gpt-5-mini-2025-08-07" // You can change this to any OpenAI model like "gpt-3.5-turbo", "gpt-4-turbo", etc.
+  model: "gpt-5-nano-2025-08-07" // You can change this to any OpenAI model like "gpt-3.5-turbo", "gpt-4-turbo", etc.
 })
 
 export async function startOrNot(userInput: string, conversationHistory: any[] = [], architectureData: any) { 
