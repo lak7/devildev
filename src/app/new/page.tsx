@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ImportGitRepository from '@/components/ImportGitRepository';
+import { checkPackageAndFramework } from '../../../actions/reverse-architecture';
 
 interface Repository {
   id: number;
@@ -30,33 +31,32 @@ export default function NewPage() {
   const [importing, setImporting] = useState(false);
 
   const handleImport = async (repo: Repository) => {
-    setImporting(true);
-    try {
-      const response = await fetch('/api/github/import', {
-        method: 'POST', 
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          repositoryId: repo.id,
-          repositoryName: repo.name,
-          fullName: repo.fullName,
-          description: repo.description,
-          language: repo.language,
-          isPrivate: repo.private,
-        }),
-      });
+    
+    setImporting(true); 
+    try { 
+      const response = await checkPackageAndFramework(repo.id.toString(), repo.fullName);
+      let cleanedResult = response;
+      if (typeof response === 'string') {
+        // Remove markdown code blocks (```json...``` or ```...```)
+        cleanedResult = response
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/\s*```\s*$/, '')
+          .trim();
+      }
 
-      const data = await response.json();
+      const parsedResponse = typeof cleanedResult === 'string' 
+        ? JSON.parse(cleanedResult) 
+        : cleanedResult; 
 
-      if (response.ok && data.success) {
+      if (parsedResponse) {
         alert("Imported successfully");
-        console.log("This is special: ", data);
+        console.log("This is special: ", parsedResponse);
+        alert(parsedResponse.framework);
         // Redirect to the chat page for the imported repository
         // router.push(`/dev/${data.chatId}`);
       } else {
-        console.error('Import failed:', data.error);
-        alert('Failed to import repository: ' + (data.error || 'Unknown error'));
+        console.error('Import failed:');
       }
     } catch (error) {
       console.error('Error importing repository:', error);
@@ -78,7 +78,7 @@ export default function NewPage() {
               <p className="text-gray-600">
                 Import an existing Git Repository to reverse engineer and generate its architecture
               </p>
-            </div>
+            </div> 
             
             <ImportGitRepository onImport={handleImport} />
              
