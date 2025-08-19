@@ -15,13 +15,15 @@ interface FileNode {
   isGenerating?: boolean
   isComplete?: boolean
 }
-
+ 
 interface ProjectContextDocsProps {
   projectDocsId?: string;
   docsName?: string;
+  projectPlan?: string;
+  projectPhases?: string[];
 }
 
-export default function ProjectContextDocs({ projectDocsId, docsName }: ProjectContextDocsProps = {}) {
+export default function ProjectContextDocs({ projectDocsId, docsName, projectPlan, projectPhases }: ProjectContextDocsProps = {}) {
   const [selectedFile, setSelectedFile] = React.useState<string>(`${docsName || "BigChanges"}/PROJECT_RULES.md`)
   const [selectedContent, setSelectedContent] = React.useState<string>("")
   const [isCopied, setIsCopied] = React.useState<boolean>(false)
@@ -48,7 +50,7 @@ export default function ProjectContextDocs({ projectDocsId, docsName }: ProjectC
   }, [projectDocsId]);
 
   // Update selected file when docsName changes
-  React.useEffect(() => {
+  React.useEffect(() => { 
     if (docsName) {
       setSelectedFile(`${docsName}/PROJECT_RULES.md`);
     }
@@ -357,7 +359,7 @@ Your implementation is successful when:
 - **Human can successfully set up and test the application**
 
 ## Remember
-Every decision should support the overall project goals while maintaining consistency with established patterns. Build software that is not just functional, but also maintainable, scalable, and aligned with the project vision outlined in the PRD. **Most importantly, never proceed without human verification - the human review process is crucial for ensuring quality and preventing cascading errors in subsequent phases.**`,
+            Every decision should support the overall project goals while maintaining consistency with established patterns. Build software that is not just functional, but also maintainable, scalable, and aligned with the project vision outlined in the PRD. **Most importantly, never proceed without human verification - the human review process is crucial for ensuring quality and preventing cascading errors in subsequent phases.**`,
             isComplete: true
           },
           "HUMAN_REVIEW.md": {
@@ -408,24 +410,40 @@ Every decision should support the overall project goals while maintaining consis
           },
           "PLAN.md": {
             type: "file" as const,
-            content: projectContextData?.plan || `# Development Plan\n\nThis is the plan for ${folderName}.`,
+            content: projectPlan,
             isComplete: true
           },
           Phases: {
             type: "folder" as const,
-            children: {
-              "PHASE_1.md": {
-                type: "file" as const,
-                content: `# Phase 1\n\nInitial phase details for ${folderName}.`,
-                isComplete: true
-              },
-            },
+            children: (() => {
+              const phaseChildren: Record<string, FileNode> = {};
+              
+              if (projectPhases && projectPhases.length > 0 && projectPhases[0] !== "Not Generated 1") {
+                // Use the actual projectPhases data
+                projectPhases.forEach((phase, index) => {
+                  phaseChildren[`PHASE_${index + 1}.md`] = {
+                    type: "file" as const,
+                    content: phase,
+                    isComplete: true
+                  };
+                });
+              } else {
+                // Default phase structure
+                phaseChildren["PHASE_1.md"] = {
+                  type: "file" as const,
+                  content: `# Phase 1\n\nInitial phase details for ${folderName}.`,
+                  isComplete: true
+                };
+              }
+              
+              return phaseChildren;
+            })(),
           },
         },
       };
 
       return baseStructure;
-  }, [docsName, projectContextData]);
+  }, [docsName, projectContextData, projectPlan, projectPhases]);
 
   const fileStructure = createFileStructure();
 

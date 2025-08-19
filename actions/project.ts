@@ -484,7 +484,7 @@ export async function createProjectContextDocs(
 }
 
 // Get project context docs by ID
-export async function getProjectContextDocs(projectContextDocsId: string) {
+export async function getProjectContextDocs(projectId: string) {
     const { userId } = await auth();
     if (!userId) {
         return { error: 'Unauthorized' };
@@ -492,33 +492,21 @@ export async function getProjectContextDocs(projectContextDocsId: string) {
 
     try {
         const projectContextDocs = await db.projectContextDocs.findUnique({
-            where: { id: projectContextDocsId },
-            include: {
-                project: {
-                    select: {
-                        userId: true
-                    }
-                }
-            }
+            where: {projectId: projectId}
         });
         
         if (!projectContextDocs) {
             return { error: 'Project context docs not found' };
         }
 
-        // Verify the project belongs to the user
-        if (projectContextDocs.project.userId !== userId) {
-            return { error: 'Unauthorized' };
-        }
-
-        return { success: true, projectContextDocs };
+        return projectContextDocs;
     } catch (error) {
         console.error("Error getting project context docs:", error);
         return { error: 'Failed to get project context docs' };
     }
 } 
 
-export async function generateProjectPlan(framework: string, phaseCount: string, detailedAnalysis: string, requirement: string) {
+export async function generateProjectPlan( framework: string, phaseCount: string, detailedAnalysis: string, requirement: string) {
     const { userId } = await auth();
     if (!userId) {
         return { error: 'Unauthorized' };
@@ -551,4 +539,16 @@ export async function generateNthPhase(plan: string, framework: string, detailed
         phaseNum: phaseNum
     });
     return response;
+}
+
+export async function updateProjectContextDocs(projectContextDocsId: string, plan: string, phases: any[]) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    await db.projectContextDocs.update({
+        where: {id: projectContextDocsId},
+        data: {plan: plan, phases: phases as any}
+    })
 }

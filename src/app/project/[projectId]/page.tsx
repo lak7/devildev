@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase } from "../../../../actions/project";
+import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
@@ -50,6 +50,8 @@ const ProjectPage = () => {
   const [isDocsGenerating, setIsDocsGenerating] = useState(false);
   const [selectedProjectDocsId, setSelectedProjectDocsId] = useState<string | undefined>(undefined);
   const [selectedDocsName, setSelectedDocsName] = useState<string | undefined>(undefined);
+  const [projectPlan, setProjectPlan] = useState<string>("Not Generated");
+  const [projectPhases, setProjectPhases] = useState<string[]>(["Not Generated 1", "Not Generated 2"]); 
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30);
@@ -175,6 +177,24 @@ const ProjectPage = () => {
                   // Load custom positions from the database
                   setCustomPositions(existingArchitecture.componentPositions || {});
                   setIsArchitectureGenerating(false);
+                  // HERE IMPLEMENT THE PROJECT CONTEXT DOCS
+                  // alert("Project Context Docs Implement Here")
+                  const projectContextDocs = await getProjectContextDocs(projectId);
+                  
+                  // Check if the result is an error
+                  if ('error' in projectContextDocs) {
+                    // alert("Error getting project context docs")
+                    console.error('Error getting project context docs:', projectContextDocs.error);
+                    // Set default values or handle the error appropriately
+                    setProjectPlan("Not Generated");
+                    setProjectPhases(["Not Generated 1", "Not Generated 2"]);
+                  } else {
+                    // alert("Project Context Docs Found")
+                    // Success case - access the properties safely
+                    setProjectPlan(projectContextDocs.plan || "Not Generated");
+                    setProjectPhases(projectContextDocs.phases as string[] || ["Not Generated 1", "Not Generated 2"]);
+                  }
+                  // alert("ok")
               }else{
                 setIsArchitectureGenerating(true);
                   const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
@@ -373,7 +393,8 @@ const ProjectPage = () => {
  
 
       
-      if(parsedResponse.prompt && parsedResponse.wannaStart){
+      if(parsedResponse.prompt && parsedResponse.wannaStart && (parsedResponse.difficulty === "easy" || parsedResponse.difficulty === "medium")){
+        alert("Starting to generate prompt")
         setIsPromptGenerating(true);
         //here
         const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
@@ -399,6 +420,7 @@ const ProjectPage = () => {
           setIsPromptGenerating(false);
         }
       }else if(parsedResponse.docs && parsedResponse.wannaStart){
+        alert("Starting to generate docs")
         setIsDocsGenerating(true);  
          // Here Docs generation logic
          const initialDocsRes = await initialDocsGeneration(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
@@ -416,7 +438,7 @@ const ProjectPage = () => {
              projectId, 
              parsedInitialDocsRes.nameDocs,
              bigChangesContent,
-             undefined, // human review
+             undefined, // human review 
              undefined, // plan
              undefined, // phases  
              parsedInitialDocsRes.phaseCount
@@ -441,21 +463,40 @@ const ProjectPage = () => {
              Object.assign(assistantMessage, updatedAssistantMessage);
            }
 
-           //Here generate plan
+           if(!projectContextDocsResult.projectContextDocs){
+            alert("no project context docs");
+            console.error('Error creating project context docs:', projectContextDocsResult.error);
+            return;
+           }
+
+           alert("Starting to generate plan")
+
+           //Here generate plan  
            const plan = await generateProjectPlan(project.framework, parsedInitialDocsRes.phaseCount, project.detailedAnalysis, parsedInitialDocsRes.requirement);
-           console.log("This is plan: ", plan);
+           console.log("This is plan: ", plan); 
+           alert("Plan generated")
+           setProjectPlan(plan.toString()); 
+
+           alert("Starting to generate phases")
+           let projectPhases: string[] = [];
            
            for(let i = 0; i< parsedInitialDocsRes.phaseCount; i++){
+            alert(i)
             const nthPhase = await generateNthPhase(JSON.stringify(plan), project.framework, project.detailedAnalysis, parsedInitialDocsRes.requirement, i.toString());
             console.log("This is nth phase: ", nthPhase);
+            projectPhases.push(nthPhase.toString());
            }
-           
+           setProjectPhases(projectPhases);
+           alert("Phases generated")
+           setIsDocsGenerating(false);
+           const updateDocsRes = await updateProjectContextDocs(projectContextDocsResult.projectContextDocs.id, projectPlan, projectPhases);
+           alert("Yeahh")
            
          } catch (error) {
            console.error('Error creating project context docs:', error);
          }
-         
          setIsDocsGenerating(false);
+         
       }
       
       // Save assistant message to database
@@ -718,7 +759,7 @@ const ProjectPage = () => {
                 {/* Project Docs button - only show for assistant messages with projectDocsId */}
                 {message.type === 'assistant' && message.projectDocsId && (
                   <div className="flex justify-start items-center space-x-3 ml-12 h-12  my-2 relative">
-                    <button
+                    <button 
                       onClick={() => {
                         setSelectedProjectDocsId(message.projectDocsId);
                         setSelectedDocsName(message.docsName);
@@ -927,6 +968,8 @@ const ProjectPage = () => {
               <ProjectContextDocs 
                 projectDocsId={selectedProjectDocsId}
                 docsName={selectedDocsName}
+                projectPlan={projectPlan}
+                projectPhases={projectPhases}
               />
             </div>
           </div>

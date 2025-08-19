@@ -1145,13 +1145,11 @@ ACCEPTANCE CRITERIA:
 
 ## OUTPUT FORMAT
 
-Generate ONLY this JSON structure:
-
-json
+Generate ONLY valid JSON without any comments or trailing commas:
 {{
-  "phaseCount": [2-7 integer based on complexity analysis],
-  "nameDocs": "[Professional project name for documentation]",
-  "exactRequirement": "[Complete, self-contained implementation specification that includes all functional, technical, UX, and integration requirements]"
+  "phaseCount": integer [2-7 integer based on complexity analysis],
+  "nameDocs": string [Professional project name for documentation],
+  "exactRequirement": string "[Complete, self-contained implementation specification that includes all functional, technical, UX, and integration requirements]"
 }}
 
 ## SUCCESS CRITERIA
