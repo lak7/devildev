@@ -43,9 +43,13 @@ export async function getProject(projectId: string) {
             framework: true,
             createdAt: true,
             updatedAt: true,
-            messages: true,
             ProjectArchitecture: true,
-            detailedAnalysis: true
+            detailedAnalysis: true,
+            ProjectChat: {
+                orderBy: {
+                    createdAt: 'asc'
+                }
+            }
         }
     });
     console.log("Project: ", project)
@@ -119,7 +123,7 @@ export async function saveProjectArchitecture(
                     timestamp: new Date().toISOString()
                 };
 
-                // Add the initial message to the project
+                // Add the initial message to the project (will create/use first chat)
                 await addMessageToProject(projectId, assistantMessage);
             }
         }
@@ -177,46 +181,8 @@ export async function updateProjectComponentPositions(
     }
 }
 
-// Add message to project
-export async function addMessageToProject(projectId: string, message: ProjectMessage) {
-    const { userId } = await auth();
-    if (!userId) {
-        return { error: 'Unauthorized' };
-    }
-
-    try {
-        // First verify the project belongs to the user
-        const project = await db.project.findUnique({
-            where: { id: projectId, userId: userId },
-            select: { id: true, messages: true }
-        });
-        
-        if (!project) {
-            return { error: 'Project not found' };
-        }
-
-        // Add new message to existing messages
-        const currentMessages = project.messages as unknown as ProjectMessage[];
-        const updatedMessages = [...currentMessages, message];
-
-        // Update project with new message
-        const updatedProject = await db.project.update({
-            where: { id: projectId },
-            data: {
-                messages: updatedMessages as any,
-                updatedAt: new Date()
-            }
-        });
-
-        return { success: true, project: updatedProject };
-    } catch (error) {
-        console.error("Error adding message to project:", error);
-        return { error: 'Failed to add message' };
-    }
-}
-
-// Update all messages in project
-export async function updateProjectMessages(projectId: string, messages: ProjectMessage[]) {
+// Create a new project chat
+export async function createProjectChat(projectId: string, title?: string) {
     const { userId } = await auth();
     if (!userId) {
         return { error: 'Unauthorized' };
@@ -233,20 +199,219 @@ export async function updateProjectMessages(projectId: string, messages: Project
             return { error: 'Project not found' };
         }
 
-        // Update project with all messages
-        const updatedProject = await db.project.update({
-            where: { id: projectId },
+        // Create new project chat
+        const projectChat = await db.projectChat.create({
+            data: {
+                projectId,
+                title: title || "New Chat",
+                messages: []
+            }
+        });
+
+        return { success: true, projectChat };
+    } catch (error) {
+        console.error("Error creating project chat:", error);
+        return { error: 'Failed to create project chat' };
+    }
+}
+
+// Get all project chats for a project
+export async function getProjectChats(projectId: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        // First verify the project belongs to the user
+        const project = await db.project.findUnique({
+            where: { id: projectId, userId: userId },
+            select: { id: true }
+        });
+        
+        if (!project) {
+            return { error: 'Project not found' };
+        }
+
+        // Get all project chats
+        const projectChats = await db.projectChat.findMany({
+            where: { projectId },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        return { success: true, projectChats };
+    } catch (error) {
+        console.error("Error getting project chats:", error);
+        return { error: 'Failed to get project chats' };
+    }
+}
+
+// Get a specific project chat
+export async function getProjectChat(projectId: string, chatId: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        // First verify the project belongs to the user
+        const project = await db.project.findUnique({
+            where: { id: projectId, userId: userId },
+            select: { id: true }
+        });
+        
+        if (!project) {
+            return { error: 'Project not found' };
+        }
+
+        // Get specific project chat
+        const projectChat = await db.projectChat.findUnique({
+            where: { 
+                id: BigInt(chatId),
+                projectId: projectId 
+            }
+        });
+
+        if (!projectChat) {
+            return { error: 'Project chat not found' };
+        }
+
+        return { success: true, projectChat };
+    } catch (error) {
+        console.error("Error getting project chat:", error);
+        return { error: 'Failed to get project chat' };
+    }
+}
+
+// Add message to project chat
+export async function addMessageToProjectChat(projectId: string, chatId: string, message: ProjectMessage) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        // First verify the project belongs to the user
+        const project = await db.project.findUnique({
+            where: { id: projectId, userId: userId },
+            select: { id: true }
+        });
+        
+        if (!project) {
+            return { error: 'Project not found' };
+        }
+
+        // Get current project chat
+        const projectChat = await db.projectChat.findUnique({
+            where: { 
+                id: BigInt(chatId),
+                projectId: projectId 
+            }
+        });
+
+        if (!projectChat) {
+            return { error: 'Project chat not found' };
+        }
+
+        // Add new message to existing messages
+        const currentMessages = projectChat.messages as unknown as ProjectMessage[];
+        const updatedMessages = [...currentMessages, message];
+
+        // Update project chat with new message
+        const updatedProjectChat = await db.projectChat.update({
+            where: { id: BigInt(chatId) },
+            data: {
+                messages: updatedMessages as any,
+                updatedAt: new Date()
+            }
+        });
+
+        return { success: true, projectChat: updatedProjectChat };
+    } catch (error) {
+        console.error("Error adding message to project chat:", error);
+        return { error: 'Failed to add message' };
+    }
+}
+
+// Legacy function - redirects to chat-based function
+export async function addMessageToProject(projectId: string, message: ProjectMessage, chatId?: string) {
+    if (chatId) {
+        return addMessageToProjectChat(projectId, chatId, message);
+    }
+    
+    // If no chatId provided, create or get the first chat
+    const chatsResult = await getProjectChats(projectId);
+    if (!chatsResult.success) {
+        return chatsResult;
+    }
+
+    let targetChatId: string;
+    if (chatsResult.projectChats!.length === 0) {
+        // Create first chat
+        const createResult = await createProjectChat(projectId);
+        if (!createResult.success) {
+            return createResult;
+        }
+        targetChatId = createResult.projectChat!.id.toString();
+    } else {
+        targetChatId = chatsResult.projectChats![0].id.toString();
+    }
+
+    return addMessageToProjectChat(projectId, targetChatId, message);
+}
+
+// Update all messages in project chat
+export async function updateProjectChatMessages(projectId: string, chatId: string, messages: ProjectMessage[]) {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        // First verify the project belongs to the user
+        const project = await db.project.findUnique({
+            where: { id: projectId, userId: userId },
+            select: { id: true }
+        });
+        
+        if (!project) {
+            return { error: 'Project not found' };
+        }
+
+        // Update project chat with all messages
+        const updatedProjectChat = await db.projectChat.update({
+            where: { id: BigInt(chatId) },
             data: {
                 messages: messages as any,
                 updatedAt: new Date()
             }
         });
 
-        return { success: true, project: updatedProject };
+        return { success: true, projectChat: updatedProjectChat };
     } catch (error) {
-        console.error("Error updating project messages:", error);
+        console.error("Error updating project chat messages:", error);
         return { error: 'Failed to update messages' };
     }
+}
+
+// Legacy function - redirects to chat-based function
+export async function updateProjectMessages(projectId: string, messages: ProjectMessage[], chatId?: string) {
+    if (chatId) {
+        return updateProjectChatMessages(projectId, chatId, messages);
+    }
+    
+    // If no chatId provided, update the first chat
+    const chatsResult = await getProjectChats(projectId);
+    if (!chatsResult.success) {
+        return chatsResult;
+    }
+
+    if (chatsResult.projectChats!.length === 0) {
+        return { error: 'No project chats found' };
+    }
+
+    const targetChatId = chatsResult.projectChats![0].id.toString();
+    return updateProjectChatMessages(projectId, targetChatId, messages);
 }
 
 
@@ -391,6 +556,8 @@ export async function projectChatBot( userInput: string, projectFramework: strin
 // Remember: You are the bridge between the user's ideas and their development workflow. Make their coding journey smoother by providing exactly the right level of assistance!
 //     ` 
 
+    console.log("This is the user Input: ", userInput);
+    console.log("This is the conversation History: ", formattedHistory);
     
     const prompt = PromptTemplate.fromTemplate(ultraProjectChatBotPrompt);
     const chain = prompt.pipe(llmWithWeb).pipe(new StringOutputParser());

@@ -5,12 +5,21 @@ import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs } from "../../../../actions/project";
+import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
 import { useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 import ProjectContextDocs from '@/components/core/ProjectContextDocs';
+
+interface ProjectChat {
+  id: bigint;
+  title: string;
+  projectId: string;
+  messages: any[]; // JsonValue[] from database, cast to ProjectMessage[] when needed
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 interface Project {
   name: string;
@@ -19,13 +28,17 @@ interface Project {
   updatedAt: Date;
   ProjectArchitecture: any;
   userId: string;
-  messages: ProjectMessage[];
+  ProjectChat: any[]; // Raw data from database
 }
 
 const ProjectPage = () => {
     const params = useParams();
   const router = useRouter();
   const projectId = params?.projectId as string;
+  
+  // Get current search params for chat ID
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const urlChatId = searchParams.get('c');
   
   // Counter for unique message IDs
   const messageIdCounterRef = useRef(0);
@@ -43,6 +56,8 @@ const ProjectPage = () => {
   const [textareaHeight, setTextareaHeight] = useState('60px');
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [projectChats, setProjectChats] = useState<ProjectChat[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isArchitectureGenerating, setIsArchitectureGenerating] = useState(false);
   const [architectureData, setArchitectureData] = useState<any>(null);
   const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
@@ -123,6 +138,56 @@ const ProjectPage = () => {
     }
   };
 
+  // Handle chat switching
+  const handleChatSwitch = async (chatId: string) => {
+    if (chatId === activeChatId) return;
+    
+    try {
+      const chatResult = await getProjectChat(projectId, chatId);
+      if (chatResult.success && chatResult.projectChat) {
+        setActiveChatId(chatId);
+        
+        // Load messages from the selected chat
+        const chatMessages = chatResult.projectChat.messages as unknown as ProjectMessage[];
+        const loadedMessages = chatMessages.map((msg, index) => ({
+          ...msg,
+          id: msg.id || generateMessageId()
+        }));
+        setMessages(loadedMessages);
+        
+        // Update URL
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('c', chatId);
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+    } catch (error) {
+      console.error('Error switching chat:', error);
+    }
+  };
+
+  // Handle creating new chat
+  const handleCreateNewChat = async () => {
+    try {
+      const createResult = await createProjectChat(projectId, "New Chat");
+      if (createResult.success) {
+        const newChat = createResult.projectChat!;
+        const newChatFormatted = {
+          ...newChat,
+          id: newChat.id,
+          messages: newChat.messages || []
+        } as ProjectChat;
+        
+        // Add to project chats list
+        setProjectChats(prev => [...prev, newChatFormatted]);
+        
+        // Switch to new chat
+        await handleChatSwitch(newChat.id.toString());
+      }
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+    }
+  };
+
     useEffect(() => {
       
       // Only run when Clerk is fully loaded
@@ -142,13 +207,86 @@ const ProjectPage = () => {
           if (projectData && !('error' in projectData)) { 
             setProject(projectData);
             
-            // Load existing messages from the project
-            if (projectData.messages && Array.isArray(projectData.messages)) {
-              const loadedMessages = (projectData.messages as unknown as ProjectMessage[]).map((msg, index) => ({
-                ...msg,
-                id: msg.id || generateMessageId() // Ensure every message has an ID
-              }));
-              setMessages(loadedMessages);
+            // Load project chats
+            if (projectData.ProjectChat && Array.isArray(projectData.ProjectChat)) {
+              const chats = projectData.ProjectChat.map(chat => ({
+                ...chat,
+                id: chat.id,
+                messages: chat.messages || [] // Ensure messages is always an array
+              })) as ProjectChat[];
+              setProjectChats(chats);
+              
+              // Determine which chat to load
+              let targetChatId: string | null = null;
+              
+              if (urlChatId) {
+                // Check if the URL chat ID exists
+                const chatExists = chats.find(chat => chat.id.toString() === urlChatId);
+                if (chatExists) {
+                  targetChatId = urlChatId;
+                }
+              }
+              
+              // If no valid URL chat ID, use the first chat or create one
+              if (!targetChatId) {
+                if (chats.length > 0) {
+                  targetChatId = chats[0].id.toString();
+                } else {
+                  // Create first chat if none exist
+                  const createResult = await createProjectChat(projectId);
+                  if (createResult.success) {
+                    const newChat = createResult.projectChat!;
+                    const newChatFormatted = {
+                      ...newChat,
+                      id: newChat.id,
+                      messages: newChat.messages || []
+                    } as ProjectChat;
+                    setProjectChats([newChatFormatted]);
+                    targetChatId = newChat.id.toString();
+                  }
+                }
+              }
+              
+              // Set active chat and load its messages
+              if (targetChatId) {
+                setActiveChatId(targetChatId);
+                const activeChat = chats.find(chat => chat.id.toString() === targetChatId) || 
+                                  (await getProjectChat(projectId, targetChatId)).projectChat;
+                
+                if (activeChat && activeChat.messages && Array.isArray(activeChat.messages)) {
+                  const loadedMessages = (activeChat.messages as unknown as ProjectMessage[]).map((msg, index) => ({
+                    ...msg,
+                    id: msg.id || generateMessageId() // Ensure every message has an ID
+                  }));
+                  setMessages(loadedMessages);
+                }
+                
+                // Update URL if needed
+                if (urlChatId !== targetChatId) {
+                  const newUrl = new URL(window.location.href);
+                  newUrl.searchParams.set('c', targetChatId);
+                  window.history.replaceState({}, '', newUrl.toString());
+                }
+              }
+            } else {
+              // No chats exist, create the first one
+              const createResult = await createProjectChat(projectId);
+              if (createResult.success) {
+                const newChat = createResult.projectChat!;
+                const newChatFormatted = {
+                  ...newChat,
+                  id: newChat.id,
+                  messages: newChat.messages || []
+                } as ProjectChat;
+                setProjectChats([newChatFormatted]);
+                setActiveChatId(newChat.id.toString());
+                setMessages([]);
+                
+                // Update URL
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('c', newChat.id.toString());
+                window.history.replaceState({}, '', newUrl.toString());
+              }
             }
             
             setIsLoading(false);
@@ -156,6 +294,7 @@ const ProjectPage = () => {
             loadArchitecture(projectData);
           }
         } catch (error) {
+          console.error('Error loading project:', error);
         } finally { 
           setIsLoading(false);
         }
@@ -262,7 +401,7 @@ const ProjectPage = () => {
       loadProject();
       
         
-  }, [projectId, isSignedIn, isLoaded]);
+  }, [projectId, isSignedIn, isLoaded, urlChatId]);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -334,7 +473,7 @@ const ProjectPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim() || isChatLoading) return;
+    if (!inputMessage.trim() || isChatLoading || !activeChatId) return;
     
     const userMessage: ProjectMessage = {
       id: generateMessageId(),
@@ -343,8 +482,12 @@ const ProjectPage = () => {
       timestamp: new Date().toISOString()
     };
 
+    alert(0)
+
     // Add user message to local state immediately
     setMessages(prevMessages => [...prevMessages, userMessage]);
+
+    alert(1)
     
     const currentInput = inputMessage;
     setInputMessage('');
@@ -352,15 +495,18 @@ const ProjectPage = () => {
     setIsChatLoading(true);
 
     try {
+      alert(2)
       // Save user message to database
-      await addMessageToProject(projectId, userMessage);
+      await addMessageToProjectChat(projectId, activeChatId, userMessage);
+      alert(3)
 
       // alert(currentInput.trim())
       
       // TODO: Add AI response handling here when implementing chat functionality
-      // here
+      // here 
       const chatbotResponse = await projectChatBot(currentInput.trim() ,project.framework, messages, architectureData, project.detailedAnalysis);
-      let cleanedResponse = chatbotResponse;
+      alert(4)
+      let cleanedResponse = chatbotResponse; 
       if (typeof cleanedResponse === 'string') {
         cleanedResponse = cleanedResponse
           .replace(/^```json\s*/i, '')
@@ -500,7 +646,7 @@ const ProjectPage = () => {
       }
       
       // Save assistant message to database
-      await addMessageToProject(projectId, assistantMessage);
+      await addMessageToProjectChat(projectId, activeChatId, assistantMessage);
       
     } catch (error) {
       console.error('Error handling message:', error);
@@ -680,6 +826,50 @@ const ProjectPage = () => {
                   Community
                 </span>
               </a>
+            </div>
+
+            {/* Project Chats Section */}
+            <div className="px-2 mt-6 flex-1 overflow-hidden">
+              <div className="flex items-center justify-between mb-3">
+                <span className={`text-xs font-semibold text-gray-400 uppercase tracking-wider transition-all duration-300 ${
+                  isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}>
+                  Project Chats
+                </span>
+                <button
+                  onClick={handleCreateNewChat}
+                  className={`p-1 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded transition-all duration-200 ${
+                    isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                  }`}
+                  title="New Chat"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+              
+              <div className="space-y-1 overflow-y-auto max-h-96 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                {projectChats.map((chat) => (
+                  <button
+                    key={chat.id.toString()}
+                    onClick={() => handleChatSwitch(chat.id.toString())}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-left w-full transition-all duration-200 group/chat ${
+                      activeChatId === chat.id.toString()
+                        ? 'bg-red-500/20 text-white border border-red-500/30'
+                        : 'text-gray-300 hover:text-white hover:bg-black/40 border border-transparent'
+                    }`}
+                    title={chat.title}
+                  >
+                    <MessageCircle className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${
+                      activeChatId === chat.id.toString() ? 'text-red-400' : 'text-gray-400 group-hover/chat:text-red-400'
+                    } group-hover/chat:scale-105`} />
+                    <span className={`text-sm truncate transition-all duration-300 ${
+                      isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                    }`}>
+                      {chat.title}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* User avatar at bottom */}

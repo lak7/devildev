@@ -176,6 +176,7 @@ model ProjectContextDocs {
 
 model ProjectChat {
   id        BigInt   @id @default(autoincrement())
+  title     String  @default("New Chat")
   projectId String   
   messages Json[] @default([])
   createdAt DateTime @default(now())
