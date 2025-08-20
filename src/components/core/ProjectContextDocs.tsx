@@ -17,13 +17,14 @@ interface FileNode {
 }
  
 interface ProjectContextDocsProps {
+  projectId?: string;
   projectDocsId?: string;
   docsName?: string;
   projectPlan?: string;
   projectPhases?: string[];
 }
 
-export default function ProjectContextDocs({ projectDocsId, docsName, projectPlan, projectPhases }: ProjectContextDocsProps = {}) {
+export default function ProjectContextDocs({ projectId, projectDocsId, docsName, projectPlan, projectPhases }: ProjectContextDocsProps = {}) {
   const [selectedFile, setSelectedFile] = React.useState<string>(`${docsName || "BigChanges"}/PROJECT_RULES.md`)
   const [selectedContent, setSelectedContent] = React.useState<string>("")
   const [isCopied, setIsCopied] = React.useState<boolean>(false)
@@ -32,11 +33,13 @@ export default function ProjectContextDocs({ projectDocsId, docsName, projectPla
   // Load project context data when projectDocsId changes
   React.useEffect(() => {
     const loadProjectContextData = async () => {
-      if (projectDocsId) {
+      if (projectId) { 
         try {
-          const result = await getProjectContextDocs(projectDocsId);
+          const result = await getProjectContextDocs(projectId);
+          alert("Fetched bitch")
+          console.log("This is result: ", result) ; 
           if (result.success) {
-            setProjectContextData(result.projectContextDocs);
+            setProjectContextData(result.projectContextDocs); 
           }
         } catch (error) {
           console.error('Error loading project context docs:', error);
@@ -47,7 +50,7 @@ export default function ProjectContextDocs({ projectDocsId, docsName, projectPla
     };
 
     loadProjectContextData();
-  }, [projectDocsId]);
+  }, [projectId]);
 
   // Update selected file when docsName changes
   React.useEffect(() => { 

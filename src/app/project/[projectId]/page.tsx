@@ -189,10 +189,10 @@ const ProjectPage = () => {
                     setProjectPlan("Not Generated");
                     setProjectPhases(["Not Generated 1", "Not Generated 2"]);
                   } else {
-                    // alert("Project Context Docs Found")
+                    // alert("Project Context Docs Found") 
                     // Success case - access the properties safely
-                    setProjectPlan(projectContextDocs.plan || "Not Generated");
-                    setProjectPhases(projectContextDocs.phases as string[] || ["Not Generated 1", "Not Generated 2"]);
+                    setProjectPlan(projectContextDocs.projectContextDocs[0].plan || "Not Generated");
+                    setProjectPhases(projectContextDocs.projectContextDocs[0].phases as string[] || ["Not Generated 1", "Not Generated 2"]);
                   }
                   // alert("ok")
               }else{
@@ -966,6 +966,7 @@ const ProjectPage = () => {
             {/* Documentation Tab */}
             <div className={`h-full ${activeTab === 'docs' ? 'block' : 'hidden'}`}>
               <ProjectContextDocs 
+                projectId={projectId}
                 projectDocsId={selectedProjectDocsId}
                 docsName={selectedDocsName}
                 projectPlan={projectPlan}

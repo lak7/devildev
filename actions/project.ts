@@ -491,7 +491,7 @@ export async function getProjectContextDocs(projectId: string) {
     }
 
     try {
-        const projectContextDocs = await db.projectContextDocs.findUnique({
+        const projectContextDocs = await db.projectContextDocs.findMany({
             where: {projectId: projectId}
         });
         
@@ -499,7 +499,7 @@ export async function getProjectContextDocs(projectId: string) {
             return { error: 'Project context docs not found' };
         }
 
-        return projectContextDocs;
+        return {success: true, projectContextDocs: projectContextDocs};
     } catch (error) {
         console.error("Error getting project context docs:", error);
         return { error: 'Failed to get project context docs' };

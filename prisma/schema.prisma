@@ -162,7 +162,7 @@ model ProjectArchitecture {
 
 model ProjectContextDocs {
   id        String   @id @default(uuid())
-  projectId String  @unique
+  projectId String  
   contextName String?
   projectRules String?
   humanReview String?
