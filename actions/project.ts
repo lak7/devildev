@@ -5,7 +5,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { architectureModificationPrompt, chatbotPrompt } from "../prompts/Chatbot";
-import { generateEasyMediumPrompt, generateNthProjectPhase, generateProjectPlanDocs, initialDocsGenerationPrompt, projectChatBotPrompt } from "../prompts/ReverseArchitecture";
+import { generateEasyMediumPrompt, generateNthProjectPhase, generateProjectPlanDocs, initialDocsGenerationPrompt, projectChatBotPrompt, theProjectChatBotPrompt, ultraProjectChatBotPrompt } from "../prompts/ReverseArchitecture";
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
   openAIApiKey: openaiKey,
@@ -14,7 +14,7 @@ const llm = new ChatOpenAI({
 
 const llm2 = new ChatOpenAI({
   openAIApiKey: openaiKey,
-  model: "gpt-5-mini-2025-08-07"
+  model: "gpt-5-nano-2025-08-07"
 })
 const tool = {"type": "web_search_preview"}
 const llmWithWeb = llm2.bindTools([tool])
@@ -258,7 +258,7 @@ export async function projectChatBot( userInput: string, projectFramework: strin
      // Format conversation history for the prompt
      const formattedHistory = conversationHistory.map(msg => 
         `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
-    ).join('\n');
+    ).join('\n'); 
 //     const template = `
 //     You are an intelligent project assistant specializing in React/Next.js applications. You have complete context about the user's project and can help with explanations, queries, and generating contextual development prompts.
 
@@ -389,10 +389,10 @@ export async function projectChatBot( userInput: string, projectFramework: strin
 // ✅ **JSON Compliance**: Always return properly formatted JSON response
 
 // Remember: You are the bridge between the user's ideas and their development workflow. Make their coding journey smoother by providing exactly the right level of assistance!
-//     `
+//     ` 
 
     
-    const prompt = PromptTemplate.fromTemplate(projectChatBotPrompt);
+    const prompt = PromptTemplate.fromTemplate(ultraProjectChatBotPrompt);
     const chain = prompt.pipe(llmWithWeb).pipe(new StringOutputParser());
     const response = await chain.invoke({
         userQuery: userInput,

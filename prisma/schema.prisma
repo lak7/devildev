@@ -135,7 +135,7 @@ model Project {
   language  String?
   repoId String? @unique
   repoFullName String?
-  messages Json[] @default([])
+  ProjectChat ProjectChat[]
   packageJson Json?
   framework String?
   repoContent Json?
@@ -169,6 +169,15 @@ model ProjectContextDocs {
   plan String?
   phases Json?
   phaseCount Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectChat {
+  id        BigInt   @id @default(autoincrement())
+  projectId String   
+  messages Json[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
