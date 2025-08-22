@@ -181,3 +181,16 @@ textarea {
   scrollbar-color: rgba(239, 68, 68, 0.3) transparent;
 }
 
+/* Custom loading animation */
+@keyframes loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+

@@ -112,7 +112,7 @@ export default function NewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md">
         <div className="w-full py-4 px-7">
@@ -156,7 +156,7 @@ export default function NewPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex items-center justify-center mt-7  px-4 sm:px-6 lg:px-8">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-4xl">
           <ImportGitRepository onImport={handleImport} />
         </div>

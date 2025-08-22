@@ -41,6 +41,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [searchLoading, setSearchLoading] = useState(false);
   const [githubConnected, setGithubConnected] = useState(false);
   const [importing, setImporting] = useState<number | null>(null);
+  const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(true);
 
   useEffect(() => {
     checkGithubStatus();
@@ -53,10 +54,12 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   }, [githubConnected]);
 
   const checkGithubStatus = async () => {
+    setIsGithubStatusLoading(true);
     try {
       const response = await fetch('/api/github/status');
       const data = await response.json();
       setGithubConnected(data.isConnected);
+      setIsGithubStatusLoading(false);
     } catch (error) {
       console.error('Error checking GitHub status:', error);
     }
@@ -121,6 +124,23 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
     return `${Math.floor(diffInSeconds / 31536000)}y ago`;
   };
+
+  if (isGithubStatusLoading) {
+    return (
+      <div className="w-full flex items-center justify-center min-h-[200px]">
+        <div className="text-center space-y-6">
+          <div className="relative w-80 h-3 bg-gray-800/50 rounded-full overflow-hidden border border-gray-700/50">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-full"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 rounded-full animate-[loading_2.5s_ease-in-out_infinite] shadow-lg shadow-red-500/25"></div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-gray-300 text-sm font-medium">Connecting to GitHub</p>
+            <p className="text-gray-500 text-xs">Please wait while we verify your connection...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!githubConnected) {
     return (

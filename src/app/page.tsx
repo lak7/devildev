@@ -17,6 +17,9 @@ import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
 import { UserProfile, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { FuturisticButton } from '@/components/ui/GlowButton01';
+import { MatrixGlitchButton } from '@/components/ui/GlowButton02';
+import { GlowButton } from '@/components/ui/GlowButton05';
 
 
 
@@ -454,6 +457,17 @@ export default function Page() {
                 </button>
               </div>
             </form>
+
+            <div className="flex w-full h-full justify-center items-center mt-12"> 
+            {/* <MatrixGlitchButton onClick={() => alert("Join Now!")} className="px-8 py-4 text-base">
+            Import Existing Project From GitHub
+          </MatrixGlitchButton> */}
+          <GlowButton variant="cyan" size="md" onClick={() => router.push('/new')}>
+            <Github className="w-5 h-5" />
+            Import Existing Project From GitHub
+          </GlowButton>
+              {/* <FuturisticButton variant="white">Import Existing Project From GitHub</FuturisticButton> */}
+            </div>
           </div>
           {!isSignedIn && (
             <div className="flex w-full h-full justify-center items-center mt-12">

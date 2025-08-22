@@ -20,6 +20,7 @@
     "@radix-ui/react-scroll-area": "^1.2.9",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",
+    "@react-three/fiber": "^9.3.0",
     "@supabase/supabase-js": "^2.50.5",
     "@tabler/icons-react": "^3.34.1",
     "@types/jszip": "^3.4.0",
@@ -43,6 +44,7 @@
     "remark-gfm": "^4.0.1",
     "svix": "^1.69.0",
     "tailwind-merge": "^3.3.0",
+    "three": "^0.179.1",
     "zod": "^3.25.54"
   },
   "devDependencies": {
