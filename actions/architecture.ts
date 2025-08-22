@@ -393,7 +393,7 @@ export async function generateArchitectureWithToolCalling(requirement: string, c
     `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
 ).join('\n');
 
-const llm = new ChatOpenAI({openAIApiKey: process.env.OPENAI_API_KEY, model: "gpt-4o"});
+const llm = new ChatOpenAI({openAIApiKey: process.env.OPENAI_API_KEY, model: "gpt-5-mini-2025-08-07"});
 
 const prompt = ChatPromptTemplate.fromMessages([
   ["system", `You are DevilDev, an expert software architect specializing in modern, production-ready systems. Your primary task is to analyze software requirements and generate comprehensive architecture components using the appropriate tools, then return a structured JSON response.
