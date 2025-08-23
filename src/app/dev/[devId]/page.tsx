@@ -314,8 +314,8 @@ const DevPage = () => {
           if (chatResult.success && chatResult.chat) {
             const chatMessages = chatResult.chat.messages as unknown as ChatMessageType[];
             setMessages(chatMessages);
-            setIsChatMode(true);
-            
+            setIsChatMode(true); 
+            alert(0)
             // Load architecture data if it exists
             const archResult = await getArchitecture(chatId);
             if (archResult.success && archResult.architecture) {
@@ -323,6 +323,7 @@ const DevPage = () => {
               setComponentPositions(archResult.componentPositions || {});
               setArchitectureGenerated(true);
             }
+            alert(1)
             setIsLoadingChat(false);
 
             // Load contextual docs data if it exists
@@ -332,6 +333,7 @@ const DevPage = () => {
               syncIndividualStates(docsResult.contextualDocs);
               setDocsGenerated(true);
             }
+            alert(2)
           } else {
             setIsLoadingChat(false);
             console.error("Failed to load chat:", chatResult.error);

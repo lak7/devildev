@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Github, ExternalLink, Clock, Star, GitFork, Lock, Globe, Loader2, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,15 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     }
   }, [githubConnected]);
 
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleSearch(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
   const checkGithubStatus = async () => {
     setIsGithubStatusLoading(true);
     try {
@@ -91,10 +100,9 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) { 
-      fetchRepos(searchTerm.trim());
+  const handleSearch = (searchValue: string) => {
+    if (searchValue.trim()) { 
+      fetchRepos(searchValue.trim());
     } else {
       fetchRepos();
     }
@@ -195,7 +203,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
       {/* Search Section */}
       <div className="bg-gradient-to-br from-neutral-950 to-neutral-900 border border-white/10 rounded-2xl p-6 mb-6">
-        <form onSubmit={handleSearch} className="relative">
+        <div className="relative">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
@@ -211,7 +219,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
               </div>
             )}
           </div>
-        </form>
+        </div>
       </div>
 
       {/* Repository List */}
@@ -263,7 +271,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
                       }}
                       variant="outline"
                       size="sm"
-                      className="border-white/20 text-white hover:bg-white/10 hover:border-white/40"
+                      className="border-white/20 text-black hover:text-white hover:bg-white/10 hover:border-white/40"
                     >
                       Clear Search
                     </Button>

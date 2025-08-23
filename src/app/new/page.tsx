@@ -44,7 +44,7 @@ export default function NewPage() {
   const handleImport = async (repo: Repository) => {
     setImporting(true); 
     try { 
-      const response = await checkPackageAndFramework(repo.id.toString(), repo.fullName);
+      const {result: response, project: project} = await checkPackageAndFramework(repo.id.toString(), repo.fullName);
       let cleanedResult = response;
       if (typeof response === 'string') {
         // Remove markdown code blocks (```json...``` or ```...```)
@@ -59,8 +59,11 @@ export default function NewPage() {
         ? JSON.parse(cleanedResult)  
         : cleanedResult; 
 
-      if (parsedResponse) {
+      if (parsedResponse && project) {
         alert("Imported successfully");
+        if(parsedResponse.isValid){
+          router.push(`/project/${project.id}`);
+        }
       } else {
         console.error('Import failed:');
       }

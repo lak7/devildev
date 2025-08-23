@@ -17,7 +17,7 @@ const llm = new ChatOpenAI({
   const llm2 = new ChatOpenAI({
     openAIApiKey: openaiKey,
     model: "gpt-4o-2024-08-06"
-  })
+  }) 
 
 
 export async function checkPackageAndFramework(repositoryId: string, repoFullName: string){
@@ -143,18 +143,19 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
       }
       console.log("Step 7")
       // Check if the project is a react or next project
-      const template = isNextOrReactPrompt
+      const template = isNextOrReactPrompt 
       const prompt = PromptTemplate.fromTemplate(template);
       const chain = prompt.pipe(llm).pipe(new StringOutputParser());
       const result = await chain.invoke({repoContent: JSON.stringify(repoContent), packageJson: JSON.stringify(packageJson)});
       console.log("Step 8")
       const resultObject = JSON.parse(result);
+      let project = null;
       if(resultObject.isValid){
-            const project = await db.project.create({
+            project = await db.project.create({
             data: {
                 name: repoFullName.split('/')[1] || repoFullName, // Use repo name as project name
                 userId: userId,
-                repoId: repositoryId,
+                repoId: repositoryId, 
                 repoFullName: repoFullName,
                 repoContent: repoContent,
                 packageJson: packageJson,
@@ -163,7 +164,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
             }
             });
       }
-        return result;
+        return {result: result, project: project};
       
       
      

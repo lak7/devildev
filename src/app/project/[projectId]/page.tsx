@@ -202,9 +202,11 @@ const ProjectPage = () => {
         }
         
         try {
+          alert(0)
           const projectData = await getProject(projectId);
-     
+          alert(1)
           if (projectData && !('error' in projectData)) { 
+            alert(2)
             setProject(projectData);
             
             // Load project chats
@@ -215,6 +217,7 @@ const ProjectPage = () => {
                 messages: chat.messages || [] // Ensure messages is always an array
               })) as ProjectChat[];
               setProjectChats(chats);
+              alert(3)
               
               // Determine which chat to load
               let targetChatId: string | null = null;
@@ -226,7 +229,7 @@ const ProjectPage = () => {
                   targetChatId = urlChatId;
                 }
               }
-              
+              alert(4)
               // If no valid URL chat ID, use the first chat or create one
               if (!targetChatId) {
                 if (chats.length > 0) {
@@ -246,13 +249,13 @@ const ProjectPage = () => {
                   }
                 }
               }
-              
+              alert(5)              
               // Set active chat and load its messages
               if (targetChatId) {
                 setActiveChatId(targetChatId);
                 const activeChat = chats.find(chat => chat.id.toString() === targetChatId) || 
                                   (await getProjectChat(projectId, targetChatId)).projectChat;
-                
+  alert(6)                
                 if (activeChat && activeChat.messages && Array.isArray(activeChat.messages)) {
                   const loadedMessages = (activeChat.messages as unknown as ProjectMessage[]).map((msg, index) => ({
                     ...msg,
@@ -260,15 +263,17 @@ const ProjectPage = () => {
                   }));
                   setMessages(loadedMessages);
                 }
-                
+                alert(7)
                 // Update URL if needed
                 if (urlChatId !== targetChatId) {
                   const newUrl = new URL(window.location.href);
                   newUrl.searchParams.set('c', targetChatId);
                   window.history.replaceState({}, '', newUrl.toString());
                 }
+                alert(8)
               }
             } else {
+              alert(9)
               // No chats exist, create the first one
               const createResult = await createProjectChat(projectId);
               if (createResult.success) {
@@ -288,7 +293,7 @@ const ProjectPage = () => {
                 window.history.replaceState({}, '', newUrl.toString());
               }
             }
-            
+            alert(10)
             setIsLoading(false);
 
             loadArchitecture(projectData);
@@ -301,8 +306,9 @@ const ProjectPage = () => {
       };
 
       const loadArchitecture = async (theProjectData: any) => {
+        alert("Step 1")
         if(theProjectData?.ProjectArchitecture && theProjectData.ProjectArchitecture.length > 0){
-
+          alert("Step 2")
                   // Load existing architecture
                   const existingArchitecture = theProjectData.ProjectArchitecture[0];
                   const architectureData = { 
@@ -319,7 +325,7 @@ const ProjectPage = () => {
                   // HERE IMPLEMENT THE PROJECT CONTEXT DOCS
                   // alert("Project Context Docs Implement Here")
                   const projectContextDocs = await getProjectContextDocs(projectId);
-                  
+              alert("Step 3")                  
                   // Check if the result is an error
                   if ('error' in projectContextDocs) {
                     // alert("Error getting project context docs")
@@ -328,6 +334,7 @@ const ProjectPage = () => {
                     setProjectPlan("Not Generated");
                     setProjectPhases(["Not Generated 1", "Not Generated 2"]);
                   } else {
+                    alert("Step 4")
                     // alert("Project Context Docs Found") 
                     // Success case - access the properties safely
                     setProjectPlan(projectContextDocs.projectContextDocs[0].plan || "Not Generated");
@@ -335,8 +342,11 @@ const ProjectPage = () => {
                   }
                   // alert("ok")
               }else{
+                alert("Step 5")
                 setIsArchitectureGenerating(true);
+                alert(projectId)
                   const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
+                  alert("Step 6")
                   // Clean the result to remove markdown code blocks if present
                   let cleanedResult = architectureResult; 
                   if (typeof architectureResult === 'string') {
@@ -347,7 +357,7 @@ const ProjectPage = () => {
                       .replace(/\s*```\s*$/, '')
                       .trim();
                   }
-                  
+                  alert("Step 7")                  
                   // Parse the JSON result
                   const parsedArchitecture = typeof cleanedResult === 'string' 
                       ? JSON.parse(cleanedResult) 
@@ -401,7 +411,7 @@ const ProjectPage = () => {
       loadProject();
       
         
-  }, [projectId, isSignedIn, isLoaded, urlChatId]);
+  }, [projectId, isSignedIn, isLoaded]);
 
   // Check if mobile on mount and resize
   useEffect(() => {
