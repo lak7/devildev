@@ -337,8 +337,13 @@ const ProjectPage = () => {
                     alert("Step 4")
                     // alert("Project Context Docs Found") 
                     // Success case - access the properties safely
-                    setProjectPlan(projectContextDocs.projectContextDocs[0].plan || "Not Generated");
-                    setProjectPhases(projectContextDocs.projectContextDocs[0].phases as string[] || ["Not Generated 1", "Not Generated 2"]);
+                    if(projectContextDocs.projectContextDocs && projectContextDocs.projectContextDocs.length > 0){
+                      setProjectPlan(projectContextDocs.projectContextDocs[0].plan || "Not Generated");
+                      setProjectPhases(projectContextDocs.projectContextDocs[0].phases as string[] || ["Not Generated 1", "Not Generated 2"]);
+                    }else{
+                      setProjectPlan("Not Generated");
+                      setProjectPhases(["Not Generated 1", "Not Generated 2"]);
+                    }
                   }
                   // alert("ok")
               }else{
