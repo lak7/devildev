@@ -18,7 +18,7 @@ import Noise from '@/components/Noise/Noise';
 import { UserProfile, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { FuturisticButton } from '@/components/ui/GlowButton01';
-import { MatrixGlitchButton } from '@/components/ui/GlowButton02';
+// import { MatrixGlitchButton } from '@/components/ui/GlowButton02';
 import { GlowButton } from '@/components/ui/GlowButton05';
 
 
