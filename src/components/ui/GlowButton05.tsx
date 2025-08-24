@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 
 interface GlowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode
-  variant?: "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "rainbow" | "red"
+  variant?: "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "rainbow" | "red" | "white"
   size?: "sm" | "md" | "lg"
 }
 
@@ -23,6 +23,7 @@ export function GlowButton({ children, className, variant = "blue", size = "md",
     rainbow:
       "bg-black border-purple-500/30 text-white shadow-[0_0_12px_rgba(147,51,234,0.24),0_0_24px_rgba(59,130,246,0.18),0_0_36px_rgba(236,72,153,0.12)] hover:shadow-[0_0_16px_rgba(147,51,234,0.36),0_0_32px_rgba(59,130,246,0.24),0_0_48px_rgba(236,72,153,0.18)]",
     red: "bg-black border-red-500/30 text-white shadow-[0_0_12px_rgba(220,38,38,0.35),0_0_24px_rgba(220,38,38,0.18)] hover:shadow-[0_0_16px_rgba(220,38,38,0.48),0_0_32px_rgba(220,38,38,0.24)]",
+    white: "bg-white border-gray-300/30 rounded-full text-black shadow-[0_0_12px_rgba(255,255,255,0.35),0_0_24px_rgba(255,255,255,0.18)] hover:shadow-[0_0_16px_rgba(255,255,255,0.48),0_0_32px_rgba(255,255,255,0.24)]",
   }
 
   const gradients = {
@@ -34,6 +35,7 @@ export function GlowButton({ children, className, variant = "blue", size = "md",
     cyan: "from-cyan-500 to-blue-400",
     rainbow: "from-purple-500 via-blue-500 to-pink-500",
     red: "from-red-600 to-red-600",
+    white: "from-white to-gray-100",
   }
 
   const sizes = {

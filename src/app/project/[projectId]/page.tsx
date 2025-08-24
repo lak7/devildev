@@ -11,6 +11,7 @@ import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 import ProjectContextDocs from '@/components/core/ProjectContextDocs';
+import { ProjectPageSkeleton } from '@/components/ui/project-skeleton';
 
 interface ProjectChat {
   id: bigint;
@@ -177,8 +178,8 @@ const ProjectPage = () => {
           messages: newChat.messages || []
         } as ProjectChat;
         
-        // Add to project chats list
-        setProjectChats(prev => [...prev, newChatFormatted]);
+        // Add to project chats list at the beginning (latest first)
+        setProjectChats(prev => [newChatFormatted, ...prev]);
         
         // Switch to new chat
         await handleChatSwitch(newChat.id.toString());
@@ -216,7 +217,12 @@ const ProjectPage = () => {
                 id: chat.id,
                 messages: chat.messages || [] // Ensure messages is always an array
               })) as ProjectChat[];
-              setProjectChats(chats);
+              
+              // Sort chats by createdAt in descending order (latest first)
+              const sortedChats = chats.sort((a, b) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              );
+              setProjectChats(sortedChats);
               alert(3)
               
               // Determine which chat to load
@@ -224,16 +230,16 @@ const ProjectPage = () => {
               
               if (urlChatId) {
                 // Check if the URL chat ID exists
-                const chatExists = chats.find(chat => chat.id.toString() === urlChatId);
+                const chatExists = sortedChats.find(chat => chat.id.toString() === urlChatId);
                 if (chatExists) {
                   targetChatId = urlChatId;
                 }
               }
               alert(4)
-              // If no valid URL chat ID, use the first chat or create one
+              // If no valid URL chat ID, use the latest chat or create one
               if (!targetChatId) {
-                if (chats.length > 0) {
-                  targetChatId = chats[0].id.toString();
+                if (sortedChats.length > 0) {
+                  targetChatId = sortedChats[0].id.toString(); // Latest chat (first in sorted array)
                 } else {
                   // Create first chat if none exist
                   const createResult = await createProjectChat(projectId);
@@ -250,10 +256,10 @@ const ProjectPage = () => {
                 }
               }
               alert(5)              
-              // Set active chat and load its messages
+                              // Set active chat and load its messages
               if (targetChatId) {
                 setActiveChatId(targetChatId);
-                const activeChat = chats.find(chat => chat.id.toString() === targetChatId) || 
+                const activeChat = sortedChats.find(chat => chat.id.toString() === targetChatId) || 
                                   (await getProjectChat(projectId, targetChatId)).projectChat;
   alert(6)                
                 if (activeChat && activeChat.messages && Array.isArray(activeChat.messages)) {
@@ -681,11 +687,7 @@ const ProjectPage = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-black">
-        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
-      </div>
-    );
+    return <ProjectPageSkeleton />;
   }
 
   if (!project?.name) {
@@ -818,15 +820,15 @@ const ProjectPage = () => {
             {/* Navigation items */}
             <div className="px-2 space-y-2">
               <button
-                onClick={() => router.push('/')}
+                onClick={handleCreateNewChat}
                 className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item w-full"
-                title="New Project"
+                title="New Chat"
               >
                 <Plus className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                   isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
-                  New Project
+                  New Chat
                 </span>
               </button>
               <a
@@ -851,15 +853,9 @@ const ProjectPage = () => {
                 }`}>
                   Project Chats
                 </span>
-                <button
-                  onClick={handleCreateNewChat}
-                  className={`p-1 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded transition-all duration-200 ${
-                    isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                  }`}
-                  title="New Chat"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
+                
+
+
               </div>
               
               <div className="space-y-1 overflow-y-auto max-h-96 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">

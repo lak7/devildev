@@ -2,6 +2,8 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ProjectSkeletonGrid } from "@/components/ui/project-skeleton"
+import { GlowButton } from "@/components/ui/GlowButton05"
 import {
   MoreHorizontal,
   RotateCcw,
@@ -23,12 +25,14 @@ import {
   MessageCircle,
   Clock,
   Folder,
+  Upload,
 } from "lucide-react"
 import useSWR from "swr";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useUser } from '@clerk/nextjs'
+import { useEffect, useState } from "react"
 
 interface Project {
   id: string;
@@ -41,6 +45,7 @@ interface Project {
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const { isLoaded, isSignedIn, user } = useUser();
 
   // SWR fetcher function using API route
@@ -52,8 +57,13 @@ export default function ProjectsPage() {
     return response.json();
   };
 
+
+
+
+
+
   // Use SWR for caching and revalidation
-  const { data: projects = [], error, isLoading } = useSWR(
+  const { data: projects = null, error, isLoading } = useSWR(
     isSignedIn ? '/api/projects/getUserProjects' : null,
     fetcher,
     {
@@ -65,6 +75,12 @@ export default function ProjectsPage() {
       errorRetryInterval: 1000, // Wait 1 second between retries
     }
   );
+
+  useEffect(() => {
+    if (isLoading) {
+      setIsInitialLoading(false);
+    }
+  }, [isLoaded, isSignedIn, isLoading]);
 
   const getProjectIcon = (framework: string | null) => {
     if (!framework) {
@@ -95,6 +111,15 @@ export default function ProjectsPage() {
     if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
     return `${Math.floor(diffDays / 365)}y ago`;
   };
+
+  // if(isInitialLoading) {
+  //   return (
+  //     <div className="flex items-center justify-center h-screen">
+  //       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-400"></div>
+  //     </div>
+  //   )
+  // }
+
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -170,7 +195,7 @@ export default function ProjectsPage() {
                 <p className="text-gray-400 text-sm">Manage and explore your imported repositories</p>
                 </div>
                
-               
+               {projects && projects.length > 0 && (
                 <button onClick={() => router.push('/new')} className="px-4 py-2 rounded-md border border-black bg-white text-black text-sm hover:bg-gray-300 hover:cursor-pointer">
                 <div className="flex justify-center font-medium items-center gap-2.5">
                 Add New...
@@ -178,6 +203,8 @@ export default function ProjectsPage() {
                 </div>
                  
                 </button>
+               )}
+                
               </div>
               
               {error ? (
@@ -195,28 +222,114 @@ export default function ProjectsPage() {
                     Retry
                   </Button>
                 </div>
-              ) : isLoading ? (
-                <div className="flex items-center justify-center py-16">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-400"></div>
-                </div>
-              ) : projects.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Folder className="h-8 w-8 text-gray-400" />
+              ) : isInitialLoading || isLoading || !projects ? (
+                <ProjectSkeletonGrid />
+              ) : projects && projects.length === 0 ? (
+                <div className="flex w-full h-full justify-center items-center">
+                  {/* Right Section - Projects */}
+                  <div className="w-full max-w-2xl">
+                    <div className="text-center">
+                      <div className="relative mx-auto mb-6">
+                        <div className="relative inline-block">
+                          {/* Circular glow layers */}
+                          <div
+                            className="absolute inset-0 rounded-full blur-sm opacity-35 bg-gradient-to-r from-white to-gray-100"
+                            style={{
+                              transform: "scale(1.03)",
+                              filter: "blur(8px)",
+                              animation: "float-glow 6s ease-in-out infinite",
+                            }}
+                          />
+                          <div
+                            className="absolute inset-0 rounded-full blur-xs opacity-24 bg-gradient-to-r from-white to-gray-100"
+                            style={{
+                              transform: "scale(1.015)",
+                              filter: "blur(4px)",
+                              animation: "float-glow-secondary 7s ease-in-out infinite reverse",
+                            }}
+                          />
+                          <div
+                            className="absolute inset-0 rounded-full blur-md opacity-18 bg-gradient-to-r from-white to-gray-100"
+                            style={{
+                              transform: "scale(1.05)",
+                              filter: "blur(12px)",
+                              animation: "float-glow-tertiary 8s ease-in-out infinite",
+                            }}
+                          />
+
+                          {/* Button */}
+                          <button
+                            onClick={() => router.push('/new')}
+                            className="group relative z-10 w-24 h-24 rounded-full border-2 border-gray-300 bg-black text-white font-medium transition-all duration-300 ease-out backdrop-blur-sm cursor-pointer hover:border-gray-100 hover:scale-105 flex items-center justify-center overflow-hidden "
+                          >
+                            {/* Continuous shiny animation overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shine rounded-full"></div>
+                            <Upload className="h-12 w-12 text-gray-300 group-hover:text-white transition-colors duration-300 relative z-10" />
+                          </button>
+                        </div>
+                      </div>
+                      <h2 className="text-2xl font-bold text-white mb-2">Import any React or Next.js Project</h2>
+                      <p className="text-gray-400 text-sm mb-8">Start with one of our analysis types or import something new.</p>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-4 bg-black border border-gray-800 rounded-lg hover:border-gray-700 transition-colors">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+                              <Plus className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-white text-sm font-medium">Import Project</p>
+                              <p className="text-gray-400 text-xs">Add a repo from your git provider</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-black border border-gray-800 rounded-lg hover:border-gray-700 transition-colors">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+                              <BarChart3 className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-white text-sm font-medium text-left">Get Your Architecture</p>
+                              <p className="text-gray-400 text-xs">Instant codebase structure analysis</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-black border border-gray-800 rounded-lg hover:border-gray-700 transition-colors">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+                              <Eye className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-white text-sm font-medium">Detailed Project Analysis</p>
+                              <p className="text-gray-400 text-xs">Deep dive into your codebase</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-black border border-gray-800 rounded-lg hover:border-gray-700 transition-colors">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+                              <Zap className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-white text-sm font-medium">Get Prompts for Big Changes</p>
+                              <p className="text-gray-400 text-xs">AI-powered architectural suggestions</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 pt-6 border-t border-gray-800">
+                        <p className="text-gray-500 text-xs mt-1">Jumpstart architecture analysis, code reviews, and more.</p>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-medium text-white mb-2">No projects yet</h3>
-                  <p className="text-gray-400 text-sm mb-6">Import your first repository to get started</p>
-                  <Button 
-                    onClick={() => router.push('/new')}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Import Repository
-                  </Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {projects.map((project: Project) => (
+                  {projects && projects.map((project: Project) => (
                     <Card
                       key={project.id}
                       className="group bg-zinc-950 border border-gray-500/30 hover:border-gray-500/69 transition-all duration-200 cursor-pointer overflow-hidden rounded-s-sm rounded-l-sm rounded-b-sm rounded-t-sm"
