@@ -1,6 +1,7 @@
 "use server";
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
+import { cache } from "react";
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
@@ -29,7 +30,8 @@ export interface ProjectMessage {
     timestamp: string;
 }
 
-export async function getProjects() {
+
+export const getProjects = cache(async () => {
     const { userId } = await auth();
     if (!userId) {
         return { error: 'Unauthorized' };
@@ -46,7 +48,8 @@ export async function getProjects() {
         }
     });
     return projects;
-}
+})
+
 
 export async function getProject(projectId: string) {
     const { userId } = await auth();

@@ -24,12 +24,11 @@ import {
   Clock,
   Folder,
 } from "lucide-react"
+import useSWR from "swr";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { getProjects } from "../../../actions/project"
 import { useUser } from '@clerk/nextjs'
-import { useState, useEffect } from 'react'
 
 interface Project {
   id: string;
@@ -43,31 +42,29 @@ interface Project {
 export default function ProjectsPage() {
   const router = useRouter();
   const { isLoaded, isSignedIn, user } = useUser();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const result = await getProjects();
-        if (result && !('error' in result)) {
-          // Sort projects by creation date (latest first)
-          const sortedProjects = result.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          setProjects(sortedProjects);
-        }
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (isSignedIn) {
-      fetchProjects();
+  // SWR fetcher function using API route
+  const fetcher = async (url: string) => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch projects');
     }
-  }, [isSignedIn]);
+    return response.json();
+  };
+
+  // Use SWR for caching and revalidation
+  const { data: projects = [], error, isLoading } = useSWR(
+    isSignedIn ? '/api/projects/getUserProjects' : null,
+    fetcher,
+    {
+      revalidateOnFocus: false, // Don't refetch when window gains focus
+      revalidateOnReconnect: true, // Refetch when reconnecting to the internet
+      dedupingInterval: 60000, // Dedupe requests within 1 minute
+      refreshInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+      errorRetryCount: 3, // Retry on error 3 times
+      errorRetryInterval: 1000, // Wait 1 second between retries
+    }
+  );
 
   const getProjectIcon = (framework: string | null) => {
     if (!framework) {
@@ -174,8 +171,8 @@ export default function ProjectsPage() {
                 </div>
                
                
-                <button className="px-4 py-2 rounded-md border border-black bg-white text-black text-sm hover:bg-gray-300 hover:cursor-pointer">
-                <div className="flex justify-center items-center gap-2.5">
+                <button onClick={() => router.push('/new')} className="px-4 py-2 rounded-md border border-black bg-white text-black text-sm hover:bg-gray-300 hover:cursor-pointer">
+                <div className="flex justify-center font-medium items-center gap-2.5">
                 Add New...
                 <ChevronDown className="w-5 h-5" />
                 </div>
@@ -183,7 +180,22 @@ export default function ProjectsPage() {
                 </button>
               </div>
               
-              {isLoading ? (
+              {error ? (
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 bg-red-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Triangle className="h-8 w-8 text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-white mb-2">Failed to load projects</h3>
+                  <p className="text-gray-400 text-sm mb-6">Please try refreshing the page</p>
+                  <Button 
+                    onClick={() => window.location.reload()}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Retry
+                  </Button>
+                </div>
+              ) : isLoading ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-400"></div>
                 </div>
@@ -204,32 +216,33 @@ export default function ProjectsPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {projects.map((project) => (
+                  {projects.map((project: Project) => (
                     <Card
                       key={project.id}
-                      className="group bg-gray-900/30 border border-white hover:scale-105 transition-all duration-200 cursor-pointer overflow-hidden"
+                      className="group bg-zinc-950 border border-gray-500/30 hover:border-gray-500/69 transition-all duration-200 cursor-pointer overflow-hidden rounded-s-sm rounded-l-sm rounded-b-sm rounded-t-sm"
                       onClick={() => router.push(`/project/${project.id}`)}
                     >
-                      <div className="p-4">
+                      <div className="p-4"> 
                         {/* Header */}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2.5">
                             {getProjectIcon(project.framework)}
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-medium text-white text-sm truncate">{project.name}</h3>
-                              <p className="text-xs text-white">{project.framework || 'Unknown'}</p>
-                            </div>
+                              <h3 className="font-medium text-gray-200 text-sm truncate">{project.name}</h3>
+                              <p className="text-xs text-gray-400">{project.framework || 'Unknown'}</p>
+                            </div> 
                           </div>
+                          <MoreHorizontal className="w-4 h-4 text-gray-500 hover:text-gray-300 transition-colors" />
                         </div>
 
                         {/* Repository info */}
-                        <div className="flex items-center gap-1.5 mb-3 text-xs text-white">
+                        <div className="flex items-center gap-1.5 mb-3 text-xs text-gray-400">
                           <Github className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">{project.repoFullName || 'No repository'}</span>
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between text-xs text-white">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
                           <div className="flex items-center gap-1.5">
                             <Clock className="w-3 h-3" />
                             <span>{formatDate(project.createdAt)}</span>
@@ -237,7 +250,7 @@ export default function ProjectsPage() {
                           {project.defaultBranch && (
                             <div className="flex items-center gap-1">
                               <GitBranch className="w-3 h-3" />
-                              <span className="text-white">{project.defaultBranch}</span>
+                              <span className="text-gray-400">{project.defaultBranch}</span>
                             </div>
                           )}
                         </div>

@@ -43,6 +43,7 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "svix": "^1.69.0",
+    "swr": "^2.3.6",
     "tailwind-merge": "^3.3.0",
     "three": "^0.179.1",
     "zod": "^3.25.54"
