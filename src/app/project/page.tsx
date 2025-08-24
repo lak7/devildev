@@ -174,7 +174,7 @@ export default function ProjectsPage() {
                 </div>
                
                
-                <button className="px-4 py-2 rounded-md border border-black bg-white text-black text-sm hover:shadow-[4px_4px_0px_0px_rgba(0,0,0)] transition duration-200">
+                <button className="px-4 py-2 rounded-md border border-black bg-white text-black text-sm hover:bg-gray-300 hover:cursor-pointer">
                 <div className="flex justify-center items-center gap-2.5">
                 Add New...
                 <ChevronDown className="w-5 h-5" />
