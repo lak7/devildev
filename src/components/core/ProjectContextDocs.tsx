@@ -36,7 +36,7 @@ export default function ProjectContextDocs({ projectId, projectDocsId, docsName,
       if (projectId) { 
         try {
           const result = await getProjectContextDocs(projectId);
-          alert("Fetched bitch")
+          // alert("Fetched bitch")
           console.log("This is result: ", result) ; 
           if (result.success) {
             setProjectContextData(result.projectContextDocs); 

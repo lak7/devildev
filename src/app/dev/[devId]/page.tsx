@@ -1004,7 +1004,6 @@ const DevPage = () => {
   }
 
 
-  // Chat mode layout
   return (
     <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
       {/* Enhanced Navbar */}

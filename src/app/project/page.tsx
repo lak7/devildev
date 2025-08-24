@@ -47,6 +47,8 @@ export default function ProjectsPage() {
   const router = useRouter();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const { isLoaded, isSignedIn, user } = useUser();
+  const [isDevSidebarHovered, setIsDevSidebarHovered] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   // SWR fetcher function using API route
   const fetcher = async (url: string) => {
@@ -124,15 +126,20 @@ export default function ProjectsPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Enhanced Navbar */}
-      <nav className="h-14 bg-black/95 backdrop-blur-sm border-b border-gray-800/30 flex items-center justify-between px-6 flex-shrink-0 relative">
+      <nav className="h-16 bg-black/90 backdrop-blur-sm border-b border-gray-800/50 flex items-center justify-between px-6 flex-shrink-0 relative">
         {/* Left side - Burger menu and Logo */}
         <div className="flex items-center space-x-4">
+          {/* Burger menu indicator - hide when sidebar is open */}
           <button 
-            className="p-2 hover:bg-gray-800/30 rounded-lg transition-all duration-200"
-            title="Open sidebar"
-          > 
-            <Menu className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
-          </button>
+              onClick={() => setIsDevSidebarHovered(!isDevSidebarHovered)}
+              className={`p-2 hover:bg-gray-800/50 rounded-lg transition-all duration-200`}
+              title="Open sidebar"
+            > 
+              <Menu 
+                className={`h-6 w-6 text-gray-400 hover:text-white transition-colors`}
+              />
+            </button>
+        
           
           {/* Logo - clickable to home */}
           <button 
@@ -144,43 +151,52 @@ export default function ProjectsPage() {
               <Image
                 src="/favicon.jpg"
                 alt="DevilDev Logo"
-                width={28}
-                height={28}
+                width={36}
+                height={36}
                 className="rounded-lg transition-all duration-200"
               />
             </div>
-            <span className="text-white font-semibold text-base hidden sm:block group-hover:text-red-400 transition-colors">
+            <span className="text-white font-semibold text-lg hidden sm:block group-hover:text-red-400 transition-colors">
               DevilDev
             </span>
           </button>
         </div> 
 
         {/* Right side - How to, Feedback button and User avatar */}
-        <div className="flex items-center space-x-2">
-          <button
+        <div className="flex items-center space-x-3">
+
+        <button
             onClick={() => window.open('/connect-mcp', '_blank')}
-            className="flex items-center space-x-2 px-3 py-1.5 bg-gray-900/50 hover:bg-gray-800/70 border border-gray-700/50 hover:border-gray-600/70 rounded-lg transition-all duration-200 group"
-            title="Connect MCP"
+            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
+            title="Send Feedback"
           >
-            <BrainCircuit className="h-4 w-4 text-gray-300 group-hover:text-white transition-colors" />
-            <span className="text-sm text-gray-300 group-hover:text-white transition-colors hidden sm:block">
+            <BrainCircuit className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
+            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
               Connect MCP
             </span>
           </button>
 
+          {/* Feedback button */}
           <button
-            className="flex items-center space-x-2 px-3 py-1.5 bg-gray-900/50 hover:bg-gray-800/70 border border-gray-700/50 hover:border-gray-600/70 rounded-lg transition-all duration-200 group"
+            onClick={() => setIsFeedbackOpen(true)}
+            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
             title="Send Feedback"
           >
-            <MessageSquare className="h-4 w-4 text-gray-300 group-hover:text-white transition-colors" />
-            <span className="text-sm text-gray-300 group-hover:text-white transition-colors hidden sm:block">
+            <MessageSquare className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
+            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
               Feedback
             </span>
           </button>
 
-          <Avatar className="size-8 ring-1 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
-            <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-          </Avatar>
+          {/* User Avatar */}
+          <div className="flex items-center">
+            <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
+              <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+              <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </div>
       </nav>
 
@@ -332,7 +348,7 @@ export default function ProjectsPage() {
                   {projects && projects.map((project: Project) => (
                     <Card
                       key={project.id}
-                      className="group bg-zinc-950 border border-gray-500/30 hover:border-gray-500/69 transition-all duration-200 cursor-pointer overflow-hidden rounded-s-sm rounded-l-sm rounded-b-sm rounded-t-sm"
+                      className="group bg-zinc-950 border border-gray-600 hover:border-gray-400 transition-all duration-200 cursor-pointer overflow-hidden rounded-s-sm rounded-l-sm rounded-b-sm rounded-t-sm"
                       onClick={() => router.push(`/project/${project.id}`)}
                     >
                       <div className="p-4"> 
