@@ -168,6 +168,10 @@ const ProjectPage = () => {
 
   // Handle creating new chat
   const handleCreateNewChat = async () => {
+
+    if(messages.length === 0){
+      return;
+    }
     try {
       const createResult = await createProjectChat(projectId, "New Chat");
       if (createResult.success) {
@@ -516,12 +520,28 @@ const ProjectPage = () => {
     setIsChatLoading(true);
 
     try {
-      alert(2)
+      alert(2) 
       // Save user message to database
-      await addMessageToProjectChat(projectId, activeChatId, userMessage);
+      const saveResult = await addMessageToProjectChat(projectId, activeChatId, userMessage);
       alert(3)
+      
+      // Update chat title in local state if this is the first user message
+      if (saveResult.success && messages.length === 0) {
+        const title = currentInput.length > 20 
+          ? currentInput.substring(0, 20) + '...' 
+          : currentInput;
+        
+        setProjectChats(prevChats => 
+          prevChats.map(chat => 
+            chat.id.toString() === activeChatId 
+              ? { ...chat, title: title }
+              : chat
+          )
+        );
+      }
 
       // alert(currentInput.trim())
+      alert(4.1)
       
       // TODO: Add AI response handling here when implementing chat functionality
       // here 

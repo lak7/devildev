@@ -313,16 +313,6 @@ export async function addMessageToProjectChat(projectId: string, chatId: string,
     }
 
     try {
-        // First verify the project belongs to the user
-        const project = await db.project.findUnique({
-            where: { id: projectId, userId: userId },
-            select: { id: true }
-        });
-        
-        if (!project) {
-            return { error: 'Project not found' };
-        }
-
         // Get current project chat
         const projectChat = await db.projectChat.findUnique({
             where: { 
@@ -339,13 +329,24 @@ export async function addMessageToProjectChat(projectId: string, chatId: string,
         const currentMessages = projectChat.messages as unknown as ProjectMessage[];
         const updatedMessages = [...currentMessages, message];
 
-        // Update project chat with new message
+        // Prepare update data
+        const updateData: any = {
+            messages: updatedMessages as any,
+            updatedAt: new Date()
+        };
+
+        // If this is a user message and it's the first message in the chat, update the title
+        if (message.type === 'user' && currentMessages.length === 0) {
+            const title = message.content.length > 20 
+                ? message.content.substring(0, 20) + '...' 
+                : message.content;
+            updateData.title = title;
+        }
+
+        // Update project chat with new message and potentially new title
         const updatedProjectChat = await db.projectChat.update({
             where: { id: BigInt(chatId) },
-            data: {
-                messages: updatedMessages as any,
-                updatedAt: new Date()
-            }
+            data: updateData
         });
 
         return { success: true, projectChat: updatedProjectChat };
