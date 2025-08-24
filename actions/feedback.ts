@@ -3,7 +3,7 @@
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
 
-export async function submitFeedback(chatId: string, feedback: string) {
+export async function submitFeedback(page: string, feedback: string) {
   try {
     // Get the authenticated user
     const { userId } = await auth();
@@ -22,10 +22,10 @@ export async function submitFeedback(chatId: string, feedback: string) {
       };
     }
 
-    if (!chatId) {
+    if (!page) {
       return {
         success: false,
-        error: 'Chat ID is required'
+        error: 'Project is required'
       };
     }
 
@@ -33,7 +33,7 @@ export async function submitFeedback(chatId: string, feedback: string) {
     const newFeedback = await db.feedback.create({
       data: {
         userId,
-        chatId,
+        page,
         feedback: feedback.trim()
       }
     });

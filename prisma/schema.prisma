@@ -121,7 +121,7 @@ model ContextualDocs {
 model Feedback {
   id        String   @id @default(uuid())
   userId    String
-  chatId    String
+  page    String
   feedback  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

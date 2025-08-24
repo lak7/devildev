@@ -401,7 +401,7 @@ const DevPage = () => {
     setFeedbackMessage(null);
     
     try {
-      const result = await submitFeedback(chatId, feedbackText);
+      const result = await submitFeedback("dev/" + chatId, feedbackText);
       
       if (result.success) {
         setFeedbackMessage({
