@@ -29,6 +29,25 @@ export interface ProjectMessage {
     timestamp: string;
 }
 
+export async function getProjects() {
+    const { userId } = await auth();
+    if (!userId) {
+        return { error: 'Unauthorized' };
+    }
+    const projects = await db.project.findMany({
+        where: { userId: userId },
+        select: {
+            id: true,
+            name: true,
+            framework: true,
+            createdAt: true,
+            repoFullName: true,
+            defaultBranch: true,
+        }
+    });
+    return projects;
+}
+
 export async function getProject(projectId: string) {
     const { userId } = await auth();
     if (!userId) {

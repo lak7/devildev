@@ -419,8 +419,8 @@ export default function Page() {
           </div>
 
           <h1 className="text-xl md:text-2xl lg:text-3xl text-gray-300 font-light mb-12 text-center">
-            From Idea to Architecture—Instinctively
-          </h1>
+            Build Something Scalable
+          </h1> 
 
           {/* Search Input */}
           <div className={`w-full sm:w-[600px] md:w-[800px] lg:w-[1200px] xl:w-[750px] transition-all duration-300 ${
@@ -462,7 +462,7 @@ export default function Page() {
             {/* <MatrixGlitchButton onClick={() => alert("Join Now!")} className="px-8 py-4 text-base">
             Import Existing Project From GitHub
           </MatrixGlitchButton> */}
-          <GlowButton variant="cyan" size="md" onClick={() => router.push('/new')}>
+          <GlowButton variant="red" size="md" onClick={() => router.push('/new')}>
             <Github className="w-5 h-5" />
             Import Existing Project From GitHub
           </GlowButton>
