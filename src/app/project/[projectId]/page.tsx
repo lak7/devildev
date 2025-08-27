@@ -590,7 +590,7 @@ const ProjectPage = () => {
       setIsChatLoading(false);
 
       // //alert(parsedResponse.docs)
-      // //alert(parsedResponse.wannaStart)
+      // //alert(parsedResponse.wannaStart) 
  
 
       
@@ -626,7 +626,6 @@ const ProjectPage = () => {
         //alert("Starting to generate docs")
         setIsDocsGenerating(true);   
          // Here Docs generation logic 
-         alert("Starting to summarizeProjectDocsContext")
          const projectSummarizedContext = await summarizeProjectDocsContext(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
          const parsedprojectSummarizedContext = typeof projectSummarizedContext === 'string' 
           ? JSON.parse(projectSummarizedContext) 
@@ -635,85 +634,78 @@ const ProjectPage = () => {
           // alert("Starting to generate webSearchDocs")
 
           // const webSearchDocs = await generateWebSearchDocs(parsedprojectSummarizedContext.exactRequirement, project.framework);
-          alert("Saving summarizedContext")
-          const saveProjectSummarizedContextResult = await saveProjectSummarizedContext(activeChatId, parsedprojectSummarizedContext.nameDocs, parsedprojectSummarizedContext.exactRequirement);
+
+          // const saveProjectSummarizedContextResult = await saveProjectSummarizedContext(activeChatId, parsedprojectSummarizedContext.nameDocs, parsedprojectSummarizedContext.exactRequirement);
           // alert("Saving webSearchDocs")
           // const saveProjectWebSearchDocsResult = await saveProjectWebSearchDocs(activeChatId, webSearchDocs.toString());
-          alert("DONE")
 
-//FROM
-        //  const initialDocsRes = await initialDocsGeneration(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
-        //  console.log("This is initial docs response: ", initialDocsRes);
-        //  const parsedInitialDocsRes = typeof initialDocsRes === 'string' 
-        //   ? JSON.parse(initialDocsRes) 
-        //   : initialDocsRes;
-        //  console.log("This is parsed docs: ", parsedInitialDocsRes);
          
-        //  try {
-        //    // Create project context docs in database with BigChanges content
-        //    const bigChangesContent = `# Development Agent Workflow\n\n## Primary Directive\nYou are a development agent implementing a project based on established documentation. Your goal is to build a cohesive, well-documented, and maintainable software product. **ALWAYS** consult documentation before taking any action and maintain strict consistency with project standards.\n\n[This is a truncated version of the BigChanges content for ${parsedInitialDocsRes.nameDocs}]`;
-             
-        //    const projectContextDocsResult = await createProjectContextDocs(
-        //      activeChatId, 
-        //      parsedprojectSummarizedContext.nameDocs,
-        //      bigChangesContent,
-        //      undefined, // human review 
-        //      undefined, // plan
-        //      undefined, // phases  
-        //      parsedInitialDocsRes.phaseCount
-        //    );
+         try {
+           // Create project context docs in database with BigChanges content
+           const bigChangesContent = `# Development Agent Workflow\n\n## Primary Directive\nYou are a development agent implementing a project based on established documentation. Your goal is to build a cohesive, well-documented, and maintainable software product. **ALWAYS** consult documentation before taking any action and maintain strict consistency with project standards.\n\n[This is a truncated version of the BigChanges content for ${parsedprojectSummarizedContext.nameDocs}]`;
+              
+           const projectContextDocsResult = await createProjectContextDocs(
+             activeChatId,  
+             parsedprojectSummarizedContext.nameDocs,
+             parsedprojectSummarizedContext.exactRequirement,
+             bigChangesContent,
+             undefined, // human review 
+             undefined, // plan
+             undefined, // phases  
+             parsedprojectSummarizedContext.phaseCount
+           );
            
-        //    if (projectContextDocsResult.success) {
-        //      // Update the assistant message with projectDocsId
-        //      const updatedAssistantMessage: ProjectMessage = {
-        //        ...assistantMessage,
-        //        projectDocsId: projectContextDocsResult.projectContextDocs.id,
-        //        docsName: parsedInitialDocsRes.nameDocs
-        //      };
+           if (projectContextDocsResult.success) {
+             // Update the assistant message with projectDocsId
+             const updatedAssistantMessage: ProjectMessage = {
+               ...assistantMessage,
+               projectDocsId: projectContextDocsResult.projectContextDocs.id,
+               docsName: parsedprojectSummarizedContext.nameDocs
+             };
              
-        //      // Update the message in local state
-        //      setMessages(prevMessages => 
-        //        prevMessages.map(msg => 
-        //          msg.id === assistantMessage.id ? updatedAssistantMessage : msg
-        //        )
-        //      );
+             // Update the message in local state
+             setMessages(prevMessages => 
+               prevMessages.map(msg => 
+                 msg.id === assistantMessage.id ? updatedAssistantMessage : msg
+               )
+             );
              
-        //      // Update the assistant message variable for database save
-        //      Object.assign(assistantMessage, updatedAssistantMessage);
-        //    }
+             // Update the assistant message variable for database save
+             Object.assign(assistantMessage, updatedAssistantMessage);
+           }
 
-        //    if(!projectContextDocsResult.projectContextDocs){
-        //     //alert("no project context docs");
-        //     console.error('Error creating project context docs:', projectContextDocsResult.error);
-        //     return;
-        //    }
+           if(!projectContextDocsResult.projectContextDocs){
+            //alert("no project context docs");
+            console.error('Error creating project context docs:', projectContextDocsResult.error);
+            return;
+           }
 
-        //    //alert("Starting to generate plan")
+           //alert("Starting to generate plan")
  
-        //    //Here generate plan  
-        //    const plan = await generateProjectPlan(project.framework, parsedInitialDocsRes.phaseCount, project.detailedAnalysis, parsedInitialDocsRes.requirement);
-        //    console.log("This is plan: ", plan); 
-        //    //alert("Plan generated")
-        //    setProjectPlan(plan.toString()); 
+           //Here generate plan  
+           const plan = await generateProjectPlan(project.framework, parsedprojectSummarizedContext.phaseCount, project.detailedAnalysis, parsedprojectSummarizedContext.exactRequirement);
+           console.log("This is plan: ", plan); 
+           //alert("Plan generated")
+           setProjectPlan(plan.toString()); 
 
-        //    //alert("Starting to generate phases")
-        //    let projectPhases: string[] = [];
+           //alert("Starting to generate phases")
+           let projectPhases: string[] = [];
            
-        //    for(let i = 0; i< parsedInitialDocsRes.phaseCount; i++){
-        //     //alert(i)
-        //     const nthPhase = await generateNthPhase(JSON.stringify(plan), project.framework, project.detailedAnalysis, parsedInitialDocsRes.requirement, i.toString());
-        //     console.log("This is nth phase: ", nthPhase);
-        //     projectPhases.push(nthPhase.toString());
-        //    }
-        //    setProjectPhases(projectPhases);
-        //    //alert("Phases generated")
-        //    setIsDocsGenerating(false);
-        //    const updateDocsRes = await updateProjectContextDocs(projectContextDocsResult.projectContextDocs.id, projectPlan, projectPhases);
-        //    //alert("Yeahh")
+           for(let i = 0; i< parsedprojectSummarizedContext.phaseCount; i++){
+            //alert(i)
+            const nthPhase = await generateNthPhase(JSON.stringify(plan), project.framework, parsedprojectSummarizedContext.exactRequirement, String(i+1));
+            console.log("This is nth phase: ", nthPhase);
+            projectPhases.push(nthPhase.toString());
+           }
+           setProjectPhases(projectPhases);
+           //alert("Phases generated")
+           setIsDocsGenerating(false);
+           const updateDocsRes = await updateProjectContextDocs(projectContextDocsResult.projectContextDocs.id, projectPlan, projectPhases);
+           //alert("Yeahh")
            
-        //  } catch (error) {
-        //    console.error('Error creating project context docs:', error);
-        //  }
+         } catch (error) {
+           console.error('Error creating project context docs:', error);
+         }
          setIsDocsGenerating(false);
          
       }

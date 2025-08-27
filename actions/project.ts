@@ -549,6 +549,7 @@ export async function initialDocsGeneration(userInput: string, projectFramework:
 export async function createProjectContextDocs(
     projectChatId: any,
     contextName: string,
+    summarizedContext: string,
     projectRules?: string,
     humanReview?: string,
     plan?: string,
@@ -567,6 +568,7 @@ export async function createProjectContextDocs(
             data: {
                 projectChatId,
                 contextName,
+                summarizedContext,
                 projectRules,
                 humanReview, 
                 plan,
@@ -626,7 +628,7 @@ export async function generateProjectPlan( framework: string, phaseCount: string
     return response;
 }
 
-export async function generateNthPhase(plan: string, framework: string, detailedAnalysis: string, requirement: string, phaseNum: string) {
+export async function generateNthPhase(plan: string, framework: string, requirement: string, phaseNum: string) {
     const { userId } = await auth();
     if (!userId) {
         return { error: 'Unauthorized' };
@@ -637,7 +639,6 @@ export async function generateNthPhase(plan: string, framework: string, detailed
     const response = await chain.invoke({
         plan: plan,
         framework: framework,
-        projectAnalysis: detailedAnalysis,
         requirement: requirement,
         phaseNum: phaseNum
     });

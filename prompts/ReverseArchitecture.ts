@@ -2462,7 +2462,6 @@ You are an expert software development lead creating actionable execution plans 
 ## INPUT DATA:
 - **Project Plan:** {plan}
 - **Framework:** {framework} (ReactJS or NextJS)
-- **Detailed Project Analysis:** {projectAnalysis}
 - **Enhancement Requirements:** {requirement}
 - **Phase To Be Generated (Targeted Phase):** {phaseNum}
 
@@ -2472,7 +2471,7 @@ You are an expert software development lead creating actionable execution plans 
 - Extract the specific phase objectives and deliverables for Phase {phaseNum} from the plan
 - Identify which existing components need modification vs. new components to be created
 - Understand the enhancement requirements being addressed in this specific phase
-- Determine the current project structure and existing codebase organization from projectAnalysis
+- Determine the current project structure and existing codebase organization from plan and requirement
 - **Identify if this is first phase, middle phase, or final phase for human review requirements**
 
 ### Step 2: Existing Project Task Generation Strategy
@@ -2486,7 +2485,7 @@ You are an expert software development lead creating actionable execution plans 
 
 ### Step 3: Framework and Existing Codebase Adaptation
 - Generate tasks specific to the existing framework and technology stack
-- Reference actual existing files, components, and patterns from projectAnalysis
+- Reference actual existing files, components, and patterns from plan and requirement
 - Include appropriate modification strategies that preserve existing functionality
 - Ensure tasks reflect real enhancement work needed for this specific phase
 - Consider backward compatibility and migration requirements
@@ -2505,7 +2504,7 @@ You are an expert software development lead creating actionable execution plans 
 [Extract the specific enhancement goal of this phase from the plan - what exactly needs to be accomplished in the existing project]
 
 ## 🔄 Current State vs. Target State
-**Current State:** [Based on projectAnalysis, describe what currently exists that will be modified]
+**Current State:** [Based on plan and requirement, describe what currently exists that will be modified]
 **Target State:** [What the system will look like after this phase is complete]
 **Impact Scope:** [Which parts of the existing system will be affected]
 
@@ -2704,7 +2703,7 @@ If human reports issues or regressions:
 ## TASK GENERATION REQUIREMENTS FOR EXISTING PROJECT ENHANCEMENTS:
 
 ### Task Quality Standards:
-- **Existing Codebase Aware**: Reference actual existing files, components, and patterns from projectAnalysis
+- **Existing Codebase Aware**: Reference actual existing files, components, and patterns from plan and requirement
 - **Modification-Focused**: Clearly distinguish between modifying existing code vs. creating new code
 - **Framework Specific**: Use actual {framework} patterns and existing project conventions
 - **Phase Focused**: Only include tasks necessary to complete THIS specific phase's enhancements
@@ -2731,7 +2730,7 @@ If human reports issues or regressions:
 ### Avoid These Patterns:
 - Modifying existing code without considering backward compatibility
 - Adding new features without testing integration with existing functionality
-- Assuming existing patterns without referencing projectAnalysis
+- Assuming existing patterns without referencing plan and requirement
 - Creating tasks that could break existing user workflows
 - **Proceeding without regression testing from previous phases**
 - **Marking phases complete without validating existing functionality still works**
@@ -2739,7 +2738,7 @@ If human reports issues or regressions:
 ## GENERATION PROCESS:
 
 1. **Read plan** to understand exactly what this phase should accomplish in the existing project
-2. **Analyze projectAnalysis** to identify existing components that need modification
+2. **Analyze plan and requirement** to identify existing components that need modification
 3. **Review requirement** to understand the specific enhancements needed
 4. **Determine phase impact** on existing system and appropriate human review requirements
 5. **Identify framework-specific patterns** from existing project structure

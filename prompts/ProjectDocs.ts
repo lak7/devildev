@@ -131,7 +131,7 @@ From the project analysis, extract:
 
 ### STEP 3: COMPLEXITY ANALYSIS
 Determine project complexity based on:
-- **Scope size**: Small (2-3 phases), Medium (3-5 phases), Large (5-7 phases)
+- **Scope size**: Small (1-2 phases), Medium (2-3 phases), Large (3-4 phases)
 - **Technical complexity**: Simple config changes vs architectural overhauls
 - **Dependencies**: Number of external systems/services affected
 - **Risk level**: Breaking changes, data migrations, user-facing impacts
@@ -145,11 +145,9 @@ Create a comprehensive summary (2500-3000 tokens) including:
 - **Success metrics** and validation criteria
 
 ## COMPLEXITY-TO-PHASE MAPPING:
-- **2-3 phases**: Simple configuration changes, minor feature additions, basic setup tasks
-- **3-4 phases**: Medium complexity features, component refactoring, dependency updates
-- **4-5 phases**: Significant architectural changes, major feature development, framework migrations
-- **5-6 phases**: Large-scale refactoring, multi-system integration, complex migrations
-- **6-7 phases**: Enterprise-level changes, complete system overhauls, major platform migrations
+- **1-2 phases**: Simple configuration changes, minor feature additions, basic setup tasks
+- **2-3 phases**: Medium complexity features, component refactoring, dependency updates
+- **3-4 phases**: Significant architectural changes, major feature development, framework migrations
 
 ## OUTPUT REQUIREMENTS:
 
@@ -157,8 +155,8 @@ Generate ONLY valid JSON without any comments or trailing commas:
 
 
 {{
-  "phaseCount": integer [2-7 based on complexity analysis],
-  "nameDocs": string [Professional project name for documentation - be specific and descriptive],
+  "phaseCount": integer [1-4 based on complexity analysis],
+  "nameDocs": string [Name for documentation - be short and concise under 10 words - don't include project name in the nameDocs],
   "exactRequirement": string [Comprehensive 2500-3000 token summary including: executive summary, technical approach, risk assessment, resource requirements, success metrics, and framework-specific considerations]
 }}
 
