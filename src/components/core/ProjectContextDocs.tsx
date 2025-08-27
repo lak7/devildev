@@ -40,7 +40,11 @@ export default function ProjectContextDocs({ projectId, projectChatId, projectDo
           // alert("Fetched bitch")
           console.log("This is result: ", result) ; 
           if (result.success) {
-            setProjectContextData(result.projectContextDocs); 
+            alert("Fuck yeah")
+            console.log("This is result.projectContextDocs: ", result.projectContextDocs[1]);
+            setProjectContextData(result.projectContextDocs[1]); 
+
+            console.log("This is projectContextData: ", projectContextData);
           }
         } catch (error) {
           console.error('Error loading project context docs:', error);
