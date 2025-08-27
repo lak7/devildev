@@ -173,6 +173,8 @@ model ProjectChat {
 model ProjectContextDocs {
   id        String   @id @default(uuid())
   projectChatId BigInt  
+  summarizedContext String?
+  webSearchDocs Json?
   contextName String?
   projectRules String?
   humanReview String?

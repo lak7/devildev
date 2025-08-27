@@ -12,6 +12,7 @@ import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 import ProjectContextDocs from '@/components/core/ProjectContextDocs';
 import { ProjectPageSkeleton } from '@/components/ui/project-skeleton';
+import { generateWebSearchDocs, saveProjectSummarizedContext, saveProjectWebSearchDocs, summarizeProjectDocsContext } from '../../../../actions/projectDocs';
 
 interface ProjectChat {
   id: bigint;
@@ -333,28 +334,41 @@ const ProjectPage = () => {
                   setCustomPositions(existingArchitecture.componentPositions || {});
                   setIsArchitectureGenerating(false);
                   // HERE IMPLEMENT THE PROJECT CONTEXT DOCS
+                  // alert(activeChatId)
+                  // alert(urlChatId)
                   // //alert("Project Context Docs Implement Here")
-                  const projectContextDocs = await getProjectContextDocs(projectId);
-              //alert("Step 3")                  
-                  // Check if the result is an error
-                  if ('error' in projectContextDocs) {
-                    // //alert("Error getting project context docs")
-                    console.error('Error getting project context docs:', projectContextDocs.error);
-                    // Set default values or handle the error appropriately
-                    setProjectPlan("Not Generated");
-                    setProjectPhases(["Not Generated 1", "Not Generated 2"]);
-                  } else {
-                    //alert("Step 4")
-                    // //alert("Project Context Docs Found") 
-                    // Success case - access the properties safely
-                    if(projectContextDocs.projectContextDocs && projectContextDocs.projectContextDocs.length > 0){
-                      setProjectPlan(projectContextDocs.projectContextDocs[0].plan || "Not Generated");
-                      setProjectPhases(projectContextDocs.projectContextDocs[0].phases as string[] || ["Not Generated 1", "Not Generated 2"]);
-                    }else{
-                      setProjectPlan("Not Generated");
-                      setProjectPhases(["Not Generated 1", "Not Generated 2"]);
-                    }
-                  }
+              //     let projectContextDocs = null;
+              //     alert(activeChatId)
+              //     if(activeChatId){
+              //       alert("Inside: " + (activeChatId))
+              //       projectContextDocs = await getProjectContextDocs(activeChatId);
+              //     }
+              //     // alert("See this asshole")
+              //     // console.log("See this asshole: ", projectContextDocs)
+              //     if(!projectContextDocs){
+              //       console.error('Error getting project context docs');
+              //       return;
+              //     }
+              // //alert("Step 3")                  
+              //     // Check if the result is an error
+              //     if ('error' in projectContextDocs) {
+              //       // //alert("Error getting project context docs")
+              //       console.error('Error getting project context docs:', projectContextDocs.error);
+              //       // Set default values or handle the error appropriately
+              //       setProjectPlan("Not Generated");
+              //       setProjectPhases(["Not Generated 1", "Not Generated 2"]);
+              //     } else {
+              //       //alert("Step 4")
+              //       // //alert("Project Context Docs Found") 
+              //       // Success case - access the properties safely
+              //       if(projectContextDocs.projectContextDocs && projectContextDocs.projectContextDocs.length > 0){
+              //         setProjectPlan(projectContextDocs.projectContextDocs[0].plan || "Not Generated");
+              //         setProjectPhases(projectContextDocs.projectContextDocs[0].phases as string[] || ["Not Generated 1", "Not Generated 2"]);
+              //       }else{
+              //         setProjectPlan("Not Generated");
+              //         setProjectPhases(["Not Generated 1", "Not Generated 2"]);
+              //       }
+              //     }
                   // //alert("ok")
               }else{
                 //alert("Step 5")
@@ -584,7 +598,9 @@ const ProjectPage = () => {
         //alert("Starting to generate prompt")
         setIsPromptGenerating(true);
         //here
-        const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
+        // alert("Fuck no")
+        // const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
+        const  prompt = "pussy"
         console.log("This is prompt: ", prompt);
         
         // Only update the assistant message if prompt is a string
@@ -608,80 +624,96 @@ const ProjectPage = () => {
         }
       }else if(parsedResponse.docs && parsedResponse.wannaStart){
         //alert("Starting to generate docs")
-        setIsDocsGenerating(true);  
-         // Here Docs generation logic
-         const initialDocsRes = await initialDocsGeneration(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
-         console.log("This is initial docs response: ", initialDocsRes);
-         const parsedInitialDocsRes = typeof initialDocsRes === 'string' 
-          ? JSON.parse(initialDocsRes) 
-          : initialDocsRes;
-         console.log("This is parsed docs: ", parsedInitialDocsRes);
+        setIsDocsGenerating(true);   
+         // Here Docs generation logic 
+         alert("Starting to summarizeProjectDocsContext")
+         const projectSummarizedContext = await summarizeProjectDocsContext(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
+         const parsedprojectSummarizedContext = typeof projectSummarizedContext === 'string' 
+          ? JSON.parse(projectSummarizedContext) 
+          : projectSummarizedContext;
+
+          // alert("Starting to generate webSearchDocs")
+
+          // const webSearchDocs = await generateWebSearchDocs(parsedprojectSummarizedContext.exactRequirement, project.framework);
+          alert("Saving summarizedContext")
+          const saveProjectSummarizedContextResult = await saveProjectSummarizedContext(activeChatId, parsedprojectSummarizedContext.nameDocs, parsedprojectSummarizedContext.exactRequirement);
+          // alert("Saving webSearchDocs")
+          // const saveProjectWebSearchDocsResult = await saveProjectWebSearchDocs(activeChatId, webSearchDocs.toString());
+          alert("DONE")
+
+//FROM
+        //  const initialDocsRes = await initialDocsGeneration(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
+        //  console.log("This is initial docs response: ", initialDocsRes);
+        //  const parsedInitialDocsRes = typeof initialDocsRes === 'string' 
+        //   ? JSON.parse(initialDocsRes) 
+        //   : initialDocsRes;
+        //  console.log("This is parsed docs: ", parsedInitialDocsRes);
          
-         try {
-           // Create project context docs in database with BigChanges content
-           const bigChangesContent = `# Development Agent Workflow\n\n## Primary Directive\nYou are a development agent implementing a project based on established documentation. Your goal is to build a cohesive, well-documented, and maintainable software product. **ALWAYS** consult documentation before taking any action and maintain strict consistency with project standards.\n\n[This is a truncated version of the BigChanges content for ${parsedInitialDocsRes.nameDocs}]`;
-           
-           const projectContextDocsResult = await createProjectContextDocs(
-             projectId, 
-             parsedInitialDocsRes.nameDocs,
-             bigChangesContent,
-             undefined, // human review 
-             undefined, // plan
-             undefined, // phases  
-             parsedInitialDocsRes.phaseCount
-           );
-           
-           if (projectContextDocsResult.success) {
-             // Update the assistant message with projectDocsId
-             const updatedAssistantMessage: ProjectMessage = {
-               ...assistantMessage,
-               projectDocsId: projectContextDocsResult.projectContextDocs.id,
-               docsName: parsedInitialDocsRes.nameDocs
-             };
+        //  try {
+        //    // Create project context docs in database with BigChanges content
+        //    const bigChangesContent = `# Development Agent Workflow\n\n## Primary Directive\nYou are a development agent implementing a project based on established documentation. Your goal is to build a cohesive, well-documented, and maintainable software product. **ALWAYS** consult documentation before taking any action and maintain strict consistency with project standards.\n\n[This is a truncated version of the BigChanges content for ${parsedInitialDocsRes.nameDocs}]`;
              
-             // Update the message in local state
-             setMessages(prevMessages => 
-               prevMessages.map(msg => 
-                 msg.id === assistantMessage.id ? updatedAssistantMessage : msg
-               )
-             );
+        //    const projectContextDocsResult = await createProjectContextDocs(
+        //      activeChatId, 
+        //      parsedprojectSummarizedContext.nameDocs,
+        //      bigChangesContent,
+        //      undefined, // human review 
+        //      undefined, // plan
+        //      undefined, // phases  
+        //      parsedInitialDocsRes.phaseCount
+        //    );
+           
+        //    if (projectContextDocsResult.success) {
+        //      // Update the assistant message with projectDocsId
+        //      const updatedAssistantMessage: ProjectMessage = {
+        //        ...assistantMessage,
+        //        projectDocsId: projectContextDocsResult.projectContextDocs.id,
+        //        docsName: parsedInitialDocsRes.nameDocs
+        //      };
              
-             // Update the assistant message variable for database save
-             Object.assign(assistantMessage, updatedAssistantMessage);
-           }
+        //      // Update the message in local state
+        //      setMessages(prevMessages => 
+        //        prevMessages.map(msg => 
+        //          msg.id === assistantMessage.id ? updatedAssistantMessage : msg
+        //        )
+        //      );
+             
+        //      // Update the assistant message variable for database save
+        //      Object.assign(assistantMessage, updatedAssistantMessage);
+        //    }
 
-           if(!projectContextDocsResult.projectContextDocs){
-            //alert("no project context docs");
-            console.error('Error creating project context docs:', projectContextDocsResult.error);
-            return;
-           }
+        //    if(!projectContextDocsResult.projectContextDocs){
+        //     //alert("no project context docs");
+        //     console.error('Error creating project context docs:', projectContextDocsResult.error);
+        //     return;
+        //    }
 
-           //alert("Starting to generate plan")
+        //    //alert("Starting to generate plan")
+ 
+        //    //Here generate plan  
+        //    const plan = await generateProjectPlan(project.framework, parsedInitialDocsRes.phaseCount, project.detailedAnalysis, parsedInitialDocsRes.requirement);
+        //    console.log("This is plan: ", plan); 
+        //    //alert("Plan generated")
+        //    setProjectPlan(plan.toString()); 
 
-           //Here generate plan  
-           const plan = await generateProjectPlan(project.framework, parsedInitialDocsRes.phaseCount, project.detailedAnalysis, parsedInitialDocsRes.requirement);
-           console.log("This is plan: ", plan); 
-           //alert("Plan generated")
-           setProjectPlan(plan.toString()); 
-
-           //alert("Starting to generate phases")
-           let projectPhases: string[] = [];
+        //    //alert("Starting to generate phases")
+        //    let projectPhases: string[] = [];
            
-           for(let i = 0; i< parsedInitialDocsRes.phaseCount; i++){
-            //alert(i)
-            const nthPhase = await generateNthPhase(JSON.stringify(plan), project.framework, project.detailedAnalysis, parsedInitialDocsRes.requirement, i.toString());
-            console.log("This is nth phase: ", nthPhase);
-            projectPhases.push(nthPhase.toString());
-           }
-           setProjectPhases(projectPhases);
-           //alert("Phases generated")
-           setIsDocsGenerating(false);
-           const updateDocsRes = await updateProjectContextDocs(projectContextDocsResult.projectContextDocs.id, projectPlan, projectPhases);
-           //alert("Yeahh")
+        //    for(let i = 0; i< parsedInitialDocsRes.phaseCount; i++){
+        //     //alert(i)
+        //     const nthPhase = await generateNthPhase(JSON.stringify(plan), project.framework, project.detailedAnalysis, parsedInitialDocsRes.requirement, i.toString());
+        //     console.log("This is nth phase: ", nthPhase);
+        //     projectPhases.push(nthPhase.toString());
+        //    }
+        //    setProjectPhases(projectPhases);
+        //    //alert("Phases generated")
+        //    setIsDocsGenerating(false);
+        //    const updateDocsRes = await updateProjectContextDocs(projectContextDocsResult.projectContextDocs.id, projectPlan, projectPhases);
+        //    //alert("Yeahh")
            
-         } catch (error) {
-           console.error('Error creating project context docs:', error);
-         }
+        //  } catch (error) {
+        //    console.error('Error creating project context docs:', error);
+        //  }
          setIsDocsGenerating(false);
          
       }
@@ -1188,6 +1220,7 @@ const ProjectPage = () => {
             <div className={`h-full ${activeTab === 'docs' ? 'block' : 'hidden'}`}>
               <ProjectContextDocs 
                 projectId={projectId}
+                projectChatId={activeChatId}
                 projectDocsId={selectedProjectDocsId}
                 docsName={selectedDocsName}
                 projectPlan={projectPlan}

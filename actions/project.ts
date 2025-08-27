@@ -7,6 +7,9 @@ import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { architectureModificationPrompt, chatbotPrompt } from "../prompts/Chatbot";
 import { generateEasyMediumPrompt, generateNthProjectPhase, generateProjectPlanDocs, initialDocsGenerationPrompt, projectChatBotPrompt, theProjectChatBotPrompt, ultraProjectChatBotPrompt } from "../prompts/ReverseArchitecture";
+import { DynamicStructuredTool } from "langchain/tools";
+import z from "zod";
+import { AgentExecutor, createToolCallingAgent } from "langchain/agents";
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
   openAIApiKey: openaiKey,
@@ -443,6 +446,20 @@ export async function projectChatBot( userInput: string, projectFramework: strin
     if (!userId) {
         return { error: 'Unauthorized' };
     }
+
+    // Get project analysis tool
+    // const getProjectArchitecture = new DynamicStructuredTool({
+    //     name: "get_project_architecture",
+    //     description: "Get the project architecture",
+    //     schema: z.object({
+    //         projectArchitecture: z.string().describe("The project architecture")
+    //     }),
+    //     func: async () => {
+    //         console.log("I am being used bitch")
+    //         return JSON.stringify(projectArchitecture);
+    //     }
+    // })
+
      // Format conversation history for the prompt
      const formattedHistory = conversationHistory.map(msg => 
         `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
@@ -450,15 +467,39 @@ export async function projectChatBot( userInput: string, projectFramework: strin
 
     console.log("This is the user Input: ", userInput);
     console.log("This is the conversation History: ", formattedHistory);
+
+    // const tools = [getProjectArchitecture];
+
+// const agent = await createToolCallingAgent({
+//   llm: llmWithWeb,
+//   tools,
+//   prompt: ultraProjectChatBotPrompt,
+// });
+
+// const agentExecutor = new AgentExecutor({
+//     agent,
+//     tools,
+//     verbose: true,
+//     maxIterations: 2, // Allow multiple tool calls
+//   });
     
     const prompt = PromptTemplate.fromTemplate(ultraProjectChatBotPrompt);
     const chain = prompt.pipe(llmWithWeb).pipe(new StringOutputParser());
     const response = await chain.invoke({
         userQuery: userInput,
         framework: projectFramework,
-        conversationHistory: formattedHistory,
-        projectAnalysis: projectAnalysis
+        projectArchitecture: projectArchitecture,
+        conversationHistory: formattedHistory
     });
+
+    // const response = await agentExecutor.invoke({
+    //          userQuery: userInput,
+    //     framework: projectFramework,
+    //     conversationHistory: formattedHistory
+    //   });
+    //   console.log("This is the result output: ", result.output);
+    //   console.log("This is the result output text: ", result.output[0].text);
+
     return response;
 }
 
@@ -481,7 +522,7 @@ export async function generatePrompt(userInput: string, projectFramework: string
             conversationHistory: formattedHistory
         });
     return response;
-}
+} 
 
 export async function initialDocsGeneration(userInput: string, projectFramework: string, conversationHistory: any[], projectAnalysis: string) {
     const { userId } = await auth();
@@ -506,7 +547,7 @@ export async function initialDocsGeneration(userInput: string, projectFramework:
 
 // Create project context docs
 export async function createProjectContextDocs(
-    projectId: string,
+    projectChatId: any,
     contextName: string,
     projectRules?: string,
     humanReview?: string,
@@ -524,7 +565,7 @@ export async function createProjectContextDocs(
         // Create new project context docs
         const projectContextDocs = await db.projectContextDocs.create({
             data: {
-                projectId,
+                projectChatId,
                 contextName,
                 projectRules,
                 humanReview, 
@@ -542,21 +583,25 @@ export async function createProjectContextDocs(
 }
 
 // Get project context docs by ID
-export async function getProjectContextDocs(projectId: string) {
+export async function getProjectContextDocs(projectChatId: any) {
+    console.log("Step 0")
     const { userId } = await auth();
     if (!userId) {
         return { error: 'Unauthorized' };
     }
 
+    console.log("This is the projectChatId: ", projectChatId);
+
     try {
+        console.log("Step 1")
         const projectContextDocs = await db.projectContextDocs.findMany({
-            where: {projectId: projectId}
+            where: {projectChatId: projectChatId}
         });
-        
+        console.log("Step 2")
         if (!projectContextDocs) {
             return { error: 'Project context docs not found' };
         }
-
+        console.log("Step 3")
         return {success: true, projectContextDocs: projectContextDocs};
     } catch (error) {
         console.error("Error getting project context docs:", error);

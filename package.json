@@ -29,6 +29,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cobe": "^0.6.4",
+    "gpt-tokenizer": "^3.0.1",
     "jszip": "^3.10.1",
     "langchain": "^0.3.29",
     "lucide-react": "^0.511.0",
@@ -46,6 +47,7 @@
     "swr": "^2.3.6",
     "tailwind-merge": "^3.3.0",
     "three": "^0.179.1",
+    "tiktoken": "^1.0.22",
     "zod": "^3.25.54"
   },
   "devDependencies": {
