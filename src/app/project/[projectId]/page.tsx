@@ -1211,6 +1211,7 @@ const ProjectPage = () => {
             {/* Documentation Tab */}
             <div className={`h-full ${activeTab === 'docs' ? 'block' : 'hidden'}`}>
               <ProjectContextDocs 
+                key={activeChatId || 'no-chat'}
                 projectId={projectId}
                 projectChatId={activeChatId}
                 projectDocsId={selectedProjectDocsId}

@@ -26,55 +26,71 @@ interface ProjectContextDocsProps {
 }
 
 export default function ProjectContextDocs({ projectId, projectChatId, projectDocsId, docsName, projectPlan, projectPhases }: ProjectContextDocsProps = {}) {
-  const [selectedFile, setSelectedFile] = React.useState<string>(`${docsName || "BigChanges"}/PROJECT_RULES.md`)
+  const [selectedFile, setSelectedFile] = React.useState<string>("")
   const [selectedContent, setSelectedContent] = React.useState<string>("")
   const [isCopied, setIsCopied] = React.useState<boolean>(false)
-  const [projectContextData, setProjectContextData] = React.useState<any>(null)
+  const [projectContextData, setProjectContextData] = React.useState<any[]>([])
+  const [isLoading, setIsLoading] = React.useState<boolean>(false)
 
   // Load project context data when projectDocsId changes
   React.useEffect(() => {
     const loadProjectContextData = async () => {
-      if (projectChatId) {  
-        try {
-          const result = await getProjectContextDocs(projectChatId);
-          // alert("Fetched bitch")
-          console.log("This is result: ", result) ; 
-          if (result.success) {
-            alert("Fuck yeah")
-            console.log("This is result.projectContextDocs: ", result.projectContextDocs[1]);
-            setProjectContextData(result.projectContextDocs[1]); 
-
-            console.log("This is projectContextData: ", projectContextData);
-          }
-        } catch (error) {
-          console.error('Error loading project context docs:', error);
-        }
-      } else {
-        setProjectContextData(null);
+      if (!projectChatId) {
+        setProjectContextData([])
+        return
       }
-    };
+      try {
+        setIsLoading(true)
+        const result = await getProjectContextDocs(projectChatId) 
+        alert("Fuck yeah")
+        if (result?.success && Array.isArray(result.projectContextDocs)) {
+          setProjectContextData(result.projectContextDocs)
+        } else {
+          setProjectContextData([])
+        }
+      } catch (error) {
+        console.error('Error loading project context docs:', error)
+        setProjectContextData([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-    loadProjectContextData();
-  }, [projectChatId]);
+    loadProjectContextData()
+  }, [projectChatId])
 
   // Update selected file when docsName changes
   React.useEffect(() => { 
-    if (docsName) {
-      setSelectedFile(`${docsName}/PROJECT_RULES.md`);
+    // Prefer selecting the first fetched context's PROJECT_RULES.md
+    if (projectContextData && projectContextData.length > 0) {
+      const firstFolder = projectContextData[0]?.contextName || ""
+      if (firstFolder) {
+        setSelectedFile(`${firstFolder}/PROJECT_RULES.md`)
+      }
+      return
     }
-  }, [docsName]);
+    // Fallback to docsName if provided and no fetched data
+    if (docsName) {
+      setSelectedFile(`${docsName}/PROJECT_RULES.md`)
+    } else {
+      setSelectedFile("")
+    }
+  }, [docsName, projectContextData])
 
   // Create file structure that supports dynamic folders
   const createFileStructure = React.useCallback((): Record<string, FileNode> => {
-    const folderName = docsName || "BigChanges";
-    
-    const baseStructure: Record<string, FileNode> = {};
-    baseStructure[folderName] = {
-        type: "folder" as const,
-        children: {
-          "PROJECT_RULES.md": {
-            type: "file" as const,
-            content: projectContextData?.projectRules || `# Development Agent Workflow
+    const baseStructure: Record<string, FileNode> = {}
+
+    // Build one root folder per contextName from fetched docs
+    if (Array.isArray(projectContextData) && projectContextData.length > 0) {
+      projectContextData.forEach((doc: any) => {
+        const folderName = doc?.contextName || "Context"
+        baseStructure[folderName] = {
+          type: "folder" as const,
+          children: {
+            "PROJECT_RULES.md": {
+              type: "file" as const,
+              content: doc?.projectRules || `# Development Agent Workflow
 
 ## Primary Directive
 You are a development agent implementing a project based on established documentation. Your goal is to build a cohesive, well-documented, and maintainable software product. **ALWAYS** consult documentation before taking any action and maintain strict consistency with project standards.
@@ -368,11 +384,11 @@ Your implementation is successful when:
 
 ## Remember
             Every decision should support the overall project goals while maintaining consistency with established patterns. Build software that is not just functional, but also maintainable, scalable, and aligned with the project vision outlined in the PRD. **Most importantly, never proceed without human verification - the human review process is crucial for ensuring quality and preventing cascading errors in subsequent phases.**`,
-            isComplete: true
-          },
-          "HUMAN_REVIEW.md": {
-            type: "file" as const,
-            content: `# Human Review Log
+              isComplete: true
+            },
+            "HUMAN_REVIEW.md": {
+              type: "file" as const,
+              content: doc?.humanReview || `# Human Review Log
 
 ## Phase [N] Review - [Date]
 
@@ -414,44 +430,43 @@ Your implementation is successful when:
 [Space for agent to add resolution details if issues were reported]
 
 ---`,
-            isComplete: true
-          },
-          "PLAN.md": {
-            type: "file" as const,
-            content: projectPlan,
-            isComplete: true
-          },
-          Phases: {
-            type: "folder" as const,
-            children: (() => {
-              const phaseChildren: Record<string, FileNode> = {};
-              
-              if (projectPhases && projectPhases.length > 0 && projectPhases[0] !== "Not Generated 1") {
-                // Use the actual projectPhases data
-                projectPhases.forEach((phase, index) => {
-                  phaseChildren[`PHASE_${index + 1}.md`] = {
+              isComplete: true
+            },
+            "PLAN.md": {
+              type: "file" as const,
+              content: doc?.plan,
+              isComplete: true
+            },
+            Phases: {
+              type: "folder" as const,
+              children: (() => {
+                const phaseChildren: Record<string, FileNode> = {}
+                const phasesArray = Array.isArray(doc?.phases) ? doc.phases : []
+                if (phasesArray.length > 0) {
+                  phasesArray.forEach((phase: string, index: number) => {
+                    phaseChildren[`PHASE_${index + 1}.md`] = {
+                      type: "file" as const,
+                      content: phase,
+                      isComplete: true
+                    }
+                  })
+                } else {
+                  phaseChildren["PHASE_1.md"] = {
                     type: "file" as const,
-                    content: phase,
+                    content: `# Phase 1\n\nInitial phase details for ${folderName}.`,
                     isComplete: true
-                  };
-                });
-              } else {
-                // Default phase structure
-                phaseChildren["PHASE_1.md"] = {
-                  type: "file" as const,
-                  content: `# Phase 1\n\nInitial phase details for ${folderName}.`,
-                  isComplete: true
-                };
-              }
-              
-              return phaseChildren;
-            })(),
+                  }
+                }
+                return phaseChildren
+              })(),
+            },
           },
-        },
-      };
+        }
+      })
+    }
 
-      return baseStructure;
-  }, [docsName, projectContextData, projectPlan, projectPhases]);
+    return baseStructure
+  }, [projectContextData])
 
   const fileStructure = createFileStructure();
 
@@ -574,6 +589,23 @@ Your implementation is successful when:
 
   const getBreadcrumbs = () => {
     return selectedFile.split("/")
+  }
+
+  if(isLoading){
+    return (
+      <div className="h-full bg-black text-white flex items-center justify-center">
+        <span className="text-white/80">Loading...</span>
+      </div>
+    )
+  }
+
+  // If loaded and no docs, show message
+  if (!isLoading && Array.isArray(projectContextData) && projectContextData.length === 0) {
+    return (
+      <div className="h-full bg-black text-white flex items-center justify-center">
+        <span className="text-white/80">No Docs Generated</span>
+      </div>
+    )
   }
 
   return (
