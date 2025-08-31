@@ -42,7 +42,7 @@ export default function ProjectContextDocs({ projectId, projectChatId, projectDo
       try {
         setIsLoading(true)
         const result = await getProjectContextDocs(projectChatId) 
-        alert("Fuck yeah")
+        // alert("Fuck yeah")
         if (result?.success && Array.isArray(result.projectContextDocs)) {
           setProjectContextData(result.projectContextDocs)
         } else {

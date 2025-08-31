@@ -65,6 +65,7 @@ const ProjectPage = () => {
   const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [isPromptGenerating, setIsPromptGenerating] = useState(false);
   const [isDocsGenerating, setIsDocsGenerating] = useState(false);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [selectedProjectDocsId, setSelectedProjectDocsId] = useState<string | undefined>(undefined);
   const [selectedDocsName, setSelectedDocsName] = useState<string | undefined>(undefined);
   const [projectPlan, setProjectPlan] = useState<string>("Not Generated");
@@ -141,56 +142,102 @@ const ProjectPage = () => {
   };
 
   // Handle chat switching
-  const handleChatSwitch = async (chatId: string) => {
+  const handleChatSwitch = (chatId: string) => {
     if (chatId === activeChatId) return;
-    
-    try {
-      const chatResult = await getProjectChat(projectId, chatId);
-      if (chatResult.success && chatResult.projectChat) {
-        setActiveChatId(chatId);
-        
-        // Load messages from the selected chat
-        const chatMessages = chatResult.projectChat.messages as unknown as ProjectMessage[];
-        const loadedMessages = chatMessages.map((msg, index) => ({
-          ...msg,
-          id: msg.id || generateMessageId()
-        }));
-        setMessages(loadedMessages);
-        
-        // Update URL
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('c', chatId);
-        window.history.replaceState({}, '', newUrl.toString());
+
+    // Optimistic UI: switch immediately using local state
+    setActiveChatId(chatId);
+    const localChat = projectChats.find(c => c.id.toString() === chatId);
+    const localMessages = (localChat?.messages as unknown as ProjectMessage[]) || [];
+    const loadedLocalMessages = localMessages.map(msg => ({
+      ...msg,
+      id: (msg as any).id || generateMessageId()
+    }));
+    setMessages(loadedLocalMessages);
+
+    // Update URL immediately
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('c', chatId);
+    window.history.replaceState({}, '', newUrl.toString());
+
+    // Refresh from server in background and reconcile if still on same chat
+    (async () => {
+      try {
+        const chatResult = await getProjectChat(projectId, chatId);
+        if (chatResult.success && chatResult.projectChat) {
+          if (chatId === (new URL(window.location.href)).searchParams.get('c')) {
+            const chatMessages = chatResult.projectChat.messages as unknown as ProjectMessage[];
+            const loadedMessages = chatMessages.map(msg => ({
+              ...msg,
+              id: (msg as any).id || generateMessageId()
+            }));
+            setMessages(loadedMessages);
+          }
+        }
+      } catch (error) {
+        console.error('Error refreshing chat:', error);
       }
-    } catch (error) {
-      console.error('Error switching chat:', error);
-    }
+    })();
   };
 
   // Handle creating new chat
   const handleCreateNewChat = async () => {
+    // Optimistic UI: add a temporary chat and switch immediately
+    const tempId = `temp-${Date.now()}`;
+    setIsCreatingChat(true);
 
-    if(messages.length === 0){
-      return;
-    }
+    const tempChat: any = {
+      id: tempId,
+      title: 'New Chat',
+      projectId,
+      messages: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    setProjectChats(prev => [tempChat as unknown as ProjectChat, ...prev]);
+    setActiveChatId(tempId);
+    setMessages([]);
+
+    // Update URL immediately
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('c', tempId);
+    window.history.replaceState({}, '', newUrl.toString());
+
+    // Create on server in background and reconcile
     try {
-      const createResult = await createProjectChat(projectId, "New Chat");
+      const createResult = await createProjectChat(projectId, 'New Chat');
       if (createResult.success) {
         const newChat = createResult.projectChat!;
+        const realId = newChat.id.toString();
         const newChatFormatted = {
           ...newChat,
           id: newChat.id,
           messages: newChat.messages || []
         } as ProjectChat;
-        
-        // Add to project chats list at the beginning (latest first)
-        setProjectChats(prev => [newChatFormatted, ...prev]);
-        
-        // Switch to new chat
-        await handleChatSwitch(newChat.id.toString());
+
+        setProjectChats(prev => {
+          const withoutTemp = prev.filter(c => c.id.toString() !== tempId);
+          return [newChatFormatted, ...withoutTemp];
+        });
+
+        // If user is still on temp chat, switch to real one transparently
+        if ((new URL(window.location.href)).searchParams.get('c') === tempId) {
+          setActiveChatId(realId);
+          setMessages([]);
+          const url = new URL(window.location.href);
+          url.searchParams.set('c', realId);
+          window.history.replaceState({}, '', url.toString());
+        }
+      } else {
+        // On failure, remove temp chat
+        setProjectChats(prev => prev.filter(c => c.id.toString() !== tempId));
       }
     } catch (error) {
       console.error('Error creating new chat:', error);
+      setProjectChats(prev => prev.filter(c => c.id.toString() !== tempId));
+    } finally {
+      setIsCreatingChat(false);
     }
   };
 
@@ -512,7 +559,7 @@ const ProjectPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim() || isChatLoading || !activeChatId) return;
+    if (!inputMessage.trim() || isChatLoading || isCreatingChat || !activeChatId) return;
     
     const userMessage: ProjectMessage = {
       id: generateMessageId(),
@@ -1117,7 +1164,7 @@ const ProjectPage = () => {
                   rows={2}
                   style={{ height: textareaHeight }}
                   maxLength={5000}
-                  disabled={isChatLoading}
+                  disabled={isChatLoading || isCreatingChat}
                 />
               </div>
               
@@ -1126,7 +1173,7 @@ const ProjectPage = () => {
                 <button 
                   type="submit" 
                   className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  disabled={!inputMessage.trim() || isChatLoading}
+                  disabled={!inputMessage.trim() || isChatLoading || isCreatingChat}
                 >
                   <Send className="h-4 w-4" />
                 </button>
