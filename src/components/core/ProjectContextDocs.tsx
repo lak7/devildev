@@ -506,10 +506,7 @@ Your implementation is successful when:
 
       if (item.type === "folder" && item.children) {
         // Create folder and recursively add its contents
-        const folder = zip.folder(fullPath)
-        if (folder) {
-          addFilesToZip(folder, item.children, fullPath)
-        }
+        addFilesToZip(zip, item.children, fullPath)
       } else if (item.type === "file" && item.content) {
         // Add file with its content
         zip.file(fullPath, item.content)
