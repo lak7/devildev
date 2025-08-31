@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
     githubAuthUrl.searchParams.set('client_id', clientId);
     githubAuthUrl.searchParams.set('redirect_uri', redirectUri);
-    githubAuthUrl.searchParams.set('scope', 'user:email read:user');
-    githubAuthUrl.searchParams.set('state', stateWithUserId);
+    githubAuthUrl.searchParams.set('scope', 'user:email read:user repo');
+    githubAuthUrl.searchParams.set('state', stateWithUserId); 
     
     return NextResponse.redirect(githubAuthUrl.toString());
   } catch (error) {

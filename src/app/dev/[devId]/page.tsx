@@ -33,15 +33,6 @@ import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 
-// Using ChatMessage from actions/chat.ts
-// export interface ChatMessage { 
-//   id: string;
-//   type: 'user' | 'assistant';
-//   content: string;
-//   timestamp: Date;
-//   isStreaming?: boolean;
-// }
-
 interface UserChat {
   id: string;
   title: string | null;
@@ -323,8 +314,8 @@ const DevPage = () => {
           if (chatResult.success && chatResult.chat) {
             const chatMessages = chatResult.chat.messages as unknown as ChatMessageType[];
             setMessages(chatMessages);
-            setIsChatMode(true);
-            
+            setIsChatMode(true); 
+            alert(0)
             // Load architecture data if it exists
             const archResult = await getArchitecture(chatId);
             if (archResult.success && archResult.architecture) {
@@ -332,6 +323,7 @@ const DevPage = () => {
               setComponentPositions(archResult.componentPositions || {});
               setArchitectureGenerated(true);
             }
+            alert(1)
             setIsLoadingChat(false);
 
             // Load contextual docs data if it exists
@@ -341,6 +333,7 @@ const DevPage = () => {
               syncIndividualStates(docsResult.contextualDocs);
               setDocsGenerated(true);
             }
+            alert(2)
           } else {
             setIsLoadingChat(false);
             console.error("Failed to load chat:", chatResult.error);
@@ -408,7 +401,7 @@ const DevPage = () => {
     setFeedbackMessage(null);
     
     try {
-      const result = await submitFeedback(chatId, feedbackText);
+      const result = await submitFeedback("dev/" + chatId, feedbackText);
       
       if (result.success) {
         setFeedbackMessage({
@@ -764,7 +757,7 @@ const DevPage = () => {
   };
 
   const handleGenerateDocs = async () => {
-    setIsGeneratingDocs(true);
+    setIsGeneratingDocs(true); 
     // setIsLoading(true);
     setActiveTab('context');
     setIsStreamingDocs(true);
@@ -1011,7 +1004,6 @@ const DevPage = () => {
   }
 
 
-  // Chat mode layout
   return (
     <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
       {/* Enhanced Navbar */}
@@ -1049,7 +1041,7 @@ const DevPage = () => {
               DevilDev
             </span>
           </button>
-        </div>
+        </div> 
 
         {/* Right side - How to, Feedback button and User avatar */}
         <div className="flex items-center space-x-3">

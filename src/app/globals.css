@@ -181,3 +181,98 @@ textarea {
   scrollbar-color: rgba(239, 68, 68, 0.3) transparent;
 }
 
+/* Custom loading animation */
+@keyframes loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Shimmer animation for skeleton loaders */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Shine animation for upload button */
+@keyframes shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shine {
+  animation: shine 2s ease-in-out infinite;
+}
+
+/* Floating glow animations for circular button */
+@keyframes float-glow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1.03) translateX(0px) translateY(0px) rotate(0deg);
+  }
+  20% {
+    opacity: 0.42;
+    transform: scale(1.035) translateX(2px) translateY(-1px) rotate(0.5deg);
+  }
+  40% {
+    opacity: 0.36;
+    transform: scale(1.04) translateX(1px) translateY(-2px) rotate(-0.3deg);
+  }
+  60% {
+    opacity: 0.42;
+    transform: scale(1.035) translateX(-1px) translateY(-1px) rotate(0.2deg);
+  }
+  80% {
+    opacity: 0.36;
+    transform: scale(1.04) translateX(-2px) translateY(0px) rotate(-0.4deg);
+  }
+}
+
+@keyframes float-glow-secondary {
+  0%, 100% {
+    opacity: 0.18;
+    transform: scale(1.015) translateX(0px) translateY(0px) rotate(0deg);
+  }
+  25% {
+    opacity: 0.3;
+    transform: scale(1.02) translateX(-1px) translateY(1px) rotate(-0.2deg);
+  }
+  50% {
+    opacity: 0.24;
+    transform: scale(1.025) translateX(1px) translateY(-1px) rotate(0.3deg);
+  }
+  75% {
+    opacity: 0.3;
+    transform: scale(1.02) translateX(0px) translateY(1px) rotate(-0.1deg);
+  }
+}
+
+@keyframes float-glow-tertiary {
+  0%, 100% {
+    opacity: 0.12;
+    transform: scale(1.05) translateX(0px) translateY(0px) rotate(0deg);
+  }
+  30% {
+    opacity: 0.22;
+    transform: scale(1.055) translateX(1px) translateY(-1px) rotate(0.4deg);
+  }
+  70% {
+    opacity: 0.18;
+    transform: scale(1.06) translateX(-1px) translateY(1px) rotate(-0.3deg);
+  }
+}
+
