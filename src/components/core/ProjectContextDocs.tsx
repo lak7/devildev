@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, File, Folder, Copy, Download, Check, Clock, CheckCircle } from "lucide-react"
+import { ChevronRight, File, Folder, Copy, Download, Check, Clock, CheckCircle, Loader2, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -594,7 +594,10 @@ Your implementation is successful when:
   if(isLoading){
     return (
       <div className="h-full bg-black text-white flex items-center justify-center">
-        <span className="text-white/80">Loading...</span>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-white/80 animate-spin" />
+          <span className="text-white/80 text-sm">Loading documentation...</span>
+        </div>
       </div>
     )
   }
@@ -603,7 +606,17 @@ Your implementation is successful when:
   if (!isLoading && Array.isArray(projectContextData) && projectContextData.length === 0) {
     return (
       <div className="h-full bg-black text-white flex items-center justify-center">
-        <span className="text-white/80">No Docs Generated</span>
+        <div className="flex flex-col items-center gap-4 text-center max-w-md">
+          <div className="p-4 rounded-full bg-white/5 border border-white/10">
+            <FileText className="w-12 h-12 text-white/40" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-white">No Documentation Available</h3>
+            <p className="text-white/60 text-sm leading-relaxed">
+              Project documentation hasn't been generated yet. Documentation will appear once you ask the devildev to implement somthing hard.
+            </p>
+          </div>
+        </div>
       </div>
     )
   }
