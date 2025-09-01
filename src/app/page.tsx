@@ -21,6 +21,7 @@ import { FuturisticButton } from '@/components/ui/GlowButton01';
 // import { MatrixGlitchButton } from '@/components/ui/GlowButton02';
 import { GlowButton } from '@/components/ui/GlowButton05';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import Link from 'next/link';
 
 
 
@@ -270,112 +271,113 @@ export default function Page() {
                 <Image
                   src="/favicon.jpg"
                   alt="DevilDev Logo"
-                  width={120}
-                  height={36}
-                  className="h-9 w-auto"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 rounded-full"
                   priority
                 />
               </div>
 
               {/* Navigation links in center */}
-              <div className="hidden md:flex items-center space-x-8">
+              <div className="hidden md:flex items-center space-x-12">
                 <a
                   href="/"
-                  className="text-white font-medium px-3 py-2 rounded-md bg-red-500/20 border border-red-500/30 transition-all duration-200 hover:bg-red-500/30 hover:border-red-500/50"
+                  className="text-white font-medium text-sm px-5 py-1  rounded-4xl bg-zinc-800/50 border border-gray-700/50 transition-all duration-200"
                 >
                   Home
                 </a>
                 <a
                   href="/community"
-                  className="text-gray-300 font-medium px-3 py-2 rounded-md border border-transparent transition-all duration-200 hover:text-white hover:bg-black/40 hover:border-red-500/30"
+                  className="text-gray-400 font-medium text-sm transition-colors duration-200 hover:text-white"
                 >
                   Community
                 </a>
                 <a
                   href="/contact"
-                  className="text-gray-300 font-medium px-3 py-2 rounded-md border border-transparent transition-all duration-200 hover:text-white hover:bg-black/40 hover:border-red-500/30"
+                  className="text-gray-400 font-medium text-sm transition-colors duration-200 hover:text-white"
                 >
                   Contact
                 </a>
               </div>
 
               {/* Projects button on the right */}
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => router.push('/new')}
-                  className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
-                >
-                  <FolderOpen className="h-4 w-4" />
-                  <span>Projects</span>
-                </button>
+              <div className="flex items-center">
+              <Link
+                      className="bg-white h-8 hidden md:flex items-center justify-center text-sm font-normal tracking-wide rounded-full text-black dark:text-secondary-foreground w-fit px-4 shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12]"
+                      href="/project"
+                    >
+                      Projects
+                    </Link>
               </div>
             </div>
           </div>
         </nav>
       )}
 
+      {/* GRID  */}
+      <div className="">
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 opacity-10">
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `
+                  linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+                `,
+                  backgroundSize: "60px 60px",
+                }}
+              />
+            </div>
 
+            {/* Left side flickering grid with gradient fades */}
+            <div className="hidden sm:block absolute left-0 top-20 h-[500px] sm:h-[600px] md:h-[800px] w-1/4 sm:w-1/3  overflow-hidden">
+                {/* Horizontal fade from left to right */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black z-10" />
 
+                {/* Vertical fade from top */}
+                <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black via-backgblackround/90 to-transparent z-10" />
 
-      {/* Grid pattern overlay */}
-      <div className="absolute inset-0 opacity-10">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-          `,
-            backgroundSize: "60px 60px",
-          }}
-        />
+                {/* Vertical fade to bottom */}
+                <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-black/90 to-transparent z-10" />
+
+                {mounted && (
+                  <FlickeringGrid
+                  className="h-full w-full"
+                  squareSize={tablet ? 2 : 2.5}
+                  gridGap={tablet ? 2 : 2.5}
+                  color="#ff0000"
+                  maxOpacity={tablet ? 0.2 : 0.4}
+                  flickerChance={isScrolling ? 0.005 : (tablet ? 0.015 : 0.03)}
+                />
+                )}
+              </div>
+
+              {/* Right side flickering grid with gradient fades */}
+              <div className="hidden sm:block absolute right-0 top-20 h-[500px] sm:h-[600px] md:h-[800px] w-1/4 sm:w-1/3  overflow-hidden">
+                {/* Horizontal fade from right to left */}
+                <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-black z-10" />
+
+                {/* Vertical fade from top */}
+                <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black via-backgblackround/90 to-transparent z-10" />
+
+                {/* Vertical fade to bottom */}
+                <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-black/90 to-transparent z-10" />
+
+                {mounted && (
+                  <FlickeringGrid
+                  className="h-full w-full"
+                  squareSize={tablet ? 2 : 2.5}
+                  gridGap={tablet ? 2 : 2.5}
+                  color="#ff0000"
+                  maxOpacity={tablet ? 0.2 : 0.4}
+                  flickerChance={isScrolling ? 0.005 : (tablet ? 0.015 : 0.03)}
+                />
+                )}
+              </div>
       </div>
 
-      {/* Left side flickering grid with gradient fades */}
-      <div className="hidden sm:block absolute left-0 top-20 h-[500px] sm:h-[600px] md:h-[800px] w-1/4 sm:w-1/3  overflow-hidden">
-          {/* Horizontal fade from left to right */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black z-10" />
-
-          {/* Vertical fade from top */}
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black via-backgblackround/90 to-transparent z-10" />
-
-          {/* Vertical fade to bottom */}
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-black/90 to-transparent z-10" />
-
-          {mounted && (
-             <FlickeringGrid
-             className="h-full w-full"
-             squareSize={tablet ? 2 : 2.5}
-             gridGap={tablet ? 2 : 2.5}
-             color="#ff0000"
-             maxOpacity={tablet ? 0.2 : 0.4}
-             flickerChance={isScrolling ? 0.005 : (tablet ? 0.015 : 0.03)}
-           />
-          )}
-        </div>
-
-        {/* Right side flickering grid with gradient fades */}
-        <div className="hidden sm:block absolute right-0 top-20 h-[500px] sm:h-[600px] md:h-[800px] w-1/4 sm:w-1/3  overflow-hidden">
-          {/* Horizontal fade from right to left */}
-          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-black z-10" />
-
-          {/* Vertical fade from top */}
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black via-backgblackround/90 to-transparent z-10" />
-
-          {/* Vertical fade to bottom */}
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-black/90 to-transparent z-10" />
-
-          {mounted && (
-             <FlickeringGrid
-             className="h-full w-full"
-             squareSize={tablet ? 2 : 2.5}
-             gridGap={tablet ? 2 : 2.5}
-             color="#ff0000"
-             maxOpacity={tablet ? 0.2 : 0.4}
-             flickerChance={isScrolling ? 0.005 : (tablet ? 0.015 : 0.03)}
-           />
-          )}
-        </div>
+      
 
     
       {/* Mobile burger menu button - moved below navbar */}
@@ -411,7 +413,7 @@ export default function Page() {
       {/* Hover-expandable Sidebar for signed in users */}
       {isSignedIn && (
         <div 
-          className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-black/30 backdrop-blur-md border-r border-red-500 transition-all duration-300 ease-in-out z-20 group ${
+          className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-black/30 backdrop-blur-md border-r border-red-500/50 transition-all duration-300 ease-in-out z-20 group ${
             isDevSidebarHovered ? 'w-72' : 'w-0'
           } overflow-hidden`}
           onMouseLeave={() => setIsDevSidebarHovered(false)}
@@ -421,36 +423,6 @@ export default function Page() {
           <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
           <div className="relative flex flex-col h-full pt-8 pb-3">
-            {/* Top navigation items */}
-            <div className="px-2 space-y-2">
-              <a
-                href="/devlogs"
-                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
-                title="Community"
-              >
-                <Users className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
-                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                }`}>
-                  Community
-                </span>
-              </a>
-              <a
-                href="/contact"
-                className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
-                title="Contact"
-              >
-                <Phone className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
-                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                }`}>
-                  Contact
-                </span>
-              </a>
-            </div>
-
-            {/* Elegant divider */}
-            <div className="mx-4 my-6 h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent"></div>
 
             {/* Chats section */}
             <div className="flex-1 px-2">
@@ -522,9 +494,6 @@ export default function Page() {
       )}
 
       <div className="flex h-full w-full justify-center items-center">
-        {isSignedIn && (
-          <div className="h-dvh min-w-16 bg-black visible:none left-0 hidden md:block"/>
-        )}
         {/* Main content */}
         <div className={`relative z-10 flex flex-col items-center justify-center min-h-screen px-2 transition-all duration-300 ${
           isSignedIn ? 'md:ml-0 pt-16' : ''
@@ -605,23 +574,9 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
+      <div className="absolute bottom-0 z-10 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
 
-      {!isSignedIn && (
-<div className="">
-{/* Corner decorations */}
-<div className="absolute top-4 left-4 w-12 h-12 border-l-2 border-t-2 border-red-500/40"></div>
-      <div className="absolute top-4 right-4 w-12 h-12 border-r-2 border-t-2 border-red-500/40"></div>
-      <div className="absolute bottom-4 left-4 w-12 h-12 border-l-2 border-b-2 border-red-500/40"></div>
-      <div className="absolute bottom-4 right-4 w-12 h-12 border-r-2 border-b-2 border-red-500/40"></div>
 
-      {/* Corner accents */}
-      <div className="absolute top-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-      <div className="absolute top-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-      <div className="absolute bottom-8 left-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-      <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
-</div>
-      )}
 
       
     </div>
