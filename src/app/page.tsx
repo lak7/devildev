@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Loader2, Github } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Loader2, Github, FolderOpen } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../actions/agentsFlow';
@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { FuturisticButton } from '@/components/ui/GlowButton01';
 // import { MatrixGlitchButton } from '@/components/ui/GlowButton02';
 import { GlowButton } from '@/components/ui/GlowButton05';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
 
 
 
@@ -40,8 +41,13 @@ interface GitHubStatus {
 
 export default function Page() {
   const [inputMessage, setInputMessage] = useState('');
+  const [isDevSidebarHovered, setIsDevSidebarHovered] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [textareaHeight, setTextareaHeight] = useState('60px');
+  const tablet = useMediaQuery('(max-width: 1024px)');
+  const [mounted, setMounted] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   // const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -93,6 +99,36 @@ export default function Page() {
       setGithubStatus({ isConnected: false });
     }
   };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Detect when scrolling is active to reduce animation complexity
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolling(true);
+      
+      // Clear any existing timeout
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+      
+      // Set a new timeout
+      scrollTimeout.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 300); // Wait 300ms after scroll stops
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+    };
+  }, []);
 
   // Function to handle GitHub connection
   const handleGithubConnect = async () => {
@@ -224,6 +260,63 @@ export default function Page() {
         }}
       />
 
+        {/* Navbar - Only show when signed in */}
+        {isSignedIn && (
+        <nav className="fixed top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-md  ">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              {/* Logo on the left */}
+              <div className="flex items-center">
+                <Image
+                  src="/favicon.jpg"
+                  alt="DevilDev Logo"
+                  width={120}
+                  height={36}
+                  className="h-9 w-auto"
+                  priority
+                />
+              </div>
+
+              {/* Navigation links in center */}
+              <div className="hidden md:flex items-center space-x-8">
+                <a
+                  href="/"
+                  className="text-white font-medium px-3 py-2 rounded-md bg-red-500/20 border border-red-500/30 transition-all duration-200 hover:bg-red-500/30 hover:border-red-500/50"
+                >
+                  Home
+                </a>
+                <a
+                  href="/community"
+                  className="text-gray-300 font-medium px-3 py-2 rounded-md border border-transparent transition-all duration-200 hover:text-white hover:bg-black/40 hover:border-red-500/30"
+                >
+                  Community
+                </a>
+                <a
+                  href="/contact"
+                  className="text-gray-300 font-medium px-3 py-2 rounded-md border border-transparent transition-all duration-200 hover:text-white hover:bg-black/40 hover:border-red-500/30"
+                >
+                  Contact
+                </a>
+              </div>
+
+              {/* Projects button on the right */}
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => router.push('/new')}
+                  className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  <span>Projects</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </nav>
+      )}
+
+
+
+
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 opacity-10">
         <div
@@ -238,11 +331,58 @@ export default function Page() {
         />
       </div>
 
-      {/* Mobile burger menu button */}
+      {/* Left side flickering grid with gradient fades */}
+      <div className="hidden sm:block absolute left-0 top-20 h-[500px] sm:h-[600px] md:h-[800px] w-1/4 sm:w-1/3  overflow-hidden">
+          {/* Horizontal fade from left to right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black z-10" />
+
+          {/* Vertical fade from top */}
+          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black via-backgblackround/90 to-transparent z-10" />
+
+          {/* Vertical fade to bottom */}
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-black/90 to-transparent z-10" />
+
+          {mounted && (
+             <FlickeringGrid
+             className="h-full w-full"
+             squareSize={tablet ? 2 : 2.5}
+             gridGap={tablet ? 2 : 2.5}
+             color="#ff0000"
+             maxOpacity={tablet ? 0.2 : 0.4}
+             flickerChance={isScrolling ? 0.005 : (tablet ? 0.015 : 0.03)}
+           />
+          )}
+        </div>
+
+        {/* Right side flickering grid with gradient fades */}
+        <div className="hidden sm:block absolute right-0 top-20 h-[500px] sm:h-[600px] md:h-[800px] w-1/4 sm:w-1/3  overflow-hidden">
+          {/* Horizontal fade from right to left */}
+          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-black z-10" />
+
+          {/* Vertical fade from top */}
+          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black via-backgblackround/90 to-transparent z-10" />
+
+          {/* Vertical fade to bottom */}
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-black/90 to-transparent z-10" />
+
+          {mounted && (
+             <FlickeringGrid
+             className="h-full w-full"
+             squareSize={tablet ? 2 : 2.5}
+             gridGap={tablet ? 2 : 2.5}
+             color="#ff0000"
+             maxOpacity={tablet ? 0.2 : 0.4}
+             flickerChance={isScrolling ? 0.005 : (tablet ? 0.015 : 0.03)}
+           />
+          )}
+        </div>
+
+    
+      {/* Mobile burger menu button - moved below navbar */}
       {isSignedIn && (
         <button
           onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-          className="fixed top-4 left-4 z-30 md:hidden bg-black/50 backdrop-blur-md border border-red-500/20 rounded-lg p-2 text-white hover:bg-black/70 transition-all duration-200"
+          className="fixed top-20 left-4 z-30 md:hidden bg-black/50 backdrop-blur-md border border-red-500/20 rounded-lg p-2 text-white hover:bg-black/70 transition-all duration-200"
         >
           {isMobileSidebarOpen ? (
             <X className="h-5 w-5" />
@@ -260,55 +400,37 @@ export default function Page() {
         />
       )}
 
+      {/* Hover trigger area - invisible but extends to far left */}
+      {isSignedIn && (
+        <div 
+          className="fixed top-16 left-0 w-4 h-[calc(100vh-4rem)] z-30"
+          onMouseEnter={() => setIsDevSidebarHovered(true)}
+        />
+      )}
+
       {/* Hover-expandable Sidebar for signed in users */}
       {isSignedIn && (
         <div 
-          className={`fixed top-0 left-0 h-full bg-black/30 backdrop-blur-md border-r border-red-500/20 transition-all duration-300 ease-in-out z-20 group overflow-hidden
-            md:hover:w-72 md:${isSidebarHovered ? 'w-72' : 'w-16'}
-            ${isMobileSidebarOpen ? 'w-72' : 'w-0 md:w-16'}
-          `}
-          onMouseEnter={() => setIsSidebarHovered(true)}
-          onMouseLeave={() => setIsSidebarHovered(false)}
+          className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-black/30 backdrop-blur-md border-r border-red-500 transition-all duration-300 ease-in-out z-20 group ${
+            isDevSidebarHovered ? 'w-72' : 'w-0'
+          } overflow-hidden`}
+          onMouseLeave={() => setIsDevSidebarHovered(false)}
         >
+          
           {/* Subtle glow effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
-          <div className="relative flex flex-col h-full pt-8 pb-6">
+          <div className="relative flex flex-col h-full pt-8 pb-3">
             {/* Top navigation items */}
             <div className="px-2 space-y-2">
-              
-              {/* <button
-                onClick={handleGithubConnect}
-                disabled={githubLoading}
-                className={`flex items-center space-x-4 px-3 py-3 rounded-lg transition-all duration-200 group/item w-full text-left border ${
-                  githubStatus.isConnected 
-                    ? 'text-green-300 hover:text-green-200 hover:bg-green-900/20 hover:border-green-500/30 border-green-500/20' 
-                    : 'text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border-transparent'
-                } ${githubLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={githubStatus.isConnected ? `Connected as ${githubStatus.githubUsername}` : "Connect Github"}
-              >
-                {githubLoading ? (
-                  <Loader2 className="h-5 w-5 flex-shrink-0 animate-spin text-red-400" />
-                ) : (
-                  <Github className={`h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 ${
-                    githubStatus.isConnected ? 'text-green-400' : 'text-red-400'
-                  }`} />
-                )}
-                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                }`}>
-                  {githubStatus.isConnected ? `Connected: ${githubStatus.githubUsername}` : 'Connect Github'}
-                </span>
-              </button> */}
-          
               <a
-                href="/community"
+                href="/devlogs"
                 className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
                 title="Community"
               >
                 <Users className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
                   Community
                 </span>
@@ -320,7 +442,7 @@ export default function Page() {
               >
                 <Phone className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
                   Contact
                 </span>
@@ -332,17 +454,17 @@ export default function Page() {
 
             {/* Chats section */}
             <div className="flex-1 px-2">
-              <div className="flex items-center space-x-4 px-3 py-3 mb-3">
+              <div className="flex items-center space-x-4 px-3 py-2  mb-3">
                 <MessageCircle className="h-5 w-5 text-red-400/70 flex-shrink-0" />
                 <span className={`text-sm font-medium text-red-400/90 whitespace-nowrap transition-all duration-300 ${
-                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
                   Chats
                 </span>
               </div>
               <div className={`space-y-1 transition-all duration-300 ${
-                (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100' : 'opacity-0'
-              } max-h-96 overflow-y-auto chat-scrollbar`}>
+                isDevSidebarHovered ? 'opacity-100' : 'opacity-0'
+              } max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-500/20`}>
                 {chatsLoading ? (
                   <div className="flex items-center justify-center px-6 py-4">
                     <Loader2 className="h-4 w-4 animate-spin text-red-400/60" />
@@ -352,7 +474,7 @@ export default function Page() {
                     <button
                       key={chat.id}
                       onClick={() => router.push(`/dev/${chat.id}`)} 
-                      className="w-full text-left px-3 py-2.5 rounded-md text-gray-300 hover:text-white hover:bg-black/30 hover:border-red-500/20 border border-transparent transition-all duration-200 group/chat"
+                      className={`w-full text-left px-3 py-2.5 rounded-md border transition-all duration-200 group/chat text-gray-300 hover:text-white hover:bg-black/30 hover:border-red-500/20 border-transparent`}
                       title={chat.title || 'Untitled Chat'}
                     >
                       <div className="truncate text-sm font-medium">
@@ -381,7 +503,7 @@ export default function Page() {
                   </AvatarFallback>
                 </Avatar>
                 <div className={`flex-1 min-w-0 transition-all duration-300 ${
-                  (isSidebarHovered || isMobileSidebarOpen) ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
                   <p className="text-sm font-medium text-white truncate">
                     {user?.fullName || user?.emailAddresses?.[0]?.emailAddress}
@@ -404,10 +526,10 @@ export default function Page() {
           <div className="h-dvh min-w-16 bg-black visible:none left-0 hidden md:block"/>
         )}
         {/* Main content */}
-        <div className={`relative z-10 flex flex-col items-center justify-center min-h-screen px-2 bottom-12 transition-all duration-300 ${
-          isSignedIn ? 'md:ml-0' : ''
+        <div className={`relative z-10 flex flex-col items-center justify-center min-h-screen px-2 transition-all duration-300 ${
+          isSignedIn ? 'md:ml-0 pt-16' : ''
         } ${isSignedIn && isMobileSidebarOpen ? 'blur-sm md:blur-none' : ''}`}>
-          <div className="mb-0  flex justify-center">
+          <div className="mb-0 flex justify-center">
             <Image
               src="/finaldev.png"
               alt="DevilDev Logo" 
@@ -504,4 +626,22 @@ export default function Page() {
       
     </div>
   );
+}
+
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+
+    const listener = () => setMatches(media.matches);
+    media.addEventListener('change', listener);
+
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
 }
