@@ -263,17 +263,17 @@ export default function Page() {
 
         {/* Navbar - Only show when signed in */}
         {isSignedIn && (
-        <nav className="fixed top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-md  ">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav className="fixed top-4 left-0 right-0 z-40 bg-black/80 backdrop-blur-md  ">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               {/* Logo on the left */}
               <div className="flex items-center">
                 <Image
-                  src="/favicon.jpg"
+                  src="/main03.png"
                   alt="DevilDev Logo"
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 rounded-full"
+                  width={15000}
+                  height={4000}
+                  className="h-10 w-36 "
                   priority
                 />
               </div>
@@ -496,22 +496,23 @@ export default function Page() {
       <div className="flex h-full w-full justify-center items-center">
         {/* Main content */}
         <div className={`relative z-10 flex flex-col items-center justify-center min-h-screen px-2 transition-all duration-300 ${
-          isSignedIn ? 'md:ml-0 pt-16' : ''
+          isSignedIn ? 'md:ml-0' : ''
         } ${isSignedIn && isMobileSidebarOpen ? 'blur-sm md:blur-none' : ''}`}>
-          <div className="mb-0 flex justify-center">
-            <Image
-              src="/finaldev.png"
-              alt="DevilDev Logo" 
-              width={400}
-              height={120}
-              className="w-auto h-32 md:h-32 lg:h-56 drop-shadow-2xl"
-              priority
-            />
-          </div>
 
-          <h1 className="text-xl md:text-2xl lg:text-3xl text-gray-300 font-light mb-12 text-center">
-            Build Something Scalable
-          </h1> 
+
+          <h1 className="text-xl md:text-2xl lg:text-5xl font-black mb-12 text-center relative">
+            
+            <span className=" font-extrabold text-7xl">10x your vibe coding <br></br> with the </span>
+ 
+             <span className="bg-gradient-to-r from-red-300 via-red-500 to-red-600 bg-clip-text text-transparent text-7xl">
+                  DevilDev
+                </span>
+            {/* Enhanced glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-red-400/20 via-red-500/20 to-red-600/20 blur-3xl -z-10 scale-110"></div>
+            {/* Additional floating glow elements */}
+            <div className="absolute -top-4 -left-4 w-32 h-32 bg-red-500/10 rounded-full blur-2xl animate-pulse"></div>
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-red-600/10 rounded-full blur-2xl animate-pulse delay-1000"></div>
+          </h1>
 
           {/* Search Input */}
           <div className={`w-full sm:w-[600px] md:w-[800px] lg:w-[1200px] xl:w-[750px] transition-all duration-300 ${
@@ -549,16 +550,23 @@ export default function Page() {
               </div>
             </form>
 
-            <div className="flex w-full h-full justify-center items-center mt-12"> 
-            {/* <MatrixGlitchButton onClick={() => alert("Join Now!")} className="px-8 py-4 text-base">
-            Import Existing Project From GitHub
-          </MatrixGlitchButton> */}
-          <GlowButton variant="red" size="md" onClick={() => router.push('/new')}>
-            <Github className="w-5 h-5" />
-            Import Existing Project From GitHub
-          </GlowButton>
-              {/* <FuturisticButton variant="white">Import Existing Project From GitHub</FuturisticButton> */}
-            </div>
+                  <div className="flex flex-col justify-center items-center w-full h-full mt-5">
+                    <div className="flex items-center justify-center w-full">
+                      <div className="flex-1 h-px bg-zinc-500/50"></div>
+                      <span className="px-4 text-zinc-400 text-sm font-medium">OR</span>
+                      <div className="flex-1 h-px bg-zinc-500/50"></div>
+                    </div>
+                  <div className="flex w-full h-full justify-center items-center mt-5"> 
+
+              
+<GlowButton variant="red" size="md" onClick={() => router.push('/new')}>
+  <Github className="w-5 h-5" />
+  Import Existing Project From GitHub
+</GlowButton>
+  </div>
+                  </div>
+
+           
           </div>
           {!isSignedIn && (
             <div className="flex w-full h-full justify-center items-center mt-12">
@@ -566,9 +574,6 @@ export default function Page() {
              <div className="w-px h-6 bg-gray-400 mx-5" />
              <a href="/community" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
              
-   
-             {/* <span className="text-red-500">Hello</span>
-             <h1>Hello</h1> */}
              </div>
           )}
         </div>
