@@ -60,7 +60,7 @@ export default function NewPage() {
         : cleanedResult; 
 
       if (parsedResponse && project) {
-        alert("Imported successfully");
+        // alert("Imported successfully");
         if(parsedResponse.isValid){
           router.push(`/project/${project.id}`);
         }
@@ -69,7 +69,7 @@ export default function NewPage() {
       }
     } catch (error) {
       console.error('Error importing repository:', error);
-      alert('Failed to import repository. Please try again.');
+      // alert('Failed to import repository. Please try again.');
     } finally {
       setImporting(false);
     }

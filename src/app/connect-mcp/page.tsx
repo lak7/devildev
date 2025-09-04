@@ -47,12 +47,12 @@ export default function ConnectMCPPage() {
         window.location.href = result.redirectUrl;
       } else {
         console.error('Failed to initiate GitHub connection:', result.error);
-        alert('Failed to connect GitHub. Please try again.');
+        // alert('Failed to connect GitHub. Please try again.');
         setGithubLoading(false);
       }
     } catch (error) {
       console.error('Error connecting GitHub:', error);
-      alert('Failed to connect GitHub. Please try again.');
+      // alert('Failed to connect GitHub. Please try again.');
       setGithubLoading(false);
     }
   };

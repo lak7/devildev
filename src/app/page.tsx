@@ -145,11 +145,11 @@ export default function Page() {
           setGithubStatus({ isConnected: false });
         } else {
           console.error('Failed to disconnect GitHub:', result.error);
-          alert('Failed to disconnect GitHub. Please try again.');
+          // alert('Failed to disconnect GitHub. Please try again.');
         }
       } catch (error) {
         console.error('Error disconnecting GitHub:', error);
-        alert('Failed to disconnect GitHub. Please try again.');
+        // alert('Failed to disconnect GitHub. Please try again.');
       } finally {
         setGithubLoading(false);
       }
@@ -162,12 +162,12 @@ export default function Page() {
           window.location.href = result.redirectUrl;
         } else {
           console.error('Failed to initiate GitHub connection:', result.error);
-          alert('Failed to connect GitHub. Please try again.');
+          // alert('Failed to connect GitHub. Please try again.');
           setGithubLoading(false);
         }
       } catch (error) {
         console.error('Error connecting GitHub:', error);
-        alert('Failed to connect GitHub. Please try again.');
+        // alert('Failed to connect GitHub. Please try again.');
         setGithubLoading(false);
       }
     }
@@ -187,7 +187,7 @@ export default function Page() {
       // Remove the parameter from URL
       window.history.replaceState({}, document.title, window.location.pathname);
       // Show success message
-      alert('GitHub successfully connected!');
+      // alert('GitHub successfully connected!');
     }
     
     if (isSignedIn && isLoaded) {
@@ -268,14 +268,21 @@ export default function Page() {
             <div className="flex items-center justify-between h-16">
               {/* Logo on the left */}
               <div className="flex items-center">
-                <Image
-                  src="/main03.png"
+                <button
+                  onClick={() => router.push('/')}
+                  className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
+                  title="Go to Home"
+                >
+                  <Image
+                  src="/bold01.png"
                   alt="DevilDev Logo"
                   width={15000}
                   height={4000}
-                  className="h-10 w-36 "
+                  className="h-full w-11 "
                   priority
                 />
+                </button>
+                
               </div>
 
               {/* Navigation links in center */}
