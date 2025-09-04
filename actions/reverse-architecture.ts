@@ -155,7 +155,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
             data: {
                 name: repoFullName.split('/')[1] || repoFullName, // Use repo name as project name
                 userId: userId,
-                repoId: repositoryId, 
+                repoId: repositoryId,  
                 repoFullName: repoFullName,
                 repoContent: repoContent,
                 packageJson: packageJson,
@@ -172,7 +172,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
 }
  
 export async function generateArchitecture(projectId: string){
-    console.log("Step 0")
+    console.log("Gen Step 0")
     const { userId } = await auth();
     if (!userId) {
         return { error: 'Unauthorized' };
@@ -195,7 +195,7 @@ export async function generateArchitecture(projectId: string){
             }
         }
     });
-    console.log("Step 1")
+    console.log("Gen Step 1")
     if(!project){
         return { error: 'Project not found' };
     }
@@ -210,7 +210,7 @@ export async function generateArchitecture(projectId: string){
     if (!githubAccessToken || !repoFullName) {
         return { error: 'Missing GitHub access token or repository information' };
     }
-    console.log("Step 2")
+    console.log("Gen Step 2")
     // Parse repo owner and name from repoFullName
     const [owner, repo] = repoFullName.split('/');
     
@@ -220,7 +220,7 @@ export async function generateArchitecture(projectId: string){
         getFileContentTool, 
         searchCodeTool
     ];
-    console.log("Step 3")
+    console.log("Gen Step 3")
    // Create the reverse architecture analysis prompt
       const prompt = ChatPromptTemplate.fromMessages([
       ["system", `You are an elite software architecture reverse engineer specializing in React/Next.js applications. Your mission is to analyze GitHub repositories and extract comprehensive architectural insights through strategic code examination.
@@ -391,22 +391,22 @@ export async function generateArchitecture(projectId: string){
 
 
 
-    console.log("Step 4")
-    console.log("Step 5")
+    console.log("Gen Step 4")
+    console.log("Gen Step 5")
     // Create agent executor
     const agent = await createToolCallingAgent({
         llm,
         tools: repoAnalysisTools,
         prompt,
     });
-    console.log("Step 6")
+    console.log("Gen Step 6")
     const agentExecutor = new AgentExecutor({
         agent,
         tools: repoAnalysisTools,
         verbose: true,
         maxIterations: 40, // Allow thorough analysis
     });
-    console.log("Step 7")
+    console.log("Gen Step 7")
     try {
         // Execute repository analysis
         const analysisResult = await agentExecutor.invoke({
@@ -419,9 +419,9 @@ export async function generateArchitecture(projectId: string){
             defaultBranch: defaultBranch || 'main',
             githubAccessToken: githubAccessToken
         });
-        console.log("Step 8")
+        console.log("Gen Step 8")
         console.log("Analysis Result: ", analysisResult.output)
-        console.log("Step 9")
+        console.log("Gen Step 9")
         const detailedAnalysis = await db.project.update({
             where: { id: projectId },
             data: { detailedAnalysis: JSON.stringify(analysisResult.output) }
@@ -461,4 +461,32 @@ export async function testGenerateArchitecture(analysis: any, name: string, fram
         console.log("Step 11")
         return architecture;
 
+}
+
+export async function getUserProjects() {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    return { error: 'Unauthorized' };
+  }
+
+  try {
+    // Fetch all user projects with repoId and repoFullName
+    const projects = await db.project.findMany({
+      where: {
+        userId: userId
+      },
+      select: {
+        id: true,
+        name: true,
+        repoId: true,
+        repoFullName: true
+      }
+    });
+
+    return { projects };
+  } catch (error) {
+    console.error('Error fetching user projects:', error);
+    return { error: 'Failed to fetch user projects' };
+  }
 }

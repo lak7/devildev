@@ -546,7 +546,7 @@ export default function Page() {
             <form onSubmit={handleFirstMessage} className="relative">
               <div className="bg-white/5 border-t border-x border-gray-600/100 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
-                  placeholder="What you want to build?"
+                  placeholder="Start build something from scratch..."
                   value={inputMessage}
                   onChange={handleTextareaChange}
                   onKeyDown={(e) => {

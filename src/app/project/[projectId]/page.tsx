@@ -467,9 +467,10 @@ const ProjectPage = () => {
               }else{
                 //alert("Step 5")
                 setIsArchitectureGenerating(true);
-                //alert(projectId)
+                alert("Pussy")
+                alert(projectId)
                   const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
-                  //alert("Step 6")
+                  alert("Dussy") 
                   // Clean the result to remove markdown code blocks if present
                   let cleanedResult = architectureResult; 
                   if (typeof architectureResult === 'string') {
@@ -859,12 +860,21 @@ const ProjectPage = () => {
   </div>
             <div className="text-center">
               <h3 className="text-lg font-semibold text-white mb-2">Generating Architecture...</h3>
-              <p className="text-sm text-gray-400">DevilDev is analyzing your requirements and crafting the perfect architecture</p>
+              <p className="text-sm text-zinc-400 mb-4">DevilDev is analyzing your requirements and crafting the perfect architecture</p>
+              
+              <div className="bg-zinc-900/30 border border-zinc-700/50 rounded-lg p-4 max-w-md mx-auto">
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-zinc-300">Please Note: It may take up to 5-7 minutes</span>
+                </div>
+                <p className="text-xs text-zinc-400">Please don't close this tab during generation</p>
+              </div>
             </div>
           </div>
         </div>
       )
   }
+
 
   
 

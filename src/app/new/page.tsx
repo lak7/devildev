@@ -119,7 +119,7 @@ export default function NewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-black via-black to-zinc-950 text-white flex flex-col">
       {/* Header */}
       <Nav setIsFeedbackOpen={setIsFeedbackOpen} isMCP={false} isProject={true} />
       

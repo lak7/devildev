@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Github, ExternalLink, Clock, Star, GitFork, Lock, Globe, Loader2, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Github, ExternalLink, Clock, Star, GitFork, Lock, Globe, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
+import Image from 'next/image';
+import { getUserProjects } from '../../actions/reverse-architecture';
 // Removed card and glow imports for a minimalist view
 
-interface Repository {
-  id: number;
+interface Repository { 
+  id: number; 
   name: string;
   fullName: string;
   description: string | null;
@@ -28,6 +30,13 @@ interface Repository {
     avatarUrl: string;
   };
 }
+
+interface UserProject {
+  id: string;
+  name: string;
+  repoId: string | null;
+  repoFullName: string | null;
+}
   
 interface ImportGitRepositoryProps {
   onImport: (repo: Repository) => void;
@@ -41,9 +50,12 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [githubConnected, setGithubConnected] = useState(false);
   const [importing, setImporting] = useState<number | null>(null);
   const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(true);
+  const [userProjects, setUserProjects] = useState<UserProject[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
 
   useEffect(() => {
     checkGithubStatus();
+    fetchUserProjects();
   }, []);
 
   useEffect(() => {
@@ -73,13 +85,34 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     }
   };
 
+  const fetchUserProjects = async () => {
+    try {
+      setProjectsLoading(true);
+      const result = await getUserProjects();
+      if (result.projects) {
+        setUserProjects(result.projects);
+      }
+    } catch (error) {
+      console.error('Error fetching user projects:', error);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  const isRepositoryImported = (repo: Repository): boolean => {
+    return userProjects.some(project => 
+      project.repoId === repo.id.toString() || 
+      project.repoFullName === repo.fullName
+    );
+  };
+
   const fetchRepos = async (search?: string) => {
     try {
       setSearchLoading(!!search);
       if (!search) setLoading(true); 
 
       const url = new URL('/api/github/repos', window.location.origin);
-      if (search) {
+      if (search) { 
         url.searchParams.set('search', search); 
       } 
 
@@ -110,6 +143,8 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     try {
       // Call the parent's import handler 
       await onImport(repo);
+      // Refresh user projects to include the newly imported repository
+      await fetchUserProjects();
     } catch (error) {
       console.error('Error importing repository:', error);
     } finally {
@@ -149,26 +184,37 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   if (!githubConnected) {
     return (
-      <div className="w-full flex items-center justify-center py-16">
-        <div className="w-full max-w-md">
-          <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-8 shadow-xl">
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                <Github className="w-6 h-6 text-gray-300" />
+      <div className="w-full flex items-center justify-center ">
+        <div className="w-full max-w-lg">
+          <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-10 shadow-xl">
+            <div className="flex flex-col items-center text-center">
+              <div className="relative">
+                <div className="absolute -inset-6 rounded-2xl bg-red-500/20 blur-2xl" aria-hidden="true" />
+                <Image
+                  src="/main00.png"
+                  alt="DevilDev"
+                  width={96}
+                  height={96}
+                  className="rounded-xl shadow-xl"
+                  priority
+                />
               </div>
-              <div>
-                <h1 className="text-xl font-semibold text-white">Connect GitHub</h1>
-                <p className="text-sm text-gray-400 mt-1">Import your repositories for architecture analysis.</p>
-              </div>
-              <div className="w-full h-px bg-white/10" />
+              <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Connect your GitHub to DevilDev
+              </h1>
+              <p className="mt-2 text-sm text-gray-400 max-w-md">
+                Import your repositories to reverse engineer their architecture and ship changes faster with AI assistance.
+              </p>
+
+              <div className="w-full h-px bg-white/10 my-6" />
               <Button
                 onClick={() => window.location.href = '/api/github/auth'}
-                className="w-full h-11 bg-white text-black hover:bg-gray-100 rounded-xl inline-flex items-center justify-center"
+                className="w-full cursor-pointer h-11 bg-white text-black hover:bg-zinc-100/69 rounded-xl inline-flex items-center justify-center"
               >
                 <Github className="w-4 h-4 mr-2" />
                 Connect GitHub Account
               </Button>
-              <p className="text-xs text-gray-500">We only request access needed to list your repos.</p>
+              <p className="mt-3 text-xs text-gray-500">We only request access needed to list your repos.</p>
             </div>
           </div>
         </div>
@@ -308,18 +354,29 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
                         >
                           <ExternalLink className="w-4 h-4" />
                         </Button>
-                        <Button
-                          onClick={() => handleImport(repo)}
-                          disabled={importing === repo.id}
-                          size="sm"
-                          className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 font-semibold min-w-[80px]"
-                        >
-                          {importing === repo.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            'Import'
-                          )}
-                        </Button>
+                        {isRepositoryImported(repo) ? (
+                          <Button
+                            disabled
+                            size="sm"
+                            className="bg-green-600/20 border border-green-500/50 text-green-300 cursor-not-allowed transition-all duration-200 font-semibold min-w-[120px]"
+                          >
+                            <Check className="h-4 w-4 mr-2" />
+                            Already Imported
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => handleImport(repo)}
+                            disabled={importing === repo.id || projectsLoading}
+                            size="sm"
+                            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 font-semibold min-w-[80px]"
+                          >
+                            {importing === repo.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              'Import'
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
