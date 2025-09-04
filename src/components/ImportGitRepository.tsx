@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GlowingEffect } from '@/components/ui/glow-effect';
+// Removed card and glow imports for a minimalist view
 
 interface Repository {
   id: number;
@@ -150,43 +149,29 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   if (!githubConnected) {
     return (
-      <div className="w-full">
-        {/* Header Section */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-xl">
-              <Github className="w-8 h-8 text-red-400" />
+      <div className="w-full flex items-center justify-center py-16">
+        <div className="w-full max-w-md">
+          <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-8 shadow-xl">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                <Github className="w-6 h-6 text-gray-300" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-white">Connect GitHub</h1>
+                <p className="text-sm text-gray-400 mt-1">Import your repositories for architecture analysis.</p>
+              </div>
+              <div className="w-full h-px bg-white/10" />
+              <Button
+                onClick={() => window.location.href = '/api/github/auth'}
+                className="w-full h-11 bg-white text-black hover:bg-gray-100 rounded-xl inline-flex items-center justify-center"
+              >
+                <Github className="w-4 h-4 mr-2" />
+                Connect GitHub Account
+              </Button>
+              <p className="text-xs text-gray-500">We only request access needed to list your repos.</p>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Import Git Repository</h1>
-          <p className="text-gray-400 text-lg">Import an existing Git Repository to reverse engineer and generate its architecture</p>
         </div>
-
-        {/* Connect GitHub Card */}
-        <Card className="relative bg-gradient-to-br from-neutral-950 to-neutral-900 border border-white/10 text-white rounded-2xl shadow-2xl">
-          <GlowingEffect disabled={false} spread={35} proximity={100}
-            inactiveZone={0.01} glow={true} className="rounded-2xl" />
-          <CardContent className="p-12 text-center">
-            <div className="p-6 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-2xl mb-8 inline-block">
-              <Github className="w-16 h-16 text-red-400" />
-            </div>
-            <CardTitle className="text-2xl font-bold mb-4 bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-              Connect GitHub
-            </CardTitle>
-            <CardDescription className="text-gray-400 mb-8 text-lg leading-relaxed">
-              Connect your GitHub account to browse and import your repositories for architecture analysis.
-            </CardDescription>
-            <Button
-              onClick={() => window.location.href = '/api/github/auth'}
-              className="relative w-full h-14 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 font-semibold text-lg rounded-xl"
-            >
-              <GlowingEffect disabled={false} spread={35} proximity={69}
-                inactiveZone={0.01} glow={true} className="rounded-xl" />
-              <Github className="w-5 h-5 mr-3" />
-              Connect GitHub Account
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }

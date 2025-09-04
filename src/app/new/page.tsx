@@ -10,6 +10,8 @@ import { Loader2, Github, ArrowLeft, MessageSquare, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { submitFeedback } from '../../../actions/feedback';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUser } from '@clerk/nextjs';
 
 interface Repository {
   id: number;
@@ -35,6 +37,7 @@ interface Repository {
 export default function NewPage() {
   const router = useRouter();
   const [importing, setImporting] = useState(false);
+  const { isLoaded, isSignedIn, user } = useUser();
     // Feedback dialog state
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [feedbackText, setFeedbackText] = useState('');
@@ -53,7 +56,7 @@ export default function NewPage() {
           .replace(/^```\s*/, '')
           .replace(/\s*```\s*$/, '')
           .trim();
-      }
+      } 
 
       const parsedResponse = typeof cleanedResult === 'string' 
         ? JSON.parse(cleanedResult)  
@@ -117,22 +120,25 @@ export default function NewPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md">
+      <nav className='w-full flex justify-center items-center'>
+      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md min-w-7xl ">
         <div className="w-full py-4 px-7">
           <div className="flex items-start justify-between ">
             {/* Logo on left */}
             <button
-              onClick={() => router.push('/')}
-              className="flex items-start hover:opacity-80 transition-opacity"
-            >
-              <Image
-                src="/favicon.jpg"
-                alt="DevilDev Logo"
-                width={40}
-                height={40}
-                className="rounded-lg"
-              />
-            </button>
+                  onClick={() => router.push('/')}
+                  className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
+                  title="Go to Home"
+                >
+                  <Image
+                  src="/bold01.png"
+                  alt="DevilDev Logo"
+                  width={15000}
+                  height={4000}
+                  className="h-full w-11 "
+                  priority
+                />
+                </button>
 
             <div className="flex justify-center items-center gap-3">
               {/* Feedback button */}
@@ -147,9 +153,14 @@ export default function NewPage() {
             </span>
           </button>
            {/* User avatar on right */}
-           <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center">
+           <div className="w-8 h-8 rounded-full flex items-center justify-center">
                
-               <span className="text-white text-sm font-medium">W</span>
+           <Avatar className="size-8  ">
+                  <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                  <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                    {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
              </div>
             </div>
             
@@ -157,6 +168,8 @@ export default function NewPage() {
           </div>
         </div>
       </div>
+      </nav>
+      
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
