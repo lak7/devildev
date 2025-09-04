@@ -6,13 +6,15 @@ import { useParams, useRouter } from "next/navigation";
 import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
-import { useUser } from '@clerk/nextjs';
+import { SignOutButton, useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 import ProjectContextDocs from '@/components/core/ProjectContextDocs';
 import { ProjectPageSkeleton } from '@/components/ui/project-skeleton';
 import { generateWebSearchDocs, saveProjectSummarizedContext, saveProjectWebSearchDocs, summarizeProjectDocsContext } from '../../../../actions/projectDocs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { submitFeedback } from '../../../../actions/feedback';
 
 interface ProjectChat {
   id: bigint;
@@ -95,6 +97,51 @@ const ProjectPage = () => {
 
   // Ref to store the debounce timer
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+      // Feedback dialog state
+      const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+      const [feedbackText, setFeedbackText] = useState('');
+      const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+      const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+      // Function to handle feedback submission
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim() || isSubmittingFeedback) return;
+    
+    setIsSubmittingFeedback(true);
+    setFeedbackMessage(null);
+    
+    try {
+      const result = await submitFeedback("project/" + projectId, feedbackText);
+      
+      if (result.success) {
+        setFeedbackMessage({
+          type: 'success',
+          text: 'Thank you for your feedback! We appreciate your input.'
+        });
+        setFeedbackText(''); 
+        
+        // Close dialog after a short delay to show success message
+        setTimeout(() => {
+          setIsFeedbackOpen(false);
+          setFeedbackMessage(null);
+        }, 2000);
+      } else {
+        setFeedbackMessage({
+          type: 'error',
+          text: result.error || 'Failed to submit feedback. Please try again.'
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      setFeedbackMessage({
+        type: 'error',
+        text: 'Failed to submit feedback. Please try again.'
+      });
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
 
   // Handler for component position changes
   const handlePositionsChange = (positions: Record<string, { x: number; y: number }>) => {
@@ -797,8 +844,6 @@ const ProjectPage = () => {
     );
   }
 
- 
-
   if(isArchitectureGenerating){
     return (
         <div className="h-dvh bg-black text-white p-4 overflow-hidden flex items-center justify-center">
@@ -867,9 +912,9 @@ const ProjectPage = () => {
 
         {/* Right side - Actions and User avatar */}
         <div className="flex items-center space-x-3">
-          <button
+        <button
             onClick={() => window.open('/connect-mcp', '_blank')}
-            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
+            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white/69 hover:border-gray-300 rounded-lg transition-all duration-200 group"
             title="Connect MCP"
           >
             <BrainCircuit className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
@@ -877,14 +922,53 @@ const ProjectPage = () => {
               Connect MCP
             </span>
           </button>
+          {/* Feedback button */}
+          <button
+            onClick={() => setIsFeedbackOpen(true)}
+            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white/69 hover:border-gray-300 rounded-lg transition-all duration-200 group"
+            title="Send Feedback"
+          >
+            <MessageSquare className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
+            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
+              Feedback
+            </span>
+          </button>
+         
 
           <div className="flex items-center">
-            <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
-              <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
-              <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
-                {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
+          <Popover>
+           <PopoverTrigger asChild>
+             <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500/50">
+               <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
+                 <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                 <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                   {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+                 </AvatarFallback>
+               </Avatar>
+             </button>
+           </PopoverTrigger>
+           <PopoverContent align="end" className="w-64 p-3 mt-2 bg-black border border-gray-700 text-white">
+             <div className="flex items-center gap-3 pb-3 border-b border-gray-800">
+               <Avatar className="size-10">
+                 <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                 <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                   {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+                 </AvatarFallback>
+               </Avatar>
+               <div className="min-w-0">
+                 <p className="text-sm font-medium truncate">{user?.fullName || "User"}</p>
+                 <p className="text-xs text-gray-400 truncate">{user?.emailAddresses?.[0]?.emailAddress || ""}</p>
+               </div>
+             </div>
+             <div className="pt-3">
+               <SignOutButton>
+                 <button className="w-full px-3 py-2 text-sm bg-white text-black rounded-md hover:bg-gray-200 transition-colors">
+                   Sign out
+                 </button>
+               </SignOutButton>
+             </div>
+           </PopoverContent>
+         </Popover>
           </div>
         </div>
       </nav>
@@ -1316,6 +1400,69 @@ const ProjectPage = () => {
               customPositions={customPositions}
               onPositionsChange={handlePositionsChange}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Dialog */}
+      {isFeedbackOpen && (
+        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-black border border-gray-600 rounded-lg p-6 w-full max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-white">Send Feedback</h3>
+              <button
+                onClick={() => setIsFeedbackOpen(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <textarea
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                placeholder="Share your experience, report bugs, or suggest features..."
+                className="w-full bg-black border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-gray-400 resize-none h-32"
+                maxLength={1000}
+                disabled={isSubmittingFeedback}
+              />
+              
+              {/* Success/Error Message */}
+              {feedbackMessage && (
+                <div className={`p-3 rounded-md text-sm ${
+                  feedbackMessage.type === 'success' 
+                    ? 'bg-green-900/50 border border-green-600/50 text-green-300' 
+                    : 'bg-red-900/50 border border-red-600/50 text-red-300'
+                }`}>
+                  {feedbackMessage.text}
+                </div>
+              )}
+              
+              <div className="flex justify-between">
+                <button
+                  onClick={() => {
+                    setIsFeedbackOpen(false);
+                    setFeedbackMessage(null);
+                    setFeedbackText('');
+                  }}
+                  disabled={isSubmittingFeedback}
+                  className="px-4 py-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleFeedbackSubmit}
+                  disabled={!feedbackText.trim() || isSubmittingFeedback}
+                  className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  {isSubmittingFeedback && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  <span>{isSubmittingFeedback ? 'Sending...' : 'Send'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

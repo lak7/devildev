@@ -87,7 +87,7 @@ export default function NewPage() {
     setFeedbackMessage(null);
     
     try {
-      const result = await submitFeedback("euihdie", feedbackText);
+      const result = await submitFeedback("new", feedbackText);
       
       if (result.success) {
         setFeedbackMessage({

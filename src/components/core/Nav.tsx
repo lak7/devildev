@@ -17,6 +17,10 @@ interface NavProps {
 export default function Nav({ setIsFeedbackOpen, isMCP = false, isProject = false }: NavProps) {
   const router = useRouter();
   const { user } = useUser();
+  const project = {
+    framework: "react",
+    name: "Project 1"
+  }
   return (
     <nav className='w-full flex justify-center items-center backdrop-blur-sm border-b border-gray-800/50'>
     <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md  w-full px-14 ">
@@ -36,13 +40,15 @@ export default function Nav({ setIsFeedbackOpen, isMCP = false, isProject = fals
                 className="h-full w-32 "
                 priority
               />
-              </button>
+          </button>
 
-              <div className="flex items-center space-x-3">
+        
+        {/* Buttons On Left  */}
+          <div className="flex items-center space-x-3">
 
                 {isProject && (
                     <button
-                    onClick={() => window.open('/project')}
+                    onClick={() => router.push('/project')}
                     className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white/50 hover:border-gray-300 rounded-lg transition-all duration-200 group"
                     title="Send Feedback"
                   >
@@ -115,7 +121,7 @@ export default function Nav({ setIsFeedbackOpen, isMCP = false, isProject = fals
            </PopoverContent>
          </Popover>
           </div>
-        </div>
+          </div>
 
           
          
