@@ -36,6 +36,7 @@ import { useRouter } from "next/navigation"
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from "react"
 import { submitFeedback } from "../../../actions/feedback"
+import Nav from "@/components/core/Nav"
 
 interface Project {
   id: string;
@@ -165,80 +166,8 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Enhanced Navbar */}
-      <nav className="h-16 bg-black/90 backdrop-blur-sm border-b border-gray-800/50 flex items-center justify-between px-6 flex-shrink-0 relative">
-        {/* Left side - Burger menu and Logo */}
-        <div className="flex items-center space-x-4">
-          {/* Burger menu indicator - hide when sidebar is open */}
-          <button 
-              onClick={() => setIsDevSidebarHovered(!isDevSidebarHovered)}
-              className={`p-2 hover:bg-gray-800/50 rounded-lg transition-all duration-200`}
-              title="Open sidebar"
-            > 
-              <Menu 
-                className={`h-6 w-6 text-gray-400 hover:text-white transition-colors`}
-              />
-            </button>
-        
-          
-          {/* Logo - clickable to home */}
-          <button 
-            onClick={() => router.push('/')}
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
-            title="Go to Home"
-          >
-            <div className="relative">
-              <Image
-                src="/favicon.jpg"
-                alt="DevilDev Logo"
-                width={36}
-                height={36}
-                className="rounded-lg transition-all duration-200"
-              />
-            </div>
-            <span className="text-white font-semibold text-lg hidden sm:block group-hover:text-red-400 transition-colors">
-              DevilDev
-            </span>
-          </button>
-        </div> 
-
-        {/* Right side - How to, Feedback button and User avatar */}
-        <div className="flex items-center space-x-3">
-
-        <button
-            onClick={() => window.open('/connect-mcp', '_blank')}
-            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white/50 hover:border-gray-300 rounded-lg transition-all duration-200 group"
-            title="Send Feedback"
-          >
-            <BrainCircuit className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
-            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
-              Connect MCP
-            </span>
-          </button>
-
-          {/* Feedback button */}
-          <button
-            onClick={() => setIsFeedbackOpen(true)}
-            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white/50 hover:border-gray-300 rounded-lg transition-all duration-200 group"
-            title="Send Feedback"
-          >
-            <MessageSquare className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
-            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
-              Feedback
-            </span>
-          </button>
-
-          {/* User Avatar */}
-          <div className="flex items-center">
-            <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
-              <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
-              <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
-                {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-        </div>
-      </nav>
+      
+      <Nav setIsFeedbackOpen={setIsFeedbackOpen} isMCP={true} isProject={false} />
 
       <div className="flex h-[calc(100vh-3.5rem)]">
         {/* Main Content */}

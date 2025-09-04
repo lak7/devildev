@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { submitFeedback } from '../../../actions/feedback';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@clerk/nextjs';
+import Nav from '@/components/core/Nav';
 
 interface Repository {
   id: number;
@@ -120,55 +121,7 @@ export default function NewPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Header */}
-      <nav className='w-full flex justify-center items-center'>
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md min-w-7xl ">
-        <div className="w-full py-4 px-7">
-          <div className="flex items-start justify-between ">
-            {/* Logo on left */}
-            <button
-                  onClick={() => router.push('/')}
-                  className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
-                  title="Go to Home"
-                >
-                  <Image
-                  src="/bold01.png"
-                  alt="DevilDev Logo"
-                  width={15000}
-                  height={4000}
-                  className="h-full w-11 "
-                  priority
-                />
-                </button>
-
-            <div className="flex justify-center items-center gap-3">
-              {/* Feedback button */}
-          <button
-            onClick={() => setIsFeedbackOpen(true)}
-            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
-            title="Send Feedback"
-          >
-            <MessageSquare className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
-            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
-              Feedback
-            </span>
-          </button>
-           {/* User avatar on right */}
-           <div className="w-8 h-8 rounded-full flex items-center justify-center">
-               
-           <Avatar className="size-8  ">
-                  <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
-                  <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
-                    {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-             </div>
-            </div>
-            
-           
-          </div>
-        </div>
-      </div>
-      </nav>
+      <Nav setIsFeedbackOpen={setIsFeedbackOpen} isMCP={false} isProject={true} />
       
 
       {/* Main Content */}
