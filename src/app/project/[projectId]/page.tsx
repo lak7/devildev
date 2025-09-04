@@ -308,6 +308,7 @@ const ProjectPage = () => {
           if (projectData && !('error' in projectData)) { 
             //alert(2)
             setProject(projectData);
+            loadArchitecture(projectData);
             
             // Load project chats
             if (projectData.ProjectChat && Array.isArray(projectData.ProjectChat)) {
@@ -378,7 +379,6 @@ const ProjectPage = () => {
                 //alert(8)
               }
             } else {
-              //alert(9)
               // No chats exist, create the first one
               const createResult = await createProjectChat(projectId);
               if (createResult.success) {
@@ -401,7 +401,7 @@ const ProjectPage = () => {
             //alert(10)
             setIsLoading(false);
 
-            loadArchitecture(projectData);
+            
           }
         } catch (error) {
           console.error('Error loading project:', error);
@@ -427,50 +427,12 @@ const ProjectPage = () => {
                   // Load custom positions from the database
                   setCustomPositions(existingArchitecture.componentPositions || {});
                   setIsArchitectureGenerating(false);
-                  // HERE IMPLEMENT THE PROJECT CONTEXT DOCS
-                  // alert(activeChatId)
-                  // alert(urlChatId)
-                  // //alert("Project Context Docs Implement Here")
-              //     let projectContextDocs = null;
-              //     alert(activeChatId)
-              //     if(activeChatId){
-              //       alert("Inside: " + (activeChatId))
-              //       projectContextDocs = await getProjectContextDocs(activeChatId);
-              //     }
-              //     // alert("See this asshole")
-              //     // console.log("See this asshole: ", projectContextDocs)
-              //     if(!projectContextDocs){
-              //       console.error('Error getting project context docs');
-              //       return;
-              //     }
-              // //alert("Step 3")                  
-              //     // Check if the result is an error
-              //     if ('error' in projectContextDocs) {
-              //       // //alert("Error getting project context docs")
-              //       console.error('Error getting project context docs:', projectContextDocs.error);
-              //       // Set default values or handle the error appropriately
-              //       setProjectPlan("Not Generated");
-              //       setProjectPhases(["Not Generated 1", "Not Generated 2"]);
-              //     } else {
-              //       //alert("Step 4")
-              //       // //alert("Project Context Docs Found") 
-              //       // Success case - access the properties safely
-              //       if(projectContextDocs.projectContextDocs && projectContextDocs.projectContextDocs.length > 0){
-              //         setProjectPlan(projectContextDocs.projectContextDocs[0].plan || "Not Generated");
-              //         setProjectPhases(projectContextDocs.projectContextDocs[0].phases as string[] || ["Not Generated 1", "Not Generated 2"]);
-              //       }else{
-              //         setProjectPlan("Not Generated");
-              //         setProjectPhases(["Not Generated 1", "Not Generated 2"]);
-              //       }
-              //     }
-                  // //alert("ok")
+            
               }else{
                 //alert("Step 5")
                 setIsArchitectureGenerating(true);
-                alert("Pussy")
-                alert(projectId)
                   const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
-                  alert("Dussy") 
+     
                   // Clean the result to remove markdown code blocks if present
                   let cleanedResult = architectureResult; 
                   if (typeof architectureResult === 'string') {
@@ -825,26 +787,6 @@ const ProjectPage = () => {
     }
   };
 
-  if (isLoading) {
-    return <ProjectPageSkeleton />;
-  }
-
-  if (!project?.name) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-black text-white">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Project Not Found</h1>
-          <button 
-            onClick={() => router.push('/')}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-          >
-            Go Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   if(isArchitectureGenerating){
     return (
         <div className="h-dvh bg-black text-white p-4 overflow-hidden flex items-center justify-center">
@@ -874,6 +816,28 @@ const ProjectPage = () => {
         </div>
       )
   }
+
+  if (isLoading) {
+    return <ProjectPageSkeleton />;
+  }
+
+  if (!project?.name) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-black text-white">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Project Not Found</h1>
+          <button 
+            onClick={() => router.push('/')}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  
 
 
   
