@@ -89,8 +89,6 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
       if (response.ok) {
         setRepos(data.repos);
-      } else {
-        console.error('Error fetching repos:', data.error);
       }
     } catch (error) {
       console.error('Error fetching repositories:', error);
