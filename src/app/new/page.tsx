@@ -10,6 +10,9 @@ import { Loader2, Github, ArrowLeft, MessageSquare, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { submitFeedback } from '../../../actions/feedback';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUser } from '@clerk/nextjs';
+import Nav from '@/components/core/Nav';
 
 interface Repository {
   id: number;
@@ -35,6 +38,8 @@ interface Repository {
 export default function NewPage() {
   const router = useRouter();
   const [importing, setImporting] = useState(false);
+  const { isLoaded, isSignedIn, user } = useUser();
+  const [isImportInfoOpen, setIsImportInfoOpen] = useState(false);
     // Feedback dialog state
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [feedbackText, setFeedbackText] = useState('');
@@ -53,23 +58,24 @@ export default function NewPage() {
           .replace(/^```\s*/, '')
           .replace(/\s*```\s*$/, '')
           .trim();
-      }
+      } 
 
       const parsedResponse = typeof cleanedResult === 'string' 
         ? JSON.parse(cleanedResult)  
         : cleanedResult; 
 
       if (parsedResponse && project) {
-        alert("Imported successfully");
         if(parsedResponse.isValid){
           router.push(`/project/${project.id}`);
+        } else {
+          setIsImportInfoOpen(true);
         }
       } else {
-        console.error('Import failed:');
+        setIsImportInfoOpen(true);
       }
     } catch (error) {
       console.error('Error importing repository:', error);
-      alert('Failed to import repository. Please try again.');
+      // alert('Failed to import repository. Please try again.');
     } finally {
       setImporting(false);
     }
@@ -83,7 +89,7 @@ export default function NewPage() {
     setFeedbackMessage(null);
     
     try {
-      const result = await submitFeedback("euihdie", feedbackText);
+      const result = await submitFeedback("new", feedbackText);
       
       if (result.success) {
         setFeedbackMessage({
@@ -115,48 +121,10 @@ export default function NewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-black via-black to-zinc-950 text-white flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md">
-        <div className="w-full py-4 px-7">
-          <div className="flex items-start justify-between ">
-            {/* Logo on left */}
-            <button
-              onClick={() => router.push('/')}
-              className="flex items-start hover:opacity-80 transition-opacity"
-            >
-              <Image
-                src="/favicon.jpg"
-                alt="DevilDev Logo"
-                width={40}
-                height={40}
-                className="rounded-lg"
-              />
-            </button>
-
-            <div className="flex justify-center items-center gap-3">
-              {/* Feedback button */}
-          <button
-            onClick={() => setIsFeedbackOpen(true)}
-            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
-            title="Send Feedback"
-          >
-            <MessageSquare className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
-            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
-              Feedback
-            </span>
-          </button>
-           {/* User avatar on right */}
-           <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center">
-               
-               <span className="text-white text-sm font-medium">W</span>
-             </div>
-            </div>
-            
-           
-          </div>
-        </div>
-      </div>
+      <Nav setIsFeedbackOpen={setIsFeedbackOpen} isMCP={false} isProject={true} />
+      
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -242,6 +210,36 @@ export default function NewPage() {
                   <span>{isSubmittingFeedback ? 'Sending...' : 'Send'}</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Info Dialog */}
+      {isImportInfoOpen && (
+        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-black border border-gray-600 rounded-lg p-6 w-full max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-white">Project type not supported yet</h3>
+              <button
+                onClick={() => setIsImportInfoOpen(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-sm text-gray-300">
+              <p>Only React.js and Next.js projects are supported for import right now.</p>
+              <p>If your repository already uses React or Next.js, please make sure the project is at the repository root (for example, that your <code>package.json</code> and app code are not inside a nested folder like <code>/app</code> or <code>/frontend</code>).</p>
+              <p>Support for additional frameworks is in progress. Thanks for your patience!</p>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setIsImportInfoOpen(false)}
+                className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200"
+              >
+                Got it
+              </button>
             </div>
           </div>
         </div>

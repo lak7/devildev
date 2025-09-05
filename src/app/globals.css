@@ -276,3 +276,50 @@ textarea {
   }
 }
 
+/* Enhanced Typography Styles */
+.hero-heading {
+  font-family: 'Orbitron', monospace;
+  text-shadow: 
+    0 0 10px rgba(239, 68, 68, 0.5),
+    0 0 20px rgba(239, 68, 68, 0.3),
+    0 0 30px rgba(239, 68, 68, 0.2);
+  letter-spacing: 0.05em;
+}
+
+.hero-text-gradient {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 25%, #b91c1c 50%, #dc2626 75%, #ef4444 100%);
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease-in-out infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-text-accent {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 300;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes text-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.8));
+  }
+}
+
+.animate-text-glow {
+  animation: text-glow 2s ease-in-out infinite;
+}
+

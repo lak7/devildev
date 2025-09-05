@@ -3,16 +3,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
-import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
+import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check, FolderKanban } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
-import { useUser } from '@clerk/nextjs';
+import { SignOutButton, useUser } from '@clerk/nextjs';
 import { generateArchitecture } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 import ProjectContextDocs from '@/components/core/ProjectContextDocs';
 import { ProjectPageSkeleton } from '@/components/ui/project-skeleton';
 import { generateWebSearchDocs, saveProjectSummarizedContext, saveProjectWebSearchDocs, summarizeProjectDocsContext } from '../../../../actions/projectDocs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { submitFeedback } from '../../../../actions/feedback';
 
 interface ProjectChat {
   id: bigint;
@@ -95,6 +97,52 @@ const ProjectPage = () => {
 
   // Ref to store the debounce timer
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+      // Feedback dialog state
+      const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+      const [isThisFirstGeneration, setIsThisFirstGeneration] = useState(false);
+      const [feedbackText, setFeedbackText] = useState('');
+      const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+      const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+      // Function to handle feedback submission
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim() || isSubmittingFeedback) return;
+    
+    setIsSubmittingFeedback(true);
+    setFeedbackMessage(null);
+    
+    try {
+      const result = await submitFeedback("project/" + projectId, feedbackText);
+      
+      if (result.success) {
+        setFeedbackMessage({
+          type: 'success',
+          text: 'Thank you for your feedback! We appreciate your input.'
+        });
+        setFeedbackText(''); 
+        
+        // Close dialog after a short delay to show success message
+        setTimeout(() => {
+          setIsFeedbackOpen(false);
+          setFeedbackMessage(null);
+        }, 2000);
+      } else {
+        setFeedbackMessage({
+          type: 'error',
+          text: result.error || 'Failed to submit feedback. Please try again.'
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      setFeedbackMessage({
+        type: 'error',
+        text: 'Failed to submit feedback. Please try again.'
+      });
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
 
   // Handler for component position changes
   const handlePositionsChange = (positions: Record<string, { x: number; y: number }>) => {
@@ -182,6 +230,9 @@ const ProjectPage = () => {
 
   // Handle creating new chat
   const handleCreateNewChat = async () => {
+
+    if(isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating || messages.length === 0) return;
+
     // Optimistic UI: add a temporary chat and switch immediately
     const tempId = `temp-${Date.now()}`;
     setIsCreatingChat(true);
@@ -261,6 +312,7 @@ const ProjectPage = () => {
           if (projectData && !('error' in projectData)) { 
             //alert(2)
             setProject(projectData);
+            loadArchitecture(projectData);
             
             // Load project chats
             if (projectData.ProjectChat && Array.isArray(projectData.ProjectChat)) {
@@ -331,7 +383,6 @@ const ProjectPage = () => {
                 //alert(8)
               }
             } else {
-              //alert(9)
               // No chats exist, create the first one
               const createResult = await createProjectChat(projectId);
               if (createResult.success) {
@@ -346,15 +397,20 @@ const ProjectPage = () => {
                 setMessages([]);
                 
                 // Update URL
+                alert("Reloading 1");
+                window.location.reload();
                 const newUrl = new URL(window.location.href);
                 newUrl.searchParams.set('c', newChat.id.toString());
                 window.history.replaceState({}, '', newUrl.toString());
               }
             }
             //alert(10)
+            if(isThisFirstGeneration){
+              // alert("Reloading 2");
+              window.location.reload();
+            }
             setIsLoading(false);
-
-            loadArchitecture(projectData);
+            
           }
         } catch (error) {
           console.error('Error loading project:', error);
@@ -380,49 +436,13 @@ const ProjectPage = () => {
                   // Load custom positions from the database
                   setCustomPositions(existingArchitecture.componentPositions || {});
                   setIsArchitectureGenerating(false);
-                  // HERE IMPLEMENT THE PROJECT CONTEXT DOCS
-                  // alert(activeChatId)
-                  // alert(urlChatId)
-                  // //alert("Project Context Docs Implement Here")
-              //     let projectContextDocs = null;
-              //     alert(activeChatId)
-              //     if(activeChatId){
-              //       alert("Inside: " + (activeChatId))
-              //       projectContextDocs = await getProjectContextDocs(activeChatId);
-              //     }
-              //     // alert("See this asshole")
-              //     // console.log("See this asshole: ", projectContextDocs)
-              //     if(!projectContextDocs){
-              //       console.error('Error getting project context docs');
-              //       return;
-              //     }
-              // //alert("Step 3")                  
-              //     // Check if the result is an error
-              //     if ('error' in projectContextDocs) {
-              //       // //alert("Error getting project context docs")
-              //       console.error('Error getting project context docs:', projectContextDocs.error);
-              //       // Set default values or handle the error appropriately
-              //       setProjectPlan("Not Generated");
-              //       setProjectPhases(["Not Generated 1", "Not Generated 2"]);
-              //     } else {
-              //       //alert("Step 4")
-              //       // //alert("Project Context Docs Found") 
-              //       // Success case - access the properties safely
-              //       if(projectContextDocs.projectContextDocs && projectContextDocs.projectContextDocs.length > 0){
-              //         setProjectPlan(projectContextDocs.projectContextDocs[0].plan || "Not Generated");
-              //         setProjectPhases(projectContextDocs.projectContextDocs[0].phases as string[] || ["Not Generated 1", "Not Generated 2"]);
-              //       }else{
-              //         setProjectPlan("Not Generated");
-              //         setProjectPhases(["Not Generated 1", "Not Generated 2"]);
-              //       }
-              //     }
-                  // //alert("ok")
+            
               }else{
                 //alert("Step 5")
                 setIsArchitectureGenerating(true);
-                //alert(projectId)
+                setIsThisFirstGeneration(true);
                   const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
-                  //alert("Step 6")
+     
                   // Clean the result to remove markdown code blocks if present
                   let cleanedResult = architectureResult; 
                   if (typeof architectureResult === 'string') {
@@ -777,6 +797,36 @@ const ProjectPage = () => {
     }
   };
 
+  if(isArchitectureGenerating){
+    return (
+        <div className="h-dvh bg-black text-white p-4 overflow-hidden flex items-center justify-center">
+          <div className="flex flex-col items-center space-y-4">
+             <div className="relative w-32 h-32">
+  <video 
+       src="/thethe.mp4" 
+       autoPlay 
+       loop 
+       muted 
+       className="elative w-full h-full object-cover rounded-full"
+     />
+  </div>
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-white mb-2">Generating Architecture...</h3>
+              <p className="text-sm text-zinc-400 mb-4">DevilDev is analyzing your requirements and crafting the perfect architecture</p>
+              
+              <div className="bg-zinc-900/30 border border-zinc-700/50 rounded-lg p-4 max-w-md mx-auto">
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-zinc-300">Please Note: It may take up to 5-7 minutes</span>
+                </div>
+                <p className="text-xs text-zinc-400">Please don't close this tab during generation</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+  }
+
   if (isLoading) {
     return <ProjectPageSkeleton />;
   }
@@ -797,29 +847,8 @@ const ProjectPage = () => {
     );
   }
 
- 
+  
 
-  if(isArchitectureGenerating){
-    return (
-        <div className="h-dvh bg-black text-white p-4 overflow-hidden flex items-center justify-center">
-          <div className="flex flex-col items-center space-y-4">
-             <div className="relative w-32 h-32">
-  <video 
-       src="/thethe.mp4" 
-       autoPlay 
-       loop 
-       muted 
-       className="elative w-full h-full object-cover rounded-full"
-     />
-  </div>
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-white mb-2">Generating Architecture...</h3>
-              <p className="text-sm text-gray-400">DevilDev is analyzing your requirements and crafting the perfect architecture</p>
-            </div>
-          </div>
-        </div>
-      )
-  }
 
   
 
@@ -828,7 +857,7 @@ const ProjectPage = () => {
       {/* Enhanced Navbar */}
       <nav className="h-16 bg-black/90 backdrop-blur-sm border-b border-gray-800/50 flex items-center justify-between px-6 flex-shrink-0 relative">
         {/* Left side - Burger menu and Logo */}
-        <div className="flex items-center space-x-4">
+        <div className="flex z-20 justify-center items-center space-x-4">
           <button 
             onClick={() => setIsSidebarHovered(!isSidebarHovered)}
             className={`p-2 hover:bg-gray-800/50 rounded-lg transition-all duration-200`}
@@ -837,39 +866,37 @@ const ProjectPage = () => {
             <Menu className={`h-6 w-6 text-gray-400 hover:text-white transition-colors`} />
           </button>
         
-          <button 
-            onClick={() => router.push('/')}
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
-            title="Go to Home"
-          >
-            <div className="relative">
-              <Image
-                src="/favicon.jpg"
+          <button
+                onClick={() => router.push('/')}
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
+                title="Go to Home"
+              >
+                <Image
+                src="/text01.png"
                 alt="DevilDev Logo"
-                width={36}
-                height={36}
-                className="rounded-lg transition-all duration-200"
+                width={15000}
+                height={4000}
+                className="h-full w-32 "
+                priority
               />
-            </div>
-            <span className="text-white font-semibold text-lg hidden sm:block group-hover:text-red-400 transition-colors">
-              DevilDev
-            </span>
           </button>
         </div> 
 
         {/* Center - Project Info */}
+        <div className="flex z-10 absolute w-full justify-center items-center">
         <div className="flex items-center space-x-3">
           <div className="hidden md:flex items-center space-x-2 px-3 py-1 bg-gray-800/50 rounded-lg border border-gray-700/50">
           {project.framework === "react" ? <Image src="/react.png" alt="Project" width={25} height={25} /> : <Image src="/nextjs.png" alt="Project" width={25} height={25} />}
             <span className="text-sm font-medium">{project.name}</span>
           </div>
         </div>
+        </div>
 
         {/* Right side - Actions and User avatar */}
-        <div className="flex items-center space-x-3">
-          <button
+        <div className="flex z-20 items-center space-x-3">
+        <button
             onClick={() => window.open('/connect-mcp', '_blank')}
-            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white hover:border-gray-300 rounded-lg transition-all duration-200 group"
+            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white/69 hover:border-gray-300 rounded-lg transition-all duration-200 group"
             title="Connect MCP"
           >
             <BrainCircuit className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
@@ -877,14 +904,53 @@ const ProjectPage = () => {
               Connect MCP
             </span>
           </button>
+          {/* Feedback button */}
+          <button
+            onClick={() => setIsFeedbackOpen(true)}
+            className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white/69 hover:border-gray-300 rounded-lg transition-all duration-200 group"
+            title="Send Feedback"
+          >
+            <MessageSquare className="h-4 w-4 text-white group-hover:text-gray-300 transition-colors" />
+            <span className="text-sm text-white group-hover:text-gray-300 transition-colors hidden sm:block">
+              Feedback
+            </span>
+          </button>
+         
 
           <div className="flex items-center">
-            <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
-              <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
-              <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
-                {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
+          <Popover>
+           <PopoverTrigger asChild>
+             <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500/50">
+               <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
+                 <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                 <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                   {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+                 </AvatarFallback>
+               </Avatar>
+             </button>
+           </PopoverTrigger>
+           <PopoverContent align="end" className="w-64 p-3 mt-2 bg-black border border-gray-700 text-white">
+             <div className="flex items-center gap-3 pb-3 border-b border-gray-800">
+               <Avatar className="size-10">
+                 <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                 <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                   {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+                 </AvatarFallback>
+               </Avatar>
+               <div className="min-w-0">
+                 <p className="text-sm font-medium truncate">{user?.fullName || "User"}</p>
+                 <p className="text-xs text-gray-400 truncate">{user?.emailAddresses?.[0]?.emailAddress || ""}</p>
+               </div>
+             </div>
+             <div className="pt-3">
+               <SignOutButton>
+                 <button className="w-full px-3 py-2 text-sm bg-white text-black rounded-md hover:bg-gray-200 transition-colors">
+                   Sign out
+                 </button>
+               </SignOutButton>
+             </div>
+           </PopoverContent>
+         </Popover>
           </div>
         </div>
       </nav>
@@ -914,6 +980,7 @@ const ProjectPage = () => {
                 onClick={handleCreateNewChat}
                 className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item w-full"
                 title="New Chat"
+                disabled={isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating}
               >
                 <Plus className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
@@ -923,15 +990,15 @@ const ProjectPage = () => {
                 </span>
               </button>
               <a
-                href="/devlogs"
+                href="/project"
                 className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
-                title="Community"
+                title="All Projects"
               >
-                <Users className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
+                <FolderKanban className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                   isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
-                  Community
+                  All Projects
                 </span>
               </a>
             </div>
@@ -960,6 +1027,7 @@ const ProjectPage = () => {
                         : 'text-gray-300 hover:text-white hover:bg-black/40 border border-transparent'
                     }`}
                     title={chat.title}
+                    disabled={isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating}
                   >
                     <MessageCircle className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${
                       activeChatId === chat.id.toString() ? 'text-red-400' : 'text-gray-400 group-hover/chat:text-red-400'
@@ -1316,6 +1384,69 @@ const ProjectPage = () => {
               customPositions={customPositions}
               onPositionsChange={handlePositionsChange}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Dialog */}
+      {isFeedbackOpen && (
+        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-black border border-gray-600 rounded-lg p-6 w-full max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-white">Send Feedback</h3>
+              <button
+                onClick={() => setIsFeedbackOpen(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <textarea
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                placeholder="Share your experience, report bugs, or suggest features..."
+                className="w-full bg-black border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-gray-400 resize-none h-32"
+                maxLength={1000}
+                disabled={isSubmittingFeedback}
+              />
+              
+              {/* Success/Error Message */}
+              {feedbackMessage && (
+                <div className={`p-3 rounded-md text-sm ${
+                  feedbackMessage.type === 'success' 
+                    ? 'bg-green-900/50 border border-green-600/50 text-green-300' 
+                    : 'bg-red-900/50 border border-red-600/50 text-red-300'
+                }`}>
+                  {feedbackMessage.text}
+                </div>
+              )}
+              
+              <div className="flex justify-between">
+                <button
+                  onClick={() => {
+                    setIsFeedbackOpen(false);
+                    setFeedbackMessage(null);
+                    setFeedbackText('');
+                  }}
+                  disabled={isSubmittingFeedback}
+                  className="px-4 py-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleFeedbackSubmit}
+                  disabled={!feedbackText.trim() || isSubmittingFeedback}
+                  className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  {isSubmittingFeedback && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  <span>{isSubmittingFeedback ? 'Sending...' : 'Send'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

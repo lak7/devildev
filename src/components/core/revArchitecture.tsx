@@ -1421,7 +1421,7 @@ export default function RevArchitecture({
                     <button
                       onClick={(e) => handleShowDetails(e, component)}
                       onMouseDown={(e) => e.stopPropagation()}
-                      className="shadow-[0_0_0_2px_#ffffff_inset] px-3 py-1 bg-transparent border border-white text-white rounded-lg font-medium transform hover:-translate-y-1 transition duration-400 cursor-pointer z-30 pointer-events-auto flex items-center gap-1.5 text-sm"
+                      className="shadow-[0_0_0_2px_#ffffff_inset] px-3 py-1 bg-white  text-black rounded-lg font-medium transform hover:bg-black hover:text-white transition cursor-pointer z-30 pointer-events-auto flex items-center gap-1.5 text-sm"
                     >
                       <Info className="w-3.5 h-3.5 pointer-events-none" />
                       Info

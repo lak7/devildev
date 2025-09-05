@@ -315,7 +315,7 @@ const DevPage = () => {
             const chatMessages = chatResult.chat.messages as unknown as ChatMessageType[];
             setMessages(chatMessages);
             setIsChatMode(true); 
-            alert(0)
+            // alert(0)
             // Load architecture data if it exists
             const archResult = await getArchitecture(chatId);
             if (archResult.success && archResult.architecture) {
@@ -323,7 +323,7 @@ const DevPage = () => {
               setComponentPositions(archResult.componentPositions || {});
               setArchitectureGenerated(true);
             }
-            alert(1)
+            // alert(1)
             setIsLoadingChat(false);
 
             // Load contextual docs data if it exists
@@ -333,14 +333,14 @@ const DevPage = () => {
               syncIndividualStates(docsResult.contextualDocs);
               setDocsGenerated(true);
             }
-            alert(2)
+            // alert(2)
           } else {
             setIsLoadingChat(false);
             console.error("Failed to load chat:", chatResult.error);
             // Clear any stale localStorage data
             localStorage.removeItem('newChatId');
             localStorage.removeItem('firstMessage');
-            router.push('/');
+            router.push('/'); 
           }
         } 
       } catch (error) {
@@ -1023,23 +1023,19 @@ const DevPage = () => {
         
           
           {/* Logo - clickable to home */}
-          <button 
-            onClick={() => router.push('/')}
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
-            title="Go to Home"
-          >
-            <div className="relative">
-              <Image
-                src="/favicon.jpg"
+          <button
+                onClick={() => router.push('/')}
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
+                title="Go to Home"
+              >
+                <Image
+                src="/text01.png"
                 alt="DevilDev Logo"
-                width={36}
-                height={36}
-                className="rounded-lg transition-all duration-200"
+                width={15000}
+                height={4000}
+                className="h-full w-32 "
+                priority
               />
-            </div>
-            <span className="text-white font-semibold text-lg hidden sm:block group-hover:text-red-400 transition-colors">
-              DevilDev
-            </span>
           </button>
         </div> 
 
