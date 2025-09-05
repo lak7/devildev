@@ -247,6 +247,11 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
       <div className="text-left mb-8">
         <h1 className="text-5xl font-bold text-white mb-2">Let's reverse engineer your code</h1>
         <p className="text-gray-400 text-md">Import an existing Git Repository to reverse engineer - generate its architecture and make big fucking changes</p>
+        <div className="mt-4 p-3 rounded-lg border border-red-500/50 bg-red-500/10">
+          <p className="text-sm text-red-200 font-semibold">
+            Important: Only React.js and Next.js projects are supported for import right now.
+          </p>
+        </div>
       </div>
 
       {/* Search Section */}
