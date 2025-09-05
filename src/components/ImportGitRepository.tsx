@@ -254,9 +254,9 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
         </div>
       </div>
 
-      {/* Search Section */}
-      <div className="bg-gradient-to-br from-neutral-950 to-neutral-900 border border-white/10 rounded-2xl p-6 mb-6">
-        <div className="relative">
+      {/* Unified Search + Repository Table */}
+      <div className="bg-gradient-to-br from-neutral-950 to-neutral-900 border border-white/10 rounded-2xl p-6">
+        <div className="mb-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
@@ -272,26 +272,40 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
               </div>
             )}
           </div>
+          {searchTerm && (
+            <div className="mt-3">
+              <Button
+                onClick={() => {
+                  setSearchTerm('');
+                  fetchRepos();
+                }}
+                variant="outline"
+                size="sm"
+                className="border-white/20 text-black hover:text-white hover:bg-white/10 hover:border-white/40"
+              >
+                Clear Search
+              </Button>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Repository List */}
-      <div className="bg-gradient-to-br from-neutral-950 to-neutral-900 border border-white/10 rounded-2xl p-6">
         {loading ? (
-          <div className="grid grid-cols-1 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center p-4 bg-black/50 border border-white/10 rounded-xl animate-pulse">
-                <div className="w-12 h-12 bg-gray-700 rounded-full mr-4"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-700 rounded w-48"></div>
-                  <div className="h-3 bg-gray-700 rounded w-32"></div>
+          <div className="overflow-hidden rounded-xl border border-white/10">
+            <div className="divide-y divide-white/10">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex items-center p-4 bg-black/30 animate-pulse">
+                  <div className="w-10 h-10 bg-gray-700 rounded-full mr-4" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-700 rounded w-48" />
+                    <div className="h-3 bg-gray-700 rounded w-32" />
+                  </div>
+                  <div className="w-24 h-8 bg-gray-700 rounded ml-4" />
                 </div>
-                <div className="w-20 h-8 bg-gray-700 rounded"></div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : (
-          <div>
+          <div className="overflow-x-auto">
             {repos.length === 0 ? (
               <div className="text-center py-12">
                 <div className="p-4 bg-gradient-to-br from-gray-500/20 to-gray-600/20 rounded-xl mb-4 inline-block">
@@ -314,97 +328,85 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  {searchTerm && (
-                    <Button
-                      onClick={() => {
-                        setSearchTerm('');
-                        fetchRepos();
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="border-white/20 text-black hover:text-white hover:bg-white/10 hover:border-white/40"
-                    >
-                      Clear Search
-                    </Button>
-                  )}
-                </div>
-                
-                <div className="grid grid-cols-1 gap-4 max-h-96 overflow-y-auto">
-                  {repos.map((repo) => (
-                    <div
-                      key={repo.id}
-                      className="flex items-center p-4 bg-black/30 border border-white/10 hover:border-white/30 rounded-xl transition-all duration-200 group"
-                    >
-                      {/* Repository Info */}
-                      <div className="flex items-center flex-1 min-w-0 mr-4">
-                        <Avatar className="w-10 h-10 ring-2 ring-white/20 mr-3 flex-shrink-0">
-                          <img src={repo.owner.avatarUrl} alt={repo.owner.login} />
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h4 className="font-semibold text-white truncate">{repo.name}</h4>
-                            {repo.private ? (
-                              <Lock className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            ) : (
-                              <Globe className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-4 text-xs text-gray-400">
-                            <span>@{repo.owner.login}</span>
-                            {repo.language && (
-                              <div className="flex items-center space-x-1">
-                                <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                                <span>{repo.language}</span>
+              <div className="max-h-96 overflow-y-auto rounded-xl border border-white/10">
+                <table className="w-full table-auto text-left">
+                  <tbody className="divide-y divide-white/10">
+                    {repos.map((repo) => (
+                      <tr key={repo.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center min-w-0">
+                            <Avatar className="w-8 h-8 ring-2 ring-white/20 mr-3 flex-shrink-0">
+                              <img src={repo.owner.avatarUrl} alt={repo.owner.login} />
+                            </Avatar>
+                            <div className="min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-semibold text-white truncate max-w-[220px]">{repo.name}</span>
+                                {repo.private ? (
+                                  <Lock className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                ) : (
+                                  <Globe className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                )}
                               </div>
-                            )}
-                            <div className="flex items-center space-x-1">
-                              <Star className="w-3 h-3" />
-                              <span>{repo.stargazersCount}</span>
+                              <div className="text-xs text-gray-400 truncate">@{repo.owner.login}</div>
                             </div>
-                            <span>Updated {formatTimeAgo(repo.updatedAt)}</span>
                           </div>
-                        </div>
-                      </div>
-                      
-                      {/* Actions */}
-                      <div className="flex items-center space-x-2 flex-shrink-0">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(`https://github.com/${repo.fullName}`, '_blank')}
-                          className="border-white/20 text-black hover:bg-white/69 hover:border-white/40"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                        {isRepositoryImported(repo) ? (
-                          <Button
-                            disabled
-                            size="sm"
-                            className="bg-green-600/20 border border-green-500/50 text-green-300 cursor-not-allowed transition-all duration-200 font-semibold min-w-[120px]"
-                          >
-                            <Check className="h-4 w-4 mr-2" />
-                            Already Imported
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={() => openConfirmDialog(repo)}
-                            disabled={importing === repo.id || projectsLoading}
-                            size="sm"
-                            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 font-semibold min-w-[80px]"
-                          >
-                            {importing === repo.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300">
+                          {repo.language ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-2 h-2 rounded-full bg-red-400" />
+                              <span>{repo.language}</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300">
+                          <div className="flex items-center space-x-1">
+                            <Star className="w-3 h-3" />
+                            <span>{repo.stargazersCount}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300">{formatTimeAgo(repo.updatedAt)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`https://github.com/${repo.fullName}`, '_blank')}
+                              className="border-white/20 text-black hover:bg-white/69 hover:border-white/40"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                            {isRepositoryImported(repo) ? (
+                              <Button
+                                disabled
+                                size="sm"
+                                className="bg-green-600/20 border border-green-500/50 text-green-300 cursor-not-allowed transition-all duration-200 font-semibold min-w-[120px]"
+                              >
+                                <Check className="h-4 w-4 mr-2" />
+                                Already Imported
+                              </Button>
                             ) : (
-                              'Import'
+                              <Button
+                                onClick={() => openConfirmDialog(repo)}
+                                disabled={importing === repo.id || projectsLoading}
+                                size="sm"
+                                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 font-semibold min-w-[80px]"
+                              >
+                                {importing === repo.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  'Import'
+                                )}
+                              </Button>
                             )}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
