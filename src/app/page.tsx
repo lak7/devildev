@@ -497,7 +497,7 @@ export default function Page() {
               </div>
               <div className={`space-y-1 transition-all duration-300 ${
                 isDevSidebarHovered ? 'opacity-100' : 'opacity-0'
-              } max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-500/20`}>
+              } max-h-96 overflow-y-auto custom-scrollbar`}>
                 {chatsLoading ? (
                   <div className="flex items-center justify-center px-6 py-4">
                     <Loader2 className="h-4 w-4 animate-spin text-red-400/60" />

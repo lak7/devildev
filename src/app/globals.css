@@ -181,6 +181,32 @@ textarea {
   scrollbar-color: rgba(239, 68, 68, 0.3) transparent;
 }
 
+/* Modern minimalist scrollbar for sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 68, 68, 0.15);
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.4);
+  width: 3px;
+}
+
+/* For Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.69) transparent;
+}
+
 /* Custom loading animation */
 @keyframes loading {
   0% {
