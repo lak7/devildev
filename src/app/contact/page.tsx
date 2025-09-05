@@ -1,17 +1,26 @@
+import HomeNav from "@/components/core/HomeNav";
+import ContactForm from "@/components/ContactForm";
+
 const ContactPage = () => {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-6">Contact</h1>
-        <p className="text-xl">
-          Please mail to{' '}
-          <a 
-            href="mailto:lakshay@devildev.com" 
-            className="text-red-400 hover:text-red-300 "
-          >
-            lakshay@devildev.com
-          </a>
-        </p>
+    <div className="h-dvh bg-black">
+      <HomeNav currentPage="Contact" />
+      
+      <div className="container mx-auto px-4 py-20">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent">
+                Contact
+              </span>
+            </h1>
+            <p className="text-gray-400 text-lg">
+              Let's talk about your next project
+            </p>
+          </div>
+          
+          <ContactForm />
+        </div>
       </div>
     </div>
   );

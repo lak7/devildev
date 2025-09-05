@@ -119,3 +119,41 @@ export async function getUserChats(userId: string) {
     return [];
   }
 }
+
+export async function contact(data: {
+  name: string;
+  email: string;
+  message: string;
+}) {
+  try {
+    // Validate input
+    const contactSchema = z.object({
+      name: z.string().min(1, "Name is required").max(100, "Name is too long"),
+      email: z.string().email("Invalid email address"),
+      message: z.string().min(10, "Message must be at least 10 characters").max(2500, "Message is too long"),
+    });
+
+    const validatedData = contactSchema.safeParse(data);
+
+    if (!validatedData.success) {
+      return {
+        error: "Validation failed",
+        issues: validatedData.error.flatten().fieldErrors,
+      };
+    }
+
+    // Save contact message to database
+    await db.contact.create({
+      data: {
+        name: validatedData.data.name,
+        email: validatedData.data.email,
+        message: validatedData.data.message,
+      },
+    });
+
+    return { success: "Message sent successfully! We'll get back to you soon." };
+  } catch (error) {
+    console.error("Error saving contact message:", error);
+    return { error: "Failed to send message", details: String(error) };
+  }
+}

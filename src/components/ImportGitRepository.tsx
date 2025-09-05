@@ -328,7 +328,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
                 )}
               </div>
             ) : (
-              <div className="max-h-96 overflow-y-auto rounded-xl border border-white/10">
+              <div className="max-h-96 overflow-y-auto rounded-xl border border-white/10 custom-scrollbar">
                 <table className="w-full table-auto text-left">
                   <tbody className="divide-y divide-white/10">
                     {repos.map((repo) => (

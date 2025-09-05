@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import HomeNav from '@/components/core/HomeNav';
 
 export default function Community() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -20,7 +21,7 @@ export default function Community() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+    <div className="h-dvh bg-black text-white relative overflow-hidden">
       {/* Animated background gradient */}
       <div
         className="absolute inset-0 opacity-20"
@@ -56,14 +57,7 @@ export default function Community() {
       <div className="absolute bottom-8 right-8 w-2 h-2 bg-red-500/60 rounded-full"></div>
 
       {/* Back button */}
-      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-50">
-        <button
-          onClick={() => router.push('/')}
-          className="px-6 py-2 bg-black/80 hover:bg-black border border-red-500/50 hover:border-red-500 text-gray-300 hover:text-white rounded-lg transition-all duration-200 backdrop-blur-sm cursor-pointer"
-        >
-          ← Back to Home
-        </button>
-      </div>
+      <HomeNav currentPage="Community"/>
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
