@@ -108,6 +108,10 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     );
   };
 
+  const hasReachedProjectLimit = (): boolean => {
+    return userProjects.length >= 2;
+  };
+
   const fetchRepos = async (search?: string) => {
     try {
       setSearchLoading(!!search);
@@ -155,6 +159,9 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   };
 
   const openConfirmDialog = (repo: Repository) => {
+    if (hasReachedProjectLimit()) {
+      return; // Don't open dialog if limit is reached
+    }
     setSelectedRepo(repo);
     setIsConfirmOpen(true);
   };
@@ -241,16 +248,54 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     );
   }
 
+  // Check if user has reached project limit
+  if (hasReachedProjectLimit()) {
+    return (
+      <div className="w-full flex items-center justify-center">
+        <div className="w-full max-w-lg">
+          <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-10 shadow-xl">
+            <div className="flex flex-col items-center text-center">
+              <div className="relative">
+                <div className="absolute -inset-6 rounded-2xl bg-yellow-500/20 blur-2xl" aria-hidden="true" />
+                <div className="w-24 h-24 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                  <span className="text-4xl">⚠️</span>
+                </div>
+              </div>
+              <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Project Limit Reached
+              </h1>
+              <p className="mt-2 text-sm text-gray-400 max-w-md">
+                You have reached the maximum limit of 2 projects. If you want to import more repositories, then please contact or mail to lakshay@devildev.com
+              </p>
+              <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <p className="text-sm text-yellow-200">
+                  <strong>Current projects:</strong> {userProjects.length}/2
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {/* Header Section */}
       <div className="text-left mb-8">
         <h1 className="text-5xl font-bold text-white mb-2">Let's reverse engineer your code</h1>
         <p className="text-gray-400 text-md">Import an existing Git Repository to reverse engineer - generate its architecture and make big fucking changes</p>
-        <div className="mt-4 p-3 rounded-lg border border-red-500/50 bg-red-500/10">
-          <p className="text-sm text-red-200 font-semibold">
-            Important: Only React.js and Next.js projects are supported for import right now.
-          </p>
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="p-3 rounded-lg border border-red-500/50 bg-red-500/10">
+            <p className="text-sm text-red-200 font-semibold">
+              Important: Only React.js and Next.js projects are supported for import right now.
+            </p>
+          </div>
+          {/* <div className="p-3 rounded-lg border border-blue-500/50 bg-blue-500/10">
+            <p className="text-sm text-blue-200 font-semibold">
+              Project Limit: {userProjects.length}/2 projects imported
+            </p>
+          </div> */}
         </div>
       </div>
 
@@ -390,12 +435,14 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
                             ) : (
                               <Button
                                 onClick={() => openConfirmDialog(repo)}
-                                disabled={importing === repo.id || projectsLoading}
+                                disabled={importing === repo.id || projectsLoading || hasReachedProjectLimit()}
                                 size="sm"
-                                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 font-semibold min-w-[80px]"
+                                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 font-semibold min-w-[80px] disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 {importing === repo.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : hasReachedProjectLimit() ? (
+                                  'Limit Reached'
                                 ) : (
                                   'Import'
                                 )}
