@@ -516,14 +516,6 @@ export default function Page() {
 
            
           </div>
-          {!isSignedIn && (
-            <div className="flex w-full h-full justify-center items-center mt-12">
-             <a href="/contact" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Contact</a>
-             <div className="w-px h-6 bg-gray-400 mx-5" />
-             <a href="/community" target="_blank" rel="noopener noreferrer" className="text-white/69 hover:text-white transition-colors cursor-pointer">Community</a>
-             
-             </div>
-          )}
         </div>
       </div>
 
