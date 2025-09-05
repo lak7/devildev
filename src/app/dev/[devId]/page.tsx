@@ -340,7 +340,7 @@ const DevPage = () => {
             // Clear any stale localStorage data
             localStorage.removeItem('newChatId');
             localStorage.removeItem('firstMessage');
-            router.push('/');
+            router.push('/'); 
           }
         } 
       } catch (error) {
@@ -1023,23 +1023,19 @@ const DevPage = () => {
         
           
           {/* Logo - clickable to home */}
-          <button 
-            onClick={() => router.push('/')}
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
-            title="Go to Home"
-          >
-            <div className="relative">
-              <Image
-                src="/favicon.jpg"
+          <button
+                onClick={() => router.push('/')}
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
+                title="Go to Home"
+              >
+                <Image
+                src="/text01.png"
                 alt="DevilDev Logo"
-                width={36}
-                height={36}
-                className="rounded-lg transition-all duration-200"
+                width={15000}
+                height={4000}
+                className="h-full w-32 "
+                priority
               />
-            </div>
-            <span className="text-white font-semibold text-lg hidden sm:block group-hover:text-red-400 transition-colors">
-              DevilDev
-            </span>
           </button>
         </div> 
 

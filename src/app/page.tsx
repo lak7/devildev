@@ -15,13 +15,14 @@ import { getUserChats } from '../../actions/chat';
 import { getGitHubStatus, disconnectGitHub, initiateGitHubConnection } from '../../actions/github';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
-import { UserProfile, useUser } from '@clerk/nextjs';
+import { SignOutButton, UserProfile, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { FuturisticButton } from '@/components/ui/GlowButton01';
 // import { MatrixGlitchButton } from '@/components/ui/GlowButton02';
 import { GlowButton } from '@/components/ui/GlowButton05';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import Link from 'next/link';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
 
@@ -270,7 +271,7 @@ export default function Page() {
 
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+    <div className="h-dvh bg-black text-white relative overflow-hidden">
       {/* Animated background gradient */}
       <div
         className="absolute inset-0 opacity-20"
@@ -281,11 +282,10 @@ export default function Page() {
 
         {/* Navbar - Only show when signed in */}
         {isSignedIn && (
-        <nav className="fixed top-4 left-0 right-0 z-40 bg-black/80 backdrop-blur-md  ">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
+        <nav className=" max-w-6xl mx-auto top-4 left-0 right-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-between h-16  flex-shrink-0 relative  ">
+
               {/* Logo on the left */}
-              <div className="flex items-center">
+              <div className="flex z-20 items-center">
                 <button
                   onClick={() => router.push('/')}
                   className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
@@ -304,7 +304,9 @@ export default function Page() {
               </div>
 
               {/* Navigation links in center */}
-              <div className="hidden md:flex items-center space-x-12">
+              <div className="flex z-10 absolute w-full justify-center items-center">
+                 {/* Navigation links in center */}
+              <div className="hidden md:flex items-center justify-center space-x-12">
                 <a
                   href="/"
                   className="text-white font-medium text-sm px-5 py-1  rounded-4xl bg-zinc-800/50 border border-gray-700/50 transition-all duration-200"
@@ -324,18 +326,52 @@ export default function Page() {
                   Contact
                 </a>
               </div>
+              </div>   
 
               {/* Projects button on the right */}
-              <div className="flex items-center">
+              <div className="flex z-20 items-center space-x-3">
               <Link
                       className="bg-white h-8 hidden md:flex items-center justify-center text-sm font-normal tracking-wide rounded-full text-black dark:text-secondary-foreground w-fit px-4 shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12]"
                       href="/project"
                     >
                       Projects
                     </Link>
-              </div>
-            </div>
+                    <div className="flex items-center">
+          <Popover>
+           <PopoverTrigger asChild>
+             <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500/50">
+               <Avatar className="size-8 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
+                 <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                 <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                   {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+                 </AvatarFallback>
+               </Avatar>
+             </button>
+           </PopoverTrigger>
+           <PopoverContent align="end" className="w-64 p-3 mt-2 bg-black border border-gray-700 text-white">
+             <div className="flex items-center gap-3 pb-3 border-b border-gray-800">
+               <Avatar className="size-10">
+                 <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                 <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
+                   {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
+                 </AvatarFallback>
+               </Avatar>
+               <div className="min-w-0">
+                 <p className="text-sm font-medium truncate">{user?.fullName || "User"}</p>
+                 <p className="text-xs text-gray-400 truncate">{user?.emailAddresses?.[0]?.emailAddress || ""}</p>
+               </div>
+             </div>
+             <div className="pt-3">
+               <SignOutButton>
+                 <button className="w-full px-3 py-2 text-sm bg-white text-black rounded-md hover:bg-gray-200 transition-colors">
+                   Sign out
+                 </button>
+               </SignOutButton>
+             </div>
+           </PopoverContent>
+         </Popover>
           </div>
+              </div>
         </nav>
       )}
 
@@ -489,28 +525,6 @@ export default function Page() {
                 )}
               </div>
             </div>
-
-            {/* User avatar at bottom with enhanced design */}
-            <div className="px-2 mt-auto">
-              <div className="flex items-center space-x-3 px-3 py-3 rounded-lg backdrop-blur-sm bg-black/20">
-                <Avatar className="size-8 ring-2 ring-white">
-                  <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
-                  <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
-                    {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className={`flex-1 min-w-0 transition-all duration-300 ${
-                  isDevSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                }`}>
-                  <p className="text-sm font-medium text-white truncate">
-                    {user?.fullName || user?.emailAddresses?.[0]?.emailAddress}
-                  </p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {user?.emailAddresses?.[0]?.emailAddress}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Thin accent line on the right */}
@@ -520,7 +534,7 @@ export default function Page() {
 
       <div className="flex h-full w-full justify-center items-center">
         {/* Main content */}
-        <div className={`relative z-10 flex flex-col items-center justify-center min-h-screen px-2 transition-all duration-300 ${
+        <div className={`relative z-10 flex flex-col items-center justify-center mb-28 px-2 transition-all duration-300 ${
           isSignedIn ? 'md:ml-0' : ''
         } ${isSignedIn && isMobileSidebarOpen ? 'blur-sm md:blur-none' : ''}`}>
 

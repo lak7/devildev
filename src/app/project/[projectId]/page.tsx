@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
-import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check } from 'lucide-react';
+import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check, FolderKanban } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
 import { SignOutButton, useUser } from '@clerk/nextjs';
@@ -847,7 +847,7 @@ const ProjectPage = () => {
       {/* Enhanced Navbar */}
       <nav className="h-16 bg-black/90 backdrop-blur-sm border-b border-gray-800/50 flex items-center justify-between px-6 flex-shrink-0 relative">
         {/* Left side - Burger menu and Logo */}
-        <div className="flex items-center space-x-4">
+        <div className="flex z-20 justify-center items-center space-x-4">
           <button 
             onClick={() => setIsSidebarHovered(!isSidebarHovered)}
             className={`p-2 hover:bg-gray-800/50 rounded-lg transition-all duration-200`}
@@ -856,36 +856,34 @@ const ProjectPage = () => {
             <Menu className={`h-6 w-6 text-gray-400 hover:text-white transition-colors`} />
           </button>
         
-          <button 
-            onClick={() => router.push('/')}
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
-            title="Go to Home"
-          >
-            <div className="relative">
-              <Image
-                src="/favicon.jpg"
+          <button
+                onClick={() => router.push('/')}
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
+                title="Go to Home"
+              >
+                <Image
+                src="/text01.png"
                 alt="DevilDev Logo"
-                width={36}
-                height={36}
-                className="rounded-lg transition-all duration-200"
+                width={15000}
+                height={4000}
+                className="h-full w-32 "
+                priority
               />
-            </div>
-            <span className="text-white font-semibold text-lg hidden sm:block group-hover:text-red-400 transition-colors">
-              DevilDev
-            </span>
           </button>
         </div> 
 
         {/* Center - Project Info */}
+        <div className="flex z-10 absolute w-full justify-center items-center">
         <div className="flex items-center space-x-3">
           <div className="hidden md:flex items-center space-x-2 px-3 py-1 bg-gray-800/50 rounded-lg border border-gray-700/50">
           {project.framework === "react" ? <Image src="/react.png" alt="Project" width={25} height={25} /> : <Image src="/nextjs.png" alt="Project" width={25} height={25} />}
             <span className="text-sm font-medium">{project.name}</span>
           </div>
         </div>
+        </div>
 
         {/* Right side - Actions and User avatar */}
-        <div className="flex items-center space-x-3">
+        <div className="flex z-20 items-center space-x-3">
         <button
             onClick={() => window.open('/connect-mcp', '_blank')}
             className="flex items-center space-x-2 px-3 py-2 bg-black hover:bg-gray-900 border border-white/69 hover:border-gray-300 rounded-lg transition-all duration-200 group"
@@ -981,15 +979,15 @@ const ProjectPage = () => {
                 </span>
               </button>
               <a
-                href="/devlogs"
+                href="/project"
                 className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item"
-                title="Community"
+                title="All Projects"
               >
-                <Users className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
+                <FolderKanban className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                   isSidebarHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}>
-                  Community
+                  All Projects
                 </span>
               </a>
             </div>
