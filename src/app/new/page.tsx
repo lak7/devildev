@@ -39,6 +39,7 @@ export default function NewPage() {
   const router = useRouter();
   const [importing, setImporting] = useState(false);
   const { isLoaded, isSignedIn, user } = useUser();
+  const [isImportInfoOpen, setIsImportInfoOpen] = useState(false);
     // Feedback dialog state
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [feedbackText, setFeedbackText] = useState('');
@@ -64,12 +65,13 @@ export default function NewPage() {
         : cleanedResult; 
 
       if (parsedResponse && project) {
-        // alert("Imported successfully");
         if(parsedResponse.isValid){
           router.push(`/project/${project.id}`);
+        } else {
+          setIsImportInfoOpen(true);
         }
       } else {
-        console.error('Import failed:');
+        setIsImportInfoOpen(true);
       }
     } catch (error) {
       console.error('Error importing repository:', error);
@@ -208,6 +210,36 @@ export default function NewPage() {
                   <span>{isSubmittingFeedback ? 'Sending...' : 'Send'}</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Info Dialog */}
+      {isImportInfoOpen && (
+        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-black border border-gray-600 rounded-lg p-6 w-full max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-white">Project type not supported yet</h3>
+              <button
+                onClick={() => setIsImportInfoOpen(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-sm text-gray-300">
+              <p>Only React.js and Next.js projects are supported for import right now.</p>
+              <p>If your repository already uses React or Next.js, please make sure the project is at the repository root (for example, that your <code>package.json</code> and app code are not inside a nested folder like <code>/app</code> or <code>/frontend</code>).</p>
+              <p>Support for additional frameworks is in progress. Thanks for your patience!</p>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setIsImportInfoOpen(false)}
+                className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200"
+              >
+                Got it
+              </button>
             </div>
           </div>
         </div>
