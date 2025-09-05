@@ -282,9 +282,7 @@ export default function Page() {
       />
 
         {/* Navbar - Only show when signed in */}
-        {isSignedIn && ( 
-        <HomeNav/>
-      )}
+        <HomeNav currentPage="Home"/>
 
       {/* GRID  */}
       <div className="">

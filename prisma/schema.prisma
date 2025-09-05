@@ -186,6 +186,15 @@ model ProjectContextDocs {
   projectChat ProjectChat @relation(fields: [projectChatId], references: [id], onDelete: Cascade)
 }
 
+model Contact {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 
 
 
