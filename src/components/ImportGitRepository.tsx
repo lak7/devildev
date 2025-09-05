@@ -52,6 +52,8 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(true);
   const [userProjects, setUserProjects] = useState<UserProject[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
 
   useEffect(() => {
     checkGithubStatus();
@@ -150,6 +152,23 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     } finally {
       setImporting(null);
     }
+  };
+
+  const openConfirmDialog = (repo: Repository) => {
+    setSelectedRepo(repo);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmImport = async () => {
+    if (!selectedRepo) return;
+    setIsConfirmOpen(false);
+    await handleImport(selectedRepo);
+    setSelectedRepo(null);
+  };
+
+  const cancelImport = () => {
+    setIsConfirmOpen(false);
+    setSelectedRepo(null);
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -365,7 +384,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
                           </Button>
                         ) : (
                           <Button
-                            onClick={() => handleImport(repo)}
+                            onClick={() => openConfirmDialog(repo)}
                             disabled={importing === repo.id || projectsLoading}
                             size="sm"
                             className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 font-semibold min-w-[80px]"
@@ -386,6 +405,35 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
           </div>
         )}
       </div>
+      {isConfirmOpen && selectedRepo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={cancelImport} />
+          <div className="relative z-10 w-full max-w-md rounded-xl border border-white/50 bg-neutral-950 p-6 shadow-2xl">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-white">Confirm Import</h2>
+              <p className="mt-2 text-sm text-gray-400">
+                Do you want to import <span className="font-medium text-white">{selectedRepo.fullName}</span> and generate its architecture?
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={cancelImport}
+                className="border-white/20 text-black hover:text-white hover:bg-white/10 hover:border-white/40"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmImport}
+                disabled={importing === selectedRepo.id}
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+              >
+                {importing === selectedRepo.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm & Import'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
