@@ -397,6 +397,8 @@ const ProjectPage = () => {
                 setMessages([]);
                 
                 // Update URL
+                alert("Reloading 1");
+                window.location.reload();
                 const newUrl = new URL(window.location.href);
                 newUrl.searchParams.set('c', newChat.id.toString());
                 window.history.replaceState({}, '', newUrl.toString());
@@ -404,10 +406,10 @@ const ProjectPage = () => {
             }
             //alert(10)
             if(isThisFirstGeneration){
+              // alert("Reloading 2");
               window.location.reload();
             }
             setIsLoading(false);
-
             
           }
         } catch (error) {
