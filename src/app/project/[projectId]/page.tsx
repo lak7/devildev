@@ -100,6 +100,7 @@ const ProjectPage = () => {
 
       // Feedback dialog state
       const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+      const [isThisFirstGeneration, setIsThisFirstGeneration] = useState(false);
       const [feedbackText, setFeedbackText] = useState('');
       const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
       const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -229,6 +230,9 @@ const ProjectPage = () => {
 
   // Handle creating new chat
   const handleCreateNewChat = async () => {
+
+    if(isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating || messages.length === 0) return;
+
     // Optimistic UI: add a temporary chat and switch immediately
     const tempId = `temp-${Date.now()}`;
     setIsCreatingChat(true);
@@ -399,6 +403,9 @@ const ProjectPage = () => {
               }
             }
             //alert(10)
+            if(isThisFirstGeneration){
+              window.location.reload();
+            }
             setIsLoading(false);
 
             
@@ -431,6 +438,7 @@ const ProjectPage = () => {
               }else{
                 //alert("Step 5")
                 setIsArchitectureGenerating(true);
+                setIsThisFirstGeneration(true);
                   const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
      
                   // Clean the result to remove markdown code blocks if present
@@ -970,6 +978,7 @@ const ProjectPage = () => {
                 onClick={handleCreateNewChat}
                 className="flex items-center space-x-4 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-black/40 hover:border-red-500/30 border border-transparent transition-all duration-200 group/item w-full"
                 title="New Chat"
+                disabled={isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating}
               >
                 <Plus className="h-5 w-5 flex-shrink-0 group-hover/item:scale-105 transition-transform duration-200 text-red-400" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ${
@@ -1016,6 +1025,7 @@ const ProjectPage = () => {
                         : 'text-gray-300 hover:text-white hover:bg-black/40 border border-transparent'
                     }`}
                     title={chat.title}
+                    disabled={isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating}
                   >
                     <MessageCircle className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${
                       activeChatId === chat.id.toString() ? 'text-red-400' : 'text-gray-400 group-hover/chat:text-red-400'
