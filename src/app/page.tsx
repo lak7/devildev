@@ -288,46 +288,75 @@ export default function Page() {
         {/* Mobile/Tablet Navbar */}
         <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-30 bg-black/50 backdrop-blur-md border-b border-red-500/30">
           <div className="h-full flex items-center justify-between px-4 md:px-6">
-            <div className="flex items-center space-x-3">
-              <button
-                aria-label="Open menu"
-                onClick={() => setIsMobileSidebarOpen(true)}
-                className="p-2 rounded-md hover:bg-white/5 active:scale-95 transition"
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-              <button
+            {isSignedIn ? (
+              <div className="flex items-center space-x-3">
+                <button
+                  aria-label="Open menu"
+                  onClick={() => setIsMobileSidebarOpen(true)}
+                  className="p-2 rounded-md hover:bg-white/5 active:scale-95 transition"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+                <button
+                    onClick={() => router.push('/')}
+                    className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
+                    title="Go to Home"
+                  >
+                    <Image
+                    src="/bold01.png"
+                    alt="DevilDev Logo"
+                    width={15000}
+                    height={4000}
+                    className="h-full w-11 "
+                    priority
+                  />
+                  </button>
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <button
                   onClick={() => router.push('/')}
                   className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
                   title="Go to Home"
                 >
                   <Image
-                  src="/bold01.png"
-                  alt="DevilDev Logo"
-                  width={15000}
-                  height={4000}
-                  className="h-full w-11 "
-                  priority
-                />
+                    src="/bold01.png"
+                    alt="DevilDev Logo"
+                    width={15000}
+                    height={4000}
+                    className="h-full w-11 "
+                    priority
+                  />
                 </button>
-            </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="rounded-full focus:outline-none">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={user?.imageUrl || ''} alt={user?.fullName || 'User'} />
-                    <AvatarFallback>U</AvatarFallback>
-                  </Avatar>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-48">
-                <div className="text-sm px-2 py-1">{user?.fullName || user?.username || 'User'}</div>
-                <div className="border-t my-2 border-white/10" />
-                <SignOutButton>
-                  <button className="w-full text-left px-2 py-1.5 hover:bg-white/5 rounded">Sign out</button>
-                </SignOutButton>
-              </PopoverContent>
-            </Popover>
+              </div>
+            )}
+            {isSignedIn ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="rounded-full focus:outline-none">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user?.imageUrl || ''} alt={user?.fullName || 'User'} />
+                      <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-48">
+                  <div className="text-sm px-2 py-1">{user?.fullName || user?.username || 'User'}</div>
+                  <div className="border-t my-2 border-white/10" />
+                  <SignOutButton>
+                    <button className="w-full text-left px-2 py-1.5 hover:bg-white/5 rounded">Sign out</button>
+                  </SignOutButton>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <button
+                onClick={() => router.push('/sign-in')}
+                className="px-3 py-1.5 rounded-md border border-white/20 hover:bg-white/5 text-sm"
+                aria-label="Login"
+              >
+                Login
+              </button>
+            )}
           </div>
         </div>
         {/* Spacer for mobile navbar height */}
