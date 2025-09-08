@@ -77,6 +77,11 @@ export default function Page() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [githubStatus, setGithubStatus] = useState<GitHubStatus>({ isConnected: false });
   const [githubLoading, setGithubLoading] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 640px)');
+  // Typewriter rotating heading state
+  const rotatingTexts = ["10x your vibe coding", "Visualize your Codebase"];
+  const [currentRotateIndex, setCurrentRotateIndex] = useState(0);
+  const [displayedRotateText, setDisplayedRotateText] = useState("");
   
 
   const { isLoaded, isSignedIn, user } = useUser();
@@ -124,6 +129,37 @@ export default function Page() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Typewriter effect for rotating heading
+  useEffect(() => {
+    if (isMobile) {
+      setDisplayedRotateText('10x your vibe coding');
+      return;
+    }
+    let typingInterval: NodeJS.Timeout | null = null;
+    let nextTextTimeout: NodeJS.Timeout | null = null;
+
+    const fullText = rotatingTexts[currentRotateIndex] || "";
+    setDisplayedRotateText("");
+    let charIndex = 0;
+
+    typingInterval = setInterval(() => {
+      if (charIndex < fullText.length) {
+        setDisplayedRotateText(fullText.slice(0, charIndex + 1));
+        charIndex += 1;
+      } else {
+        if (typingInterval) clearInterval(typingInterval);
+        nextTextTimeout = setTimeout(() => {
+          setCurrentRotateIndex((prev) => (prev + 1) % rotatingTexts.length);
+        }, 3000);
+      }
+    }, 60);
+
+    return () => {
+      if (typingInterval) clearInterval(typingInterval);
+      if (nextTextTimeout) clearTimeout(nextTextTimeout);
+    };
+  }, [currentRotateIndex, isMobile]);
 
   // Detect when scrolling is active to reduce animation complexity
   useEffect(() => {
@@ -582,7 +618,13 @@ export default function Page() {
 
           <h1 className="text-xl md:text-2xl lg:text-5xl font-black mb-12 text-center relative">
             
-            <span className=" font-extrabold text-4xl md:text-6xl lg:text-7xl">10x your vibe coding <br></br> with the </span>
+            <span className=" font-extrabold text-4xl md:text-6xl lg:text-7xl">
+              {displayedRotateText}
+              {!isMobile && (
+                <span className="ml-1 inline-block align-middle border-l-2 border-red-500 animate-pulse" style={{ height: '1em' }} />
+              )}
+              <br></br> with the 
+            </span>
  
              <span className="bg-gradient-to-r from-red-300 via-red-500 to-red-600 bg-clip-text text-transparent text-4xl md:text-6xl lg:text-7xl">
                   DevilDev
