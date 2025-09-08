@@ -462,7 +462,6 @@ const ProjectPage = () => {
                       : cleanedResult;  
                   parsedArchitecture.detailedAnalysis = detailedAnalysis;
                   setArchitectureData(parsedArchitecture);
-                  console.log(parsedArchitecture); 
 
                   const architectureRationaleParagraphs = parsedArchitecture.architectureRationale.split(/\n\s*\n/);
                   // Get first and last paragraphs
@@ -486,7 +485,6 @@ const ProjectPage = () => {
                       if (saveResult.error) {
                           console.error("Failed to save architecture:", saveResult.error);
                       } else {
-                          console.log("Architecture saved successfully:", saveResult.architecture);
                           
                           // Add the initial message to local state
                           const assistantMessage: ProjectMessage = {
@@ -643,7 +641,6 @@ const ProjectPage = () => {
         ? JSON.parse(cleanedResponse) 
         : cleanedResponse; 
 
-        console.log("This is reponse butch: ", parsedResponse);
  
         
       // For now, just add a simple response
@@ -668,9 +665,8 @@ const ProjectPage = () => {
         setIsPromptGenerating(true);
         //here
         // alert("Fuck no")
-        // const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
-        const  prompt = "pussy"
-        console.log("This is prompt: ", prompt);
+        const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
+
         
         // Only update the assistant message if prompt is a string
         if (typeof prompt === 'string') {
@@ -753,7 +749,7 @@ const ProjectPage = () => {
  
            //Here generate plan  
            const plan = await generateProjectPlan(project.framework, parsedprojectSummarizedContext.phaseCount, project.detailedAnalysis, parsedprojectSummarizedContext.exactRequirement);
-           console.log("This is plan: ", plan); 
+
            //alert("Plan generated")
            setProjectPlan(plan.toString()); 
 
@@ -763,7 +759,7 @@ const ProjectPage = () => {
            for(let i = 0; i< parsedprojectSummarizedContext.phaseCount; i++){
             //alert(i)
             const nthPhase = await generateNthPhase(JSON.stringify(plan), project.framework, parsedprojectSummarizedContext.exactRequirement, String(i+1));
-            console.log("This is nth phase: ", nthPhase);
+
             projectPhases.push(nthPhase.toString());
            }
            setProjectPhases(projectPhases);
