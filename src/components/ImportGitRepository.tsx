@@ -54,6 +54,9 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
+  const [pasteUrl, setPasteUrl] = useState('');
+  const [pasteLoading, setPasteLoading] = useState(false);
+  const [pasteError, setPasteError] = useState<string | null>(null);
 
   useEffect(() => {
     checkGithubStatus();
@@ -108,8 +111,9 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     );
   };
 
+  // TODO: Change this to 2
   const hasReachedProjectLimit = (): boolean => {
-    return userProjects.length >= 2;
+    return userProjects.length >= 11;
   };
 
   const fetchRepos = async (search?: string) => {
@@ -133,6 +137,86 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     } finally {
       setLoading(false);
       setSearchLoading(false);
+    }
+  };
+
+  const parseRepoFullName = (input: string): string | null => {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    // Accept formats: https://github.com/owner/repo, http(s)://www.github.com/owner/repo, owner/repo
+    try {
+      if (trimmed.includes('github.com')) {
+        const url = new URL(trimmed);
+        const parts = url.pathname.split('/').filter(Boolean);
+        if (parts.length >= 2) {
+          return `${parts[0]}/${parts[1]}`;
+        }
+        return null;
+      }
+    } catch (_) {
+      // Not a valid URL, fall through to owner/repo parsing
+    }
+    // owner/repo plain text
+    const plain = trimmed.replace(/^\/*/, '');
+    const parts = plain.split('/').filter(Boolean);
+    if (parts.length === 2) return `${parts[0]}/${parts[1]}`;
+    return null;
+  };
+
+  const handleImportByUrl = async () => {
+    if (hasReachedProjectLimit()) return;
+    setPasteError(null);
+    const fullName = parseRepoFullName(pasteUrl);
+    if (!fullName) {
+      setPasteError('Please enter a valid GitHub URL or owner/repo.');
+      return;
+    }
+    setPasteLoading(true);
+    try {
+      // Fetch public repo metadata without auth; server-side import still requires connected GitHub
+      const response = await fetch(`https://api.github.com/repos/${fullName}`);
+      if (!response.ok) {
+        setPasteError('Repository not found or not publicly accessible.');
+        return;
+      }
+      const repo = await response.json();
+      const formatted: Repository = {
+        id: repo.id,
+        name: repo.name,
+        fullName: repo.full_name,
+        description: repo.description,
+        private: repo.private,
+        language: repo.language,
+        stargazersCount: repo.stargazers_count,
+        forksCount: repo.forks_count,
+        updatedAt: repo.updated_at,
+        pushedAt: repo.pushed_at,
+        size: repo.size,
+        defaultBranch: repo.default_branch,
+        topics: repo.topics || [],
+        visibility: repo.visibility,
+        owner: {
+          login: repo.owner?.login,
+          avatarUrl: repo.owner?.avatar_url,
+        },
+      };
+
+      if (formatted.private) {
+        setPasteError('Only public repositories can be imported via link.');
+        return;
+      }
+
+      if (isRepositoryImported(formatted)) {
+        setPasteError('This repository is already imported.');
+        return;
+      }
+
+      setSelectedRepo(formatted);
+      setIsConfirmOpen(true);
+    } catch (e) {
+      setPasteError('Failed to fetch repository. Please check the link and try again.');
+    } finally {
+      setPasteLoading(false);
     }
   };
 
@@ -301,6 +385,28 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
       {/* Unified Search + Repository Table */}
       <div className="bg-gradient-to-br from-neutral-950 to-neutral-900 border border-white/10 rounded-2xl p-6">
+      {/* Import by URL */}
+      <div className="mb-6">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              type="text"
+              placeholder="Paste a public GitHub link or owner/repo (e.g. vercel/next.js)"
+              value={pasteUrl}
+              onChange={(e) => setPasteUrl(e.target.value)}
+              className="w-full bg-black/50 border border-white/20 rounded-xl focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 text-white placeholder-gray-400"
+            />
+            <Button
+              onClick={handleImportByUrl}
+              disabled={pasteLoading || hasReachedProjectLimit() || projectsLoading}
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white whitespace-nowrap"
+            >
+              {pasteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Import via Link'}
+            </Button>
+          </div>
+          {pasteError && (
+            <p className="mt-2 text-sm text-red-300">{pasteError}</p>
+          )}
+        </div>
         <div className="mb-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -333,6 +439,8 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
             </div>
           )}
         </div>
+
+        
 
         {loading ? (
           <div className="overflow-hidden rounded-xl border border-white/10">
