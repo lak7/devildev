@@ -83,6 +83,8 @@ const ProjectPage = () => {
   
   // Mobile responsive state
   const [isMobile, setIsMobile] = useState(false);
+  // Mobile-only: which panel is open fullscreen
+  const [mobileActivePanel, setMobileActivePanel] = useState<'architecture' | 'docs' | null>(null);
   
   // Fullscreen architecture state
   const [isArchitectureFullscreen, setIsArchitectureFullscreen] = useState(false);
@@ -1068,6 +1070,233 @@ const ProjectPage = () => {
       )}
 
       {/* Main Content Area */}
+      {isMobile ? (
+        <div className="flex-1 p-4 min-h-0 relative pb-4 h-full">
+          {/* Mobile: Chat takes ~75% height and full width */}
+          <div className="bg-black border border-gray-800 rounded-xl flex flex-col overflow-hidden h-full" style={{ height: '85vh' }}>
+            <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-800">
+              <div className="flex space-x-1">
+                <button
+                  className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
+                >
+                  Project Chat
+                </button>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+              {messages.map((message, index) => (
+                <div key={message.id || `fallback-${index}`} className={`flex flex-col ${message.type === 'user' ? 'items-start' : 'items-start'}`}>
+                  <div className="flex w-full">
+                    {message.type === 'assistant' && (
+                      <div className="mr-3 flex-shrink-0">
+                        <Image
+                          src="/favicon.jpg"
+                          alt="Assistant"
+                          width={32}
+                          height={32}
+                          className="rounded-full"
+                        />
+                      </div>
+                    )}
+                    {message.type === 'user' && (
+                      <div className="mr-1 flex-shrink-0">
+                        <Avatar className="size-8">
+                          <AvatarImage src={user?.imageUrl} alt="User" />
+                          <AvatarFallback>U</AvatarFallback>
+                        </Avatar>
+                      </div>
+                    )}
+                    <div className="max-w-[80%] rounded-2xl px-2 py-1 text-white">
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  </div>
+
+                  {/* Project Docs button - only show for assistant messages with projectDocsId */}
+                  {message.type === 'assistant' && message.projectDocsId && (
+                    <div className="flex justify-start items-center space-x-3 ml-12 h-12 my-2 relative">
+                      <button 
+                        onClick={() => {
+                          setSelectedProjectDocsId(message.projectDocsId);
+                          setSelectedDocsName(message.docsName);
+                          setMobileActivePanel('docs');
+                        }}
+                        className="px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative hover:bg-transparent border-white hover:text-white bg-white text-black"
+                      >
+                        <span>View Docs</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Prompt box - only show for assistant messages with prompt */}
+                  {message.type === 'assistant' && message.prompt && (
+                    <div className="w-full mt-3 ">
+                      <div className="border border-gray-600 rounded-lg bg-gray-900/30 relative">
+                        {/* Copy button */}
+                        <button
+                          onClick={() => copyPrompt(message.id, message.prompt!)}
+                          className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200 z-10"
+                          title="Copy prompt"
+                        >
+                          {copiedPrompts[message.id] ? (
+                            <Check className="h-4 w-4 text-green-400" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                        <div className="p-3 pr-12 max-h-60 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+                          <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono break-words">
+                            {message.prompt}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Loading indicator */}
+              {isChatLoading && (
+                <div className="flex justify-start items-center space-x-3 animate-pulse">
+                  <Image
+                    src="/favicon.jpg"
+                    alt="Assistant"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <div className="text-white/69 text-sm flex items-center">
+                    <span>thinking</span>
+                    <span className="ml-1">...</span>
+                  </div>
+                </div>
+              )}
+
+              {isPromptGenerating && (
+                <div className="flex justify-start items-center space-x-3 animate-pulse">
+                  <Image
+                    src="/favicon.jpg"
+                    alt="Assistant"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <div className="text-white/69 text-sm flex items-center">
+                    <span>generating prompt</span>
+                    <span className="ml-1">...</span>
+                  </div>
+                </div>
+              )}
+
+              {isDocsGenerating && (
+                <div className="flex justify-start items-center space-x-3 animate-pulse">
+                  <Image
+                    src="/favicon.jpg"
+                    alt="Assistant"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <div className="text-white/69 text-sm flex items-center">
+                    <span>generating docs</span>
+                    <span className="ml-1">...</span>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="p-4 flex-shrink-0">
+              <form onSubmit={handleSubmit} className="relative">
+                <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+                  <textarea
+                    placeholder="Ask about your project..."
+                    value={inputMessage}
+                    onChange={handleTextareaChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit(e);
+                      }
+                    }}
+                    className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
+                    rows={2}
+                    style={{ height: textareaHeight }}
+                    maxLength={5000}
+                    disabled={isChatLoading || isCreatingChat}
+                  />
+                </div>
+                <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
+                  <button 
+                    type="submit" 
+                    className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                    disabled={!inputMessage.trim() || isChatLoading || isCreatingChat}
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Mobile bottom bar for Architecture and Documentation */}
+          <div className="fixed bottom-4 left-4 right-4 z-30 flex gap-3">
+            <button
+              onClick={() => setMobileActivePanel('architecture')}
+              className="flex-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-600 bg-black/60 text-white hover:bg-gray-900"
+            >
+              Architecture
+            </button>
+            <button
+              onClick={() => setMobileActivePanel('docs')}
+              className="flex-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-600 bg-black/60 text-white hover:bg-gray-900"
+            >
+              Documentation
+            </button>
+          </div>
+
+          {/* Mobile fullscreen overlay for selected panel */}
+          {mobileActivePanel && (
+            <div className="fixed inset-0 z-40 bg-black">
+              <div className="h-16 bg-black/90 backdrop-blur-sm border-b border-gray-800/50 flex items-center justify-between px-4">
+                <div className="text-white font-semibold text-base">
+                  {mobileActivePanel === 'architecture' ? 'Architecture' : 'Documentation'}
+                </div>
+                <button
+                  onClick={() => setMobileActivePanel(null)}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                  title="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="h-[calc(100vh-4rem)] overflow-hidden">
+                {mobileActivePanel === 'architecture' ? (
+                  <RevArchitecture 
+                    architectureData={architectureData} 
+                    isFullscreen={true}
+                    customPositions={customPositions}
+                    onPositionsChange={handlePositionsChange}
+                  />
+                ) : (
+                  <ProjectContextDocs 
+                    key={activeChatId || 'no-chat-mobile'}
+                    projectId={projectId}
+                    projectChatId={activeChatId}
+                    projectDocsId={selectedProjectDocsId}
+                    docsName={selectedDocsName}
+                    projectPlan={projectPlan}
+                    projectPhases={projectPhases}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
       <div ref={containerRef} className="flex-1 flex gap-1 p-4 min-h-0 relative pb-0 md:pb-4 h-full">
         {/* Left Chat Panel - Resizable */}
         <div 
@@ -1338,6 +1567,7 @@ const ProjectPage = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Fullscreen Architecture Modal */}
       {isArchitectureFullscreen && (
