@@ -79,7 +79,7 @@ export default function Page() {
   const [githubLoading, setGithubLoading] = useState(false);
   const isMobile = useMediaQuery('(max-width: 640px)');
   // Typewriter rotating heading state
-  const rotatingTexts = ["10x your vibe coding", "Visualize your Codebase"];
+  const rotatingTexts = ["Visualize your Codebase","10x your vibe coding"];
   const [currentRotateIndex, setCurrentRotateIndex] = useState(0);
   const [displayedRotateText, setDisplayedRotateText] = useState("");
   
