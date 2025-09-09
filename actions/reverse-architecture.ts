@@ -172,7 +172,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
 }
  
 export async function generateArchitecture(projectId: string){
-    console.log("Gen Step 0")
+    console.log("Gen Step 0") 
     const { userId } = await auth();
     if (!userId) {
         return { error: 'Unauthorized' };
@@ -187,6 +187,7 @@ export async function generateArchitecture(projectId: string){
             repoContent: true,
             repoFullName: true,
             defaultBranch: true,
+            detailedAnalysis: true,
             user: {
               select: {
                 githubUsername: true,
@@ -211,6 +212,28 @@ export async function generateArchitecture(projectId: string){
         return { error: 'Missing GitHub access token or repository information' };
     }
     console.log("Gen Step 2")
+    // If a detailed analysis already exists, skip invoking the agent and directly generate the architecture
+    if (project.detailedAnalysis) {
+        try {
+            const existingAnalysisString = typeof project.detailedAnalysis === "string"
+                ? project.detailedAnalysis
+                : JSON.stringify(project.detailedAnalysis);
+
+            const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt);
+            const finalChain = finalPrompt.pipe(llm).pipe(new StringOutputParser());
+            const architecture = await finalChain.invoke({
+                analysis_findings: existingAnalysisString,
+                name: name,
+                framework: framework
+            });
+
+            return { architecture: architecture, detailedAnalysis: existingAnalysisString };
+        } catch (error) {
+            console.error("Error generating architecture from existing analysis:", error);
+            return { error: 'Failed to generate architecture from existing analysis' };
+        }
+    }
+    
     // Parse repo owner and name from repoFullName
     const [owner, repo] = repoFullName.split('/');
     
