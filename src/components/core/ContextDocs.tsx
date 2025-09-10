@@ -563,7 +563,7 @@ Every decision should support the overall project goals while maintaining consis
   }
 
   const renderFileTree = (node: Record<string, FileNode>, path = "") => {
-    return Object.entries(node).map(([name, item]) => {
+    return Object.entries(node).map(([name, item], index) => {
       const fullPath = path ? `${path}/${name}` : name
 
       if (item.type === "folder") {
@@ -621,7 +621,7 @@ Every decision should support the overall project goals while maintaining consis
     <div className="h-11 bg-black border-b border-white/20 flex items-center px-4 justify-between flex-shrink-0">
       <div className="flex items-center gap-2 text-sm text-white/80">
         {getBreadcrumbs().map((crumb, index) => (
-          <React.Fragment key={index}>
+          <React.Fragment key={`breadcrumb-${index}`}>
             {index > 0 && <ChevronRight className="w-3 h-3 text-white/60" />}
             <span className={index === getBreadcrumbs().length - 1 ? "text-white font-medium" : "text-white/60"}>{crumb}</span>
           </React.Fragment>
@@ -706,7 +706,7 @@ Every decision should support the overall project goals while maintaining consis
           {/* Line Numbers */}
           <div className="bg-black px-4 py-4 text-white/40 text-sm font-mono select-none border-r border-white/10 min-w-[60px] flex-shrink-0">
             {selectedContent.split("\n").map((_, index) => (
-              <div key={index} className="leading-6 text-right hover:text-white/80 transition-colors duration-200">
+              <div key={`line-${index}`} className="leading-6 text-right hover:text-white/80 transition-colors duration-200">
                 {index + 1}
               </div>
             ))}
