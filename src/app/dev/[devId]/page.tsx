@@ -48,6 +48,8 @@ interface Particle {
   animationDuration: string;
 }
 
+const MAX_CHARACTERS = 25000;
+
 const DevPage = () => {
   const params = useParams();
   const chatId = params?.devId as string;
@@ -113,7 +115,7 @@ const DevPage = () => {
 
   // Character limit state
   const [isCharacterLimitReached, setIsCharacterLimitReached] = useState(false);
-  const MAX_CHARACTERS = 25000;
+  
   
   // Coach mark state
   const [showDocsCoachMark, setShowDocsCoachMark] = useState(false);
