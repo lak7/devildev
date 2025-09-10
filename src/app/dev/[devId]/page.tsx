@@ -110,6 +110,10 @@ const DevPage = () => {
   
   // How to dialog state
   const [isHowToOpen, setIsHowToOpen] = useState(false);
+
+  // Character limit state
+  const [isCharacterLimitReached, setIsCharacterLimitReached] = useState(false);
+  const MAX_CHARACTERS = 25000;
   
   // Coach mark state
   const [showDocsCoachMark, setShowDocsCoachMark] = useState(false);
@@ -252,6 +256,16 @@ const DevPage = () => {
     } catch (error) {
       console.error('Error saving contextual docs:', error);
     }
+  };
+
+  // Helper function to calculate total characters in messages
+  const calculateTotalCharacters = (messagesArray: ChatMessageType[]) => {
+    if (!messagesArray || !Array.isArray(messagesArray)) {
+      return 0;
+    }
+    return messagesArray.reduce((total, message) => {
+      return total + (message?.content?.length || 0);
+    }, 0);
   };
 
   // Load chat data and architecture when component mounts
@@ -439,6 +453,12 @@ const DevPage = () => {
     }
   }, [isSignedIn, isLoaded]);
 
+  // Monitor character limit
+  useEffect(() => {
+    const totalCharacters = calculateTotalCharacters(messages);
+    setIsCharacterLimitReached(totalCharacters >= MAX_CHARACTERS);
+  }, [messages]);
+
   // Auto-scroll to bottom when messages change, or to docs button when it appears
   useEffect(() => {
     // Check if docs button should be visible and scroll to it
@@ -608,6 +628,13 @@ const DevPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
+
+    // Check character limit before processing
+    const currentTotalCharacters = calculateTotalCharacters(messages);
+    if (currentTotalCharacters >= MAX_CHARACTERS) {
+      alert("You have reached the maximum number of tokens and can't continue anymore.");
+      return;
+    }
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
@@ -1437,7 +1464,7 @@ const DevPage = () => {
                 <form onSubmit={handleSubmit} className="relative">
                   <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                     <textarea
-                      placeholder="Continue the conversation..."
+                      placeholder={isCharacterLimitReached ? "You have reached the maximum number of tokens and can't continue anymore." : "Continue the conversation..."}
                       value={inputMessage}
                       onChange={handleTextareaChange}
                       onKeyDown={(e) => {
@@ -1450,7 +1477,7 @@ const DevPage = () => {
                       rows={2}
                       style={{ height: textareaHeight }}
                       maxLength={5000}
-                      disabled={isLoading || isArchitectureLoading}
+                      disabled={isLoading || isArchitectureLoading || isCharacterLimitReached}
                     />
                   </div>
                   
@@ -1459,7 +1486,7 @@ const DevPage = () => {
                     <button 
                       type="submit" 
                       className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading}
+                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading || isCharacterLimitReached}
                     >
                       <SendHorizonal className="h-4 w-4" />
                     </button>
@@ -1778,7 +1805,7 @@ const DevPage = () => {
                 <form onSubmit={handleSubmit} className="relative">
                   <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                     <textarea
-                      placeholder="Continue the conversation..."
+                      placeholder={isCharacterLimitReached ? "You have reached the maximum number of tokens and can't continue anymore." : "Continue the conversation..."}
                       value={inputMessage}
                       onChange={handleTextareaChange}
                       onKeyDown={(e) => {
@@ -1791,7 +1818,7 @@ const DevPage = () => {
                       rows={2}
                       style={{ height: textareaHeight }}
                       maxLength={5000}
-                      disabled={isLoading || isArchitectureLoading}
+                      disabled={isLoading || isArchitectureLoading || isCharacterLimitReached}
                     />
                   </div>
                   
@@ -1800,7 +1827,7 @@ const DevPage = () => {
                     <button 
                       type="submit" 
                       className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading}
+                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading || isCharacterLimitReached}
                     >
                       <SendHorizonal className="h-4 w-4" />
                     </button>
