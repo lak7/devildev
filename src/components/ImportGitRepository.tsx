@@ -349,11 +349,11 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
                 Project Limit Reached
               </h1>
               <p className="mt-2 text-sm text-gray-400 max-w-md">
-                You have reached the maximum limit of 2 projects. If you want to import more repositories, then please contact or mail to lakshay@devildev.com
+                You have reached the maximum limit of 1 project. If you want to import more repositories, then please contact or mail to lakshay@devildev.com
               </p>
               <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                 <p className="text-sm text-yellow-200">
-                  <strong>Current projects:</strong> {userProjects.length}/2
+                  <strong>Current projects:</strong> {userProjects.length}/1
                 </p>
               </div>
             </div>
