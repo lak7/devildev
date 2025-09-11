@@ -1,4 +1,5 @@
 import HomeNav from "@/components/core/HomeNav"
+import TempFooter from "@/components/core/TempFooter"
 
 export default function TermsAndConditionsPage() {
     return (
@@ -67,9 +68,9 @@ export default function TermsAndConditionsPage() {
                     <p>
                         <strong>Fees:</strong> You agree to pay all applicable fees for the Pro Plan as described on our Site. Fees are non-refundable except as required by law or as stated in our Refund Policy below.
                     </p>
-                    <p>
+                    {/* <p>
                         <strong>Payment Processor:</strong> All payments for the Pro Plan are processed by Paddle.com Market Ltd., our authorized reseller and merchant of record. By providing a payment method, you authorize Paddle to charge all applicable fees to that method.
-                    </p>
+                    </p> */}
                     <p>
                         <strong>Automatic Renewal:</strong> Your Pro Plan subscription will automatically renew at the end of each billing cycle until you cancel it. You can cancel your subscription at any time through your account settings.
                     </p>
@@ -110,6 +111,7 @@ export default function TermsAndConditionsPage() {
                     </p>
                 </section>
             </main>
+            <TempFooter/>
         </div>
     )
 }
