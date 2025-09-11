@@ -5,6 +5,7 @@ import { Check } from "lucide-react"
 import HomeNav from "@/components/core/HomeNav"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function PricingPage() {
     const freeFeatures = [
@@ -24,7 +25,7 @@ export default function PricingPage() {
     return (
         <div className="min-h-screen bg-black">
             {/* Navigation */}
-            <div className="sticky top-0 z-50 px-4 py-2">
+            <div className="sticky top-0 z-50 px-4 py-2 ">
                 <HomeNav />
             </div>
 
@@ -103,11 +104,32 @@ export default function PricingPage() {
       <div className="text-center mt-16">
         <p className="text-muted-foreground">All plans include our core features. Upgrade or downgrade anytime.</p>
         <div className="flex justify-center gap-8 mt-8 text-sm text-muted-foreground">
-          <span>✓ 30-day money back guarantee</span>
           <span>✓ Cancel anytime</span>
           <span>✓ 24/7 support</span>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="mt-20 border-t border-border pt-10 pb-14">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-sm font-semibold text-card-foreground/80 mb-3">Navigate</h3>
+            <nav className="flex flex-col gap-2 text-sm">
+              <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">Home</Link>
+              <Link href="/community" className="text-muted-foreground hover:text-primary transition-colors">Community</Link>
+              <Link href="/contact" className="text-muted-foreground hover:text-primary transition-colors">Contact</Link>
+            </nav>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-card-foreground/80 mb-3">Legal</h3>
+            <nav className="flex flex-col gap-2 text-sm">
+              <Link href="/terms-and-conditions" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
+              <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
+              <Link href="/refund-policy" className="text-muted-foreground hover:text-primary transition-colors">Refund Policy</Link>
+            </nav>
+          </div>
+        </div>
+      </footer>
     </div>
         </div>
     )

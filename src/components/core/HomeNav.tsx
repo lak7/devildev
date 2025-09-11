@@ -17,7 +17,7 @@ export default function HomeNav({ currentPage }: HomeNavProps) {
   const router = useRouter();
   const { user } = useUser();
   return (
-    <nav className=" max-w-6xl mx-auto top-4 left-0 right-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-between h-16  flex-shrink-0 relative  ">
+    <nav className=" max-w-6xl mx-auto top-4 left-0 right-0 z-40 bg-black/50 backdrop-blur-md flex items-center justify-between h-16  flex-shrink-0 relative  ">
 
               {/* Logo on the left */}
               <div className="flex z-20 items-center">
