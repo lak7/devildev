@@ -45,6 +45,7 @@ interface DataFlowItem {
 interface ComponentData {
   id: string
   title: string
+  purpose?: string
   icon: any
   color: string
   borderColor: string
@@ -305,6 +306,7 @@ const initialComponents: ComponentData[] = [
   {
     id: "frontend",
     title: "Frontend",
+    purpose: "Deliver the user interface, handle user interactions, and call backend APIs.",
     icon: Monitor,
     color: "",
     borderColor: "",
@@ -323,6 +325,7 @@ const initialComponents: ComponentData[] = [
   {
     id: "backend",
     title: "Backend",
+    purpose: "Expose APIs, orchestrate business logic, integrate services, and manage data flow.",
     icon: Server,
     color: "",
     borderColor: "",
@@ -341,6 +344,7 @@ const initialComponents: ComponentData[] = [
   {
     id: "database",
     title: "Database",
+    purpose: "Persist and query structured application data with reliability and performance.",
     icon: Database,
     color: "",
     borderColor: "",
@@ -359,6 +363,7 @@ const initialComponents: ComponentData[] = [
   {
     id: "authentication",
     title: "Authentication",
+    purpose: "Authenticate users, issue and validate tokens, and manage sessions/permissions.",
     icon: Shield,
     color: "",
     borderColor: "",
@@ -377,6 +382,7 @@ const initialComponents: ComponentData[] = [
   {
     id: "storage",
     title: "Storage",
+    purpose: "Store and serve user-generated files and assets, with backups and lifecycle.",
     icon: Cloud, // Replace with appropriate icon
     color: "",
     borderColor: "",
@@ -395,6 +401,7 @@ const initialComponents: ComponentData[] = [
   {
     id: "monitoring",
     title: "Monitoring",
+    purpose: "Observe application health, collect logs/metrics, and surface performance issues.",
     icon: Activity, // Replace with appropriate icon
     color: "",
     borderColor: "",
@@ -413,6 +420,7 @@ const initialComponents: ComponentData[] = [
   {
     id: "notifications",
     title: "Notifications",
+    purpose: "Deliver timely messages to users via email, SMS, and in-app channels.",
     icon: Bell, // Replace with your icon set if needed
     color: "",
     borderColor: "",
@@ -1503,9 +1511,20 @@ export default function RevArchitecture({
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Purpose Section  */}
+              <div className="space-y-6 my-6">
+              <h3 className="text-lg font-medium text-white mb-3">Purpose</h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  {detailsComponent.purpose || "Purpose not provided for this component."}
+                </p>
+              </div>
+
+               {/* Separator */}
+               <div className="h-px bg-gray-800"></div>
               
               {/* Technologies Section */}
-              <div className="space-y-6">
+              <div className="space-y-6 mt-6">
                 <div>
                   <h3 className="text-lg font-medium text-white mb-3">Technologies</h3>
                   <div className="space-y-2">
@@ -1553,29 +1572,7 @@ export default function RevArchitecture({
                   </div>
                 </div>
 
-                {/* Separator */}
-                <div className="h-px bg-gray-800"></div>
 
-                {/* Connections Section */}
-                <div>
-                  <h3 className="text-lg font-medium text-white mb-3">Connections</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-400">Connected to {detailsComponent.connections.length} component{detailsComponent.connections.length !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {detailsComponent.connections.map((connectionId) => {
-                        const connectedComponent = components.find(c => c.id === connectionId)
-                        return connectedComponent ? (
-                          <span key={connectionId} className="text-white bg-gray-800 px-2 py-1 rounded text-sm">
-                            {connectedComponent.title}
-                          </span>
-                        ) : null
-                      })}
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

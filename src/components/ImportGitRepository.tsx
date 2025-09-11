@@ -113,7 +113,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   // TODO: Change this to 2
   const hasReachedProjectLimit = (): boolean => {
-    return userProjects.length >= 1;
+    return userProjects.length >= 20;
   };
 
   const fetchRepos = async (search?: string) => {
