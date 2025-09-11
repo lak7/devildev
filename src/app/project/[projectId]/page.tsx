@@ -14,6 +14,8 @@ import ProjectContextDocs from '@/components/core/ProjectContextDocs';
 import { ProjectPageSkeleton } from '@/components/ui/project-skeleton';
 import { generateWebSearchDocs, saveProjectSummarizedContext, saveProjectWebSearchDocs, summarizeProjectDocsContext } from '../../../../actions/projectDocs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { submitFeedback } from '../../../../actions/feedback';
 
 interface ProjectChat {
@@ -34,6 +36,8 @@ interface Project {
   userId: string;
   ProjectChat: any[]; // Raw data from database
 }
+
+const MAX_CHARACTERS = 25000;
 
 const ProjectPage = () => {
     const params = useParams();
@@ -72,6 +76,10 @@ const ProjectPage = () => {
   const [selectedDocsName, setSelectedDocsName] = useState<string | undefined>(undefined);
   const [projectPlan, setProjectPlan] = useState<string>("Not Generated");
   const [projectPhases, setProjectPhases] = useState<string[]>(["Not Generated 1", "Not Generated 2"]); 
+  const [isCharacterLimitReached, setIsCharacterLimitReached] = useState(false);
+  const [isPromptLimitReached, setIsPromptLimitReached] = useState(false);
+  const [showMaxChatsDialog, setShowMaxChatsDialog] = useState(false);
+  const MAX_CHATS = 3;
   
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30);
@@ -191,6 +199,16 @@ const ProjectPage = () => {
     }
   };
 
+  // Helper function to calculate total characters in messages
+  const calculateTotalCharacters = (messagesArray: ProjectMessage[]) => {
+    if (!messagesArray || !Array.isArray(messagesArray)) {
+      return 0;
+    }
+    return messagesArray.reduce((total, message) => {
+      return total + ((message as any)?.content?.length || 0);
+    }, 0);
+  };
+
   // Handle chat switching
   const handleChatSwitch = (chatId: string) => {
     if (chatId === activeChatId) return;
@@ -234,6 +252,10 @@ const ProjectPage = () => {
   const handleCreateNewChat = async () => {
 
     if(isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating || messages.length === 0) return;
+    if (projectChats.length >= MAX_CHATS) {
+      setShowMaxChatsDialog(true);
+      return;
+    }
 
     // Optimistic UI: add a temporary chat and switch immediately
     const tempId = `temp-${Date.now()}`;
@@ -470,7 +492,7 @@ const ProjectPage = () => {
 
                   const initialMessage = firstParagraph + "\n\n" + lastParagraph;
 
-                  
+                   
                   // Save the architecture to the database
                   if (parsedArchitecture && parsedArchitecture.components && parsedArchitecture.architectureRationale) {
                       const saveResult = await saveProjectArchitecture(
@@ -526,6 +548,18 @@ const ProjectPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isChatLoading]);
 
+  // Monitor character limit
+  useEffect(() => {
+    const totalCharacters = calculateTotalCharacters(messages);
+    setIsCharacterLimitReached(totalCharacters >= MAX_CHARACTERS);
+  }, [messages]);
+
+  // Monitor prompt generation limit (max 3 prompts)
+  useEffect(() => {
+    const existingPromptCount = messages.filter(m => m.type === 'assistant' && (m as any).prompt).length;
+    setIsPromptLimitReached(existingPromptCount >= 3);
+  }, [messages]);
+
   // Handle mouse events for resizing
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
@@ -580,6 +614,12 @@ const ProjectPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isChatLoading || isCreatingChat || !activeChatId) return;
+    if (isCharacterLimitReached || isPromptLimitReached) {
+      return;
+    }
+
+    
+
     
     const userMessage: ProjectMessage = {
       id: generateMessageId(),
@@ -626,6 +666,7 @@ const ProjectPage = () => {
       
       // TODO: Add AI response handling here when implementing chat functionality
       // here 
+
       const chatbotResponse = await projectChatBot(currentInput.trim() ,project.framework, messages, architectureData, project.detailedAnalysis);
       //alert(4)
       let cleanedResponse = chatbotResponse; 
@@ -656,37 +697,37 @@ const ProjectPage = () => {
       setIsChatLoading(false);
 
       // //alert(parsedResponse.docs)
-      // //alert(parsedResponse.wannaStart) 
+      // //alert(parsedResponse.wannaStart)
+      
  
 
       
       if(parsedResponse.prompt && parsedResponse.wannaStart && (parsedResponse.difficulty === "easy" || parsedResponse.difficulty === "medium")){
-        //alert("Starting to generate prompt")
+        // Count existing prompts already generated in this chat
         setIsPromptGenerating(true);
-        //here
-        // alert("Fuck no")
-        const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
-
-        
-        // Only update the assistant message if prompt is a string
-        if (typeof prompt === 'string') {
-          // Update the assistant message with the generated prompt
-          const updatedAssistantMessage: ProjectMessage = {
-            ...assistantMessage,
-            prompt: prompt
-          };
-           
-          // Update the message in local state
-          setMessages(prevMessages => 
-            prevMessages.map(msg => 
-              msg.id === assistantMessage.id ? updatedAssistantMessage : msg
-            )
-          );
           
-          // Update the assistant message variable for database save
-          Object.assign(assistantMessage, updatedAssistantMessage);
-          setIsPromptGenerating(false);
-        }
+          const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
+
+          
+          // Only update the assistant message if prompt is a string
+          if (typeof prompt === 'string') {
+            // Update the assistant message with the generated prompt
+            const updatedAssistantMessage: ProjectMessage = {
+              ...assistantMessage,
+              prompt: prompt
+            };
+            
+            // Update the message in local state
+            setMessages(prevMessages => 
+              prevMessages.map(msg => 
+                msg.id === assistantMessage.id ? updatedAssistantMessage : msg
+              )
+            );
+            
+            // Update the assistant message variable for database save
+            Object.assign(assistantMessage, updatedAssistantMessage);
+            setIsPromptGenerating(false);
+          }
       }else if(parsedResponse.docs && parsedResponse.wannaStart){
         //alert("Starting to generate docs")
         setIsDocsGenerating(true);   
@@ -1209,7 +1250,13 @@ const ProjectPage = () => {
               <form onSubmit={handleSubmit} className="relative">
                 <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                   <textarea
-                    placeholder="Ask about your project..."
+                    placeholder={
+                      isPromptLimitReached
+                        ? "Sorry You have reached the maximum number of prompts. Please start a new chat to continue."
+                        : isCharacterLimitReached
+                          ? "You have reached the maximum number of tokens and can't continue anymore."
+                          : "Ask about your project..."
+                    }
                     value={inputMessage}
                     onChange={handleTextareaChange}
                     onKeyDown={(e) => {
@@ -1222,14 +1269,14 @@ const ProjectPage = () => {
                     rows={2}
                     style={{ height: textareaHeight }}
                     maxLength={5000}
-                    disabled={isChatLoading || isCreatingChat}
+                    disabled={isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
                   />
                 </div>
                 <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
                   <button 
                     type="submit" 
                     className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                    disabled={!inputMessage.trim() || isChatLoading || isCreatingChat}
+                    disabled={!inputMessage.trim() || isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
                   >
                     <Send className="h-4 w-4" />
                   </button>
@@ -1444,7 +1491,13 @@ const ProjectPage = () => {
             <form onSubmit={handleSubmit} className="relative">
               <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
-                  placeholder="Ask about your project..."
+                  placeholder={
+                    isPromptLimitReached
+                      ? "You have reached the maximum number of prompts. Please start a new chat to continue."
+                      : isCharacterLimitReached
+                        ? "You have reached the maximum number of tokens. Please start a new chat to continue."
+                        : "Ask about your project..."
+                  }
                   value={inputMessage}
                   onChange={handleTextareaChange}
                   onKeyDown={(e) => {
@@ -1457,7 +1510,7 @@ const ProjectPage = () => {
                   rows={2}
                   style={{ height: textareaHeight }}
                   maxLength={5000}
-                  disabled={isChatLoading || isCreatingChat}
+                  disabled={isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
                 />
               </div>
               
@@ -1466,7 +1519,7 @@ const ProjectPage = () => {
                 <button 
                   type="submit" 
                   className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  disabled={!inputMessage.trim() || isChatLoading || isCreatingChat}
+                  disabled={!inputMessage.trim() || isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
                 >
                   <Send className="h-4 w-4" />
                 </button>
@@ -1705,6 +1758,27 @@ const ProjectPage = () => {
         /* Disable text selection during resize */
         ${isResizing ? '*{user-select: none !important;}' : ''}
       `}</style>
+      {/* Max Chats Dialog */}
+      <Dialog open={showMaxChatsDialog} onOpenChange={setShowMaxChatsDialog}>
+        <DialogContent className="sm:max-w-md border border-zinc-500">
+          <DialogHeader>
+            <DialogTitle className="text-white">Chat Limit Reached</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              You have reached the maximum number of chats ({MAX_CHATS}) and can't create more chats anymore. Please contact or mail to lakshay@devildev.com if you want to increase the limit.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-end">
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={() => setShowMaxChatsDialog(false)}
+              className="bg-transparent border-zinc-500 text-white hover:bg-white hover:text-black hover:border-red-500/50"
+            >
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
