@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-import { isNextOrReactPrompt, mainGenerateArchitecturePrompt } from '../prompts/ReverseArchitecture';
+import { isNextOrReactPrompt, mainGenerateArchitecturePrompt, mainGenerateArchitecturePrompt2 } from '../prompts/ReverseArchitecture';
 import { getFileContentTool, getRepoTreeTool, searchCodeTool } from './github/gitTools';
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
@@ -67,6 +67,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
           return { error: 'Failed to fetch repository information' };
         }
         const repoInfo = await repoInfoResponse.json();
+        console.log("Step 3.1.1: ", repoInfo)
         defaultBranch = repoInfo.default_branch;
         console.log("Step 3.2: Default branch is", defaultBranch);
       } catch (error) {
@@ -219,7 +220,7 @@ export async function generateArchitecture(projectId: string){
                 ? project.detailedAnalysis
                 : JSON.stringify(project.detailedAnalysis);
 
-            const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt);
+            const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt2);
             const finalChain = finalPrompt.pipe(llm).pipe(new StringOutputParser());
             const architecture = await finalChain.invoke({
                 analysis_findings: existingAnalysisString,
@@ -452,7 +453,7 @@ export async function generateArchitecture(projectId: string){
         console.log("Step 10")
             // Create the final architecture synthesis prompt
         // Enhanced Architecture Generation Prompt - Dynamic & Analysis-Driven
-        const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt);       // Generate final architecture based on analysis
+        const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt2);       // Generate final architecture based on analysis
         const finalChain = finalPrompt.pipe(llm).pipe(new StringOutputParser());
         const architecture = await finalChain.invoke({
             analysis_findings: JSON.stringify(analysisResult.output),
