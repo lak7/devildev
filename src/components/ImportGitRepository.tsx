@@ -78,7 +78,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
 
-  const checkGithubStatus = async () => {
+  const checkGithubStatus = async () => { 
     setIsGithubStatusLoading(true);
     try {
       const response = await fetch('/api/github/status');
@@ -113,7 +113,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   // TODO: Change this to 2
   const hasReachedProjectLimit = (): boolean => {
-    return userProjects.length >= 20;
+    return userProjects.length >= 1;
   };
 
   const fetchRepos = async (search?: string) => {
