@@ -23,9 +23,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DevilDev",
-  description: "The First Engineer",
+  description: "Visualize any codebase, chat with your code for answers & prompts, or generate new architectures from scratch",
   icons: {
-    icon: "/favicon.jpg",
+    icon: "/nakedLogo.png",
   },
   themeColor: "#000000",
   viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
