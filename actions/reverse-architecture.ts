@@ -8,6 +8,7 @@ import { isNextOrReactPrompt, mainGenerateArchitecturePrompt, mainGenerateArchit
 import { getFileContentTool, getRepoTreeTool, searchCodeTool } from './github/gitTools';
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
+import { maxProjectSizeFree } from '../Limits';
 
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
@@ -20,8 +21,8 @@ const llm = new ChatOpenAI({
   }) 
 
 
-export async function checkPackageAndFramework(repositoryId: string, repoFullName: string){
-    console.log("Step 0")
+export async function checkInfo(repositoryId: string, repoFullName: string){
+  console.log("Step 0")
     const { userId } = await auth();
     let repoContent = null;
     let packageJson = null;
@@ -70,28 +71,89 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
         console.log("Step 3.1.1: ", repoInfo)
         defaultBranch = repoInfo.default_branch;
         console.log("Step 3.2: Default branch is", defaultBranch);
+        return { repoInfo: repoInfo, defaultBranch: defaultBranch };
       } catch (error) {
         console.error('Error fetching repository info:', error);
         return { error: 'Failed to fetch repository information' };
+      }  
+}
+
+ 
+export async function checkPackageAndFramework(repositoryId: string, repoFullName: string){
+    console.log("Step 0")
+    const { userId } = await auth();
+    let repoContent = null;
+    let packageJson = null;
+    let defaultBranch = null;
+    
+    if (!userId) {
+      return { error: 'Unauthorized' };
+    }
+
+    if (!repositoryId || !repoFullName) {
+        return { error: 'Missing required repository information' };
+    }
+    console.log("Step 1")
+    
+    // Get user's GitHub access token
+    const user = await db.user.findUnique({
+        where: { id: userId },
+        select: {
+          githubAccessToken: true,
+          isGithubConnected: true,
+        },
+      });
+      console.log("Step 2")
+      if (!user?.isGithubConnected || !user.githubAccessToken) {
+        return { error: 'GitHub not connected' };
       }
+      console.log("Step 3")
+
+      // Get repository info to fetch default branch
+      try {
+        const repoInfoResponse = await fetch(
+          `https://api.github.com/repos/${repoFullName}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${user.githubAccessToken}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'DevilDev-App',
+            },
+          }
+        );
+        console.log("Step 3.1")
+        if (!repoInfoResponse.ok) {
+          return { error: 'Failed to fetch repository information' };
+        }
+        const repoInfo = await repoInfoResponse.json();
+        if(repoInfo.size > maxProjectSizeFree){
+          return {status: "tooBig", error: 'Repository size is too large' };
+        }
+        console.log("Step 3.1.1: ", repoInfo)
+        defaultBranch = repoInfo.default_branch;
+        console.log("Step 3.2: Default branch is", defaultBranch);
+      } catch (error) {
+        console.error('Error fetching repository info:', error);
+        return { error: 'Failed to fetch repository information' };
+      }  
       console.log("Step 3.3")
       // Get repository contents
-      try{
+      try{   
         const repoContentResponse = await fetch(
             `https://api.github.com/repos/${repoFullName}/contents`,
-            {
+            { 
               headers: {
                 'Authorization': `Bearer ${user.githubAccessToken}`,
                 'Accept': 'application/vnd.github.v3+json',
                 'User-Agent': 'DevilDev-App',
-              },
+              }, 
             }
-          );
+          );                              
           console.log("Step 4")
           if (!repoContentResponse.ok) {
             return { error: 'Failed to fetch repository contents' };
           } 
-          console.log("Step 5")
+          console.log("Step 5")      
 
            repoContent = await repoContentResponse.json();
            repoContent = repoContent.map((item: { name: any; }) => item.name);
@@ -141,7 +203,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
       }catch(error){
         console.error('Error fetching package.json:', error);
         return { isValid: false, framework: "" };
-      }
+      } 
       console.log("Step 7")
       // Check if the project is a react or next project
       const template = isNextOrReactPrompt 
