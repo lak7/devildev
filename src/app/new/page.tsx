@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ImportGitRepository from '@/components/ImportGitRepository';
-import { checkPackageAndFramework } from '../../../actions/reverse-architecture';
+import { checkInfo, checkPackageAndFramework } from '../../../actions/reverse-architecture';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GlowingEffect } from '@/components/ui/glow-effect';
 import { Loader2, Github, ArrowLeft, MessageSquare, X } from 'lucide-react';
@@ -13,6 +13,7 @@ import { submitFeedback } from '../../../actions/feedback';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@clerk/nextjs';
 import Nav from '@/components/core/Nav';
+import Link from 'next/link';
 
 interface Repository {
   id: number;
@@ -40,6 +41,7 @@ export default function NewPage() {
   const [importing, setImporting] = useState(false);
   const { isLoaded, isSignedIn, user } = useUser();
   const [isImportInfoOpen, setIsImportInfoOpen] = useState(false);
+  const [isTooBigDialogOpen, setIsTooBigDialogOpen] = useState(false);
     // Feedback dialog state
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [feedbackText, setFeedbackText] = useState('');
@@ -49,7 +51,9 @@ export default function NewPage() {
   const handleImport = async (repo: Repository) => {
     setImporting(true); 
     try { 
-      const {result: response, project: project} = await checkPackageAndFramework(repo.id.toString(), repo.fullName);
+      const res = await checkPackageAndFramework(repo.id.toString(), repo.fullName);
+      const {result: response, project: project} = res;
+      // const {repoInfo: response, defaultBranch: project} = await checkInfo(repo.id.toString(), repo.fullName);
       let cleanedResult = response;
       if (typeof response === 'string') {
         // Remove markdown code blocks (```json...``` or ```...```)
@@ -70,12 +74,13 @@ export default function NewPage() {
         } else {
           setIsImportInfoOpen(true);
         }
+      } else if(res.status === "tooBig"){
+        setIsTooBigDialogOpen(true);
       } else {
         setIsImportInfoOpen(true);
       }
     } catch (error) {
       console.error('Error importing repository:', error);
-      // alert('Failed to import repository. Please try again.');
     } finally {
       setImporting(false);
     }
@@ -239,6 +244,41 @@ export default function NewPage() {
                 className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200"
               >
                 Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Too Big Dialog */}
+      {isTooBigDialogOpen && (
+        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-black border border-gray-600 rounded-lg p-6 w-full max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-white">Project Too Large</h3>
+              <button
+                onClick={() => setIsTooBigDialogOpen(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-sm text-gray-300">
+              <p>This project is too big and can't be imported at the moment.</p>
+              <p>Please contact us or mail to <a href="mailto:lakshay@devildev.com" className="text-white hover:text-gray-200 underline">lakshay@devildev.com</a> for assistance with large repositories.</p>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => window.open('/contact', '_blank', 'noopener,noreferrer')}
+                className="px-4 py-2 bg-zinc-950 text-white rounded-md hover:bg-gray-700 border border-zinc-50"
+              >
+                Contact Us
+              </button>
+              <button
+                onClick={() => setIsTooBigDialogOpen(false)}
+                className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200"
+              >
+                Close
               </button>
             </div>
           </div>

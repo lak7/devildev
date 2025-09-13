@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { getUserProjects } from '../../actions/reverse-architecture';
+import { maxNumberOfProjectsFree } from '../../Limits';
 // Removed card and glow imports for a minimalist view
 
 interface Repository { 
@@ -113,7 +114,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   // TODO: Change this to 2
   const hasReachedProjectLimit = (): boolean => {
-    return userProjects.length >= 1;
+    return userProjects.length >= maxNumberOfProjectsFree;
   };
 
   const fetchRepos = async (search?: string) => {
