@@ -57,7 +57,7 @@ model User {
   githubUsername    String?   @unique
   isGithubConnected Boolean   @default(false)
   chats             Chat[]
-
+  subscription Subscription?
   projects Project[]
 }
 
@@ -193,6 +193,33 @@ model Contact {
   message   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum SubscriptionStatus {
+  FREE
+  ACTIVE
+  CANCELLED
+  ON_HOLD
+}
+
+enum SubscriptionPlan {
+  PRO
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  subscriptionId String? @unique
+  status SubscriptionStatus @default(FREE)
+  plan   SubscriptionPlan   @default(PRO)
+  productId String?
+  quantity  Int              @default(1)
+  currency   String          @default("USD")
+  currentPeriodEnd DateTime?
+  canceledAt DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 

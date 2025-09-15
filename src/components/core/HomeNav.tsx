@@ -63,6 +63,16 @@ export default function HomeNav({ currentPage }: HomeNavProps) {
                   Community
                 </a>
                 <a
+                  href="/pricing"
+                  className={`font-medium text-sm transition-all duration-200 ${
+                    currentPage === 'Contact' 
+                      ? 'text-white px-5 py-1 rounded-4xl bg-zinc-800/50 border border-gray-700/50' 
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Pricing
+                </a>
+                <a
                   href="/contact"
                   className={`font-medium text-sm transition-all duration-200 ${
                     currentPage === 'Contact' 
