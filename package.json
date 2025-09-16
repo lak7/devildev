@@ -14,6 +14,8 @@
     "@langchain/community": "^0.3.48",
     "@langchain/core": "^0.3.62",
     "@langchain/openai": "^0.5.18",
+    "@octokit/auth-app": "^8.1.0",
+    "@octokit/rest": "^22.0.0",
     "@prisma/client": "^6.9.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.11",

@@ -40,7 +40,7 @@ interface UserProject {
 }
   
 interface ImportGitRepositoryProps {
-  onImport: (repo: Repository) => void;
+  onImport: (repo: Repository, installationId?: string | null) => void;
 } 
 
 export default function ImportGitRepository({ onImport }: ImportGitRepositoryProps) {
@@ -49,6 +49,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [searchTerm, setSearchTerm] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
   const [githubConnected, setGithubConnected] = useState(false);
+  const [installationId, setInstallationId] = useState<string | null>(null);
   const [importing, setImporting] = useState<number | null>(null);
   const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(true);
   const [userProjects, setUserProjects] = useState<UserProject[]>([]);
@@ -61,14 +62,15 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   useEffect(() => {
     checkGithubStatus();
+    checkAppInstallation();
     fetchUserProjects();
   }, []);
 
   useEffect(() => {
-    if (githubConnected) {
+    if (githubConnected || installationId) {
       fetchRepos();
     }
-  }, [githubConnected]);
+  }, [githubConnected, installationId]);
 
   // Debounced search effect
   useEffect(() => {
@@ -88,6 +90,19 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
       setIsGithubStatusLoading(false);
     } catch (error) {
       console.error('Error checking GitHub status:', error);
+    }
+  };
+
+  const checkAppInstallation = async () => {
+    try {
+      const res = await fetch('/api/github/app/installations', { cache: 'no-store' });
+      const data = await res.json();
+      const list = (data?.installations || []) as Array<{ id: number }>;
+      if (list.length > 0) {
+        setInstallationId(String(list[0].id));
+      }
+    } catch (e) {
+      // ignore
     }
   };
 
@@ -126,6 +141,9 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
       if (search) { 
         url.searchParams.set('search', search); 
       } 
+      if (installationId) {
+        url.searchParams.set('installationId', installationId);
+      }
 
       const response = await fetch(url);
       const data = await response.json();
@@ -231,9 +249,10 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   const handleImport = async (repo: Repository) => {
     setImporting(repo.id);
+    alert("Importing")
     try {
       // Call the parent's import handler 
-      await onImport(repo);
+      await onImport(repo, installationId);
       // Refresh user projects to include the newly imported repository
       await fetchUserProjects();
     } catch (error) {
@@ -254,7 +273,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const confirmImport = async () => {
     if (!selectedRepo) return;
     setIsConfirmOpen(false);
-    await handleImport(selectedRepo);
+    await handleImport(selectedRepo, installationId);
     setSelectedRepo(null);
   };
 
@@ -293,7 +312,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     );
   }
 
-  if (!githubConnected) {
+  if (!githubConnected && !installationId) {
     return (
       <div className="w-full flex items-center justify-center ">
         <div className="w-full max-w-lg">
@@ -323,7 +342,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
                 className="w-full cursor-pointer h-11 bg-white text-black hover:bg-zinc-100/69 rounded-xl inline-flex items-center justify-center"
               >
                 <Github className="w-4 h-4 mr-2" />
-                Connect GitHub Account
+                {installationId ? 'Continue' : 'Connect GitHub Account'}
               </Button>
               <p className="mt-3 text-xs text-gray-500">We only request access needed to list your repos.</p>
             </div>

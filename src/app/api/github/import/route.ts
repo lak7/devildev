@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
+import { getInstallationToken } from '@/../../../actions/githubAppAuth';
+import { createOctokitWithToken } from '@/lib/githubClient';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,23 +13,43 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { repositoryId, fullName } = body;
+    const { repositoryId, fullName, installationId: bodyInstallationId, projectId } = body;
+    const appFlowEnabled = process.env.GITHUB_APP_FLOW_ENABLED === 'true';
 
     if (!repositoryId || !fullName) {
       return NextResponse.json({ error: 'Missing required repository information' }, { status: 400 });
     } 
 
-    // Get user's GitHub access token
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: {
-        githubAccessToken: true,
-        isGithubConnected: true,
-      },
-    });
+    // Determine installationId: body > project mapping (if provided)
+    let resolvedInstallationId: string | null = null;
+    if (appFlowEnabled && bodyInstallationId) {
+      resolvedInstallationId = String(bodyInstallationId);
+    } else if (appFlowEnabled && projectId) {
+      const project = await db.project.findUnique({ where: { id: projectId }, select: { githubInstallationId: true } });
+      if (project?.githubInstallationId) {
+        resolvedInstallationId = String(project.githubInstallationId);
+      }
+    }
 
-    if (!user?.isGithubConnected || !user.githubAccessToken) {
-      return NextResponse.json({ error: 'GitHub not connected' }, { status: 400 });
+    // If installationId available, prefer GitHub App flow
+    let authToken: string | null = null;
+    if (appFlowEnabled && resolvedInstallationId) {
+      const { token } = await getInstallationToken(resolvedInstallationId);
+      authToken = token;
+    } else {
+      // OAuth fallback
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: {
+          githubAccessToken: true,
+          isGithubConnected: true,
+        },
+      });
+  
+      if (!user?.isGithubConnected || !user.githubAccessToken) {
+        return NextResponse.json({ error: 'GitHub not connected' }, { status: 400 });
+      }
+      authToken = user.githubAccessToken;
     }
 
     let theProjectStructure = null;
@@ -40,7 +62,7 @@ export async function POST(request: NextRequest) {
         `https://api.github.com/repos/${fullName}/contents`,
         {
           headers: {
-            'Authorization': `Bearer ${user.githubAccessToken}`,
+            'Authorization': `Bearer ${authToken}`,
             'Accept': 'application/vnd.github.v3+json',
             'User-Agent': 'DevilDev-App',
           },
@@ -59,7 +81,7 @@ export async function POST(request: NextRequest) {
           `https://api.github.com/repos/${fullName}/contents/package.json`,
           { 
             headers: {
-              'Authorization': `Bearer ${user.githubAccessToken}`,
+              'Authorization': `Bearer ${authToken}`,
               'Accept': 'application/vnd.github.v3+json',
               'User-Agent': 'DevilDev-App',
             },
@@ -88,7 +110,8 @@ export async function POST(request: NextRequest) {
       message: 'Repository imported successfully',
       fullName,
       theProjectStructure,
-      packageJson
+      packageJson,
+      installationId: installationId ?? null,
     });
 
   } catch (error) {

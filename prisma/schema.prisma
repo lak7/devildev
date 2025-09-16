@@ -135,6 +135,7 @@ model Project {
   language  String?
   repoId String? @unique
   repoFullName String?
+  githubInstallationId BigInt?
   ProjectChat ProjectChat[]
   packageJson Json?
   framework String?
@@ -225,4 +226,27 @@ model Subscription {
 
 
 
+
+/// GitHub App Installation records (introduced for GitHub App migration Phase 1)
+model GitHubAppInstallation {
+  id                  Int      @id
+  installationId      BigInt   @unique
+  accountLogin        String
+  accountId           BigInt
+  accountType         String
+  repositories        Json?
+  permissions         Json?
+  repositorySelection String?
+  lastSyncedAt        DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+/// Webhook received events for idempotency/deduplication (Phase 1)
+model WebhookEvent {
+  id        Int      @id
+  eventId   String   @unique
+  source    String
+  createdAt DateTime @default(now())
+}
  

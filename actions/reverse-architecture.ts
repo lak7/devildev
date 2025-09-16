@@ -6,6 +6,7 @@ import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { isNextOrReactPrompt, mainGenerateArchitecturePrompt, mainGenerateArchitecturePrompt2 } from '../prompts/ReverseArchitecture';
 import { getFileContentTool, getRepoTreeTool, searchCodeTool } from './github/gitTools';
+import { getInstallationToken } from './githubAppAuth';
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { maxProjectSizeFree } from '../Limits';
@@ -79,7 +80,7 @@ export async function checkInfo(repositoryId: string, repoFullName: string){
 }
 
  
-export async function checkPackageAndFramework(repositoryId: string, repoFullName: string){
+export async function checkPackageAndFramework(repositoryId: string, repoFullName: string, installationId?: string){
     console.log("Step 0")
     const { userId } = await auth();
     let repoContent = null;
@@ -95,18 +96,29 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
     }
     console.log("Step 1")
     
-    // Get user's GitHub access token
-    const user = await db.user.findUnique({
-        where: { id: userId },
-        select: {
-          githubAccessToken: true,
-          isGithubConnected: true,
-        },
-      });
-      console.log("Step 2")
-      if (!user?.isGithubConnected || !user.githubAccessToken) {
-        return { error: 'GitHub not connected' };
-      }
+    const appFlowEnabled = process.env.GITHUB_APP_FLOW_ENABLED === 'true';
+    // Prefer installation token when provided
+    let authToken: string | null = null; 
+    if (appFlowEnabled && installationId) {
+      console.log("Bitch")
+      const { getInstallationToken } = await import('../actions/githubAppAuth');
+      const { token } = await getInstallationToken(installationId);
+      authToken = token;
+    } else {
+      // Get user's GitHub access token (OAuth fallback)
+      const user = await db.user.findUnique({
+          where: { id: userId },
+          select: {
+            githubAccessToken: true,
+            isGithubConnected: true,
+          },
+        });
+        console.log("Step 2, really")
+        if (!user?.isGithubConnected || !user.githubAccessToken) {
+          return { error: 'GitHub not connected' };
+        }
+        authToken = user.githubAccessToken;
+    }
       console.log("Step 3")
 
       // Get repository info to fetch default branch
@@ -115,7 +127,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
           `https://api.github.com/repos/${repoFullName}`,
           {
             headers: {
-              'Authorization': `Bearer ${user.githubAccessToken}`,
+              'Authorization': `Bearer ${authToken}`,
               'Accept': 'application/vnd.github.v3+json',
               'User-Agent': 'DevilDev-App',
             },
@@ -143,7 +155,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
             `https://api.github.com/repos/${repoFullName}/contents`,
             { 
               headers: {
-                'Authorization': `Bearer ${user.githubAccessToken}`,
+                'Authorization': `Bearer ${authToken}`,
                 'Accept': 'application/vnd.github.v3+json',
                 'User-Agent': 'DevilDev-App',
               }, 
@@ -175,7 +187,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
                     `https://api.github.com/repos/${repoFullName}/contents/package.json`,
                     { 
                         headers: {
-                          'Authorization': `Bearer ${user.githubAccessToken}`,
+                          'Authorization': `Bearer ${authToken}`,
                           'Accept': 'application/vnd.github.v3+json',
                           'User-Agent': 'DevilDev-App',
                         },
@@ -216,7 +228,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
       if(resultObject.isValid){
             project = await db.project.create({
             data: {
-                name: repoFullName.split('/')[1] || repoFullName, // Use repo name as project name
+                name: repoFullName.split('/')[1] || repoFullName,
                 userId: userId,
                 repoId: repositoryId,  
                 repoFullName: repoFullName,
@@ -224,6 +236,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
                 packageJson: packageJson,
                 framework: resultObject.framework,
                 defaultBranch: defaultBranch,
+                ...(installationId ? { githubInstallationId: BigInt(installationId) } : {}),
             }
             });
       }
@@ -251,6 +264,7 @@ export async function generateArchitecture(projectId: string){
             repoFullName: true,
             defaultBranch: true,
             detailedAnalysis: true,
+            githubInstallationId: true,
             user: {
               select: {
                 githubUsername: true,
@@ -271,8 +285,22 @@ export async function generateArchitecture(projectId: string){
     const { name, framework, packageJson, repoContent, repoFullName, defaultBranch, user } = project;
     const { githubUsername, githubAccessToken } = user;
 
-    if (!githubAccessToken || !repoFullName) {
-        return { error: 'Missing GitHub access token or repository information' };
+    if (!repoFullName) {
+        return { error: 'Missing repository information' };
+    }
+
+    // Resolve access token: prefer GitHub App installation token when mapped and enabled
+    const appFlowEnabled = process.env.GITHUB_APP_FLOW_ENABLED === 'true';
+    let resolvedAccessToken: string | null = null;
+    if (appFlowEnabled && project.githubInstallationId) {
+        const { token } = await getInstallationToken(String(project.githubInstallationId));
+        resolvedAccessToken = token;
+    } else {
+        resolvedAccessToken = githubAccessToken || null;
+    }
+
+    if (!resolvedAccessToken) {
+        return { error: 'Missing authentication token for GitHub access' };
     }
     console.log("Gen Step 2")
     // If a detailed analysis already exists, skip invoking the agent and directly generate the architecture
@@ -503,7 +531,7 @@ export async function generateArchitecture(projectId: string){
             packageJson: stringifiedPackageJson,
             repoContent: stringifiedRepoContent,
             defaultBranch: defaultBranch || 'main',
-            githubAccessToken: githubAccessToken
+            githubAccessToken: resolvedAccessToken
         });
         console.log("Gen Step 8")
         console.log("Analysis Result: ", analysisResult.output)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,6 +9,26 @@ export async function GET(request: NextRequest) {
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // If enabled, new users are routed to GitHub App installation instead of OAuth
+    const appNewUsers = process.env.GITHUB_APP_NEW_USERS === 'true';
+    const appSlug = process.env.GITHUB_APP_SLUG;
+
+    if (appNewUsers && appSlug) {
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: { isGithubConnected: true, githubAccessToken: true },
+      });
+
+      // New user path: no existing OAuth connection → redirect to App installation
+      if (!user?.isGithubConnected || !user.githubAccessToken) {
+        const state = crypto.randomUUID();
+        const stateWithUserId = `${state}:${userId}`;
+        const installUrl = new URL(`https://github.com/apps/${appSlug}/installations/new`);
+        installUrl.searchParams.set('state', stateWithUserId);
+        return NextResponse.redirect(installUrl.toString());
+      }
     }
 
     // GitHub OAuth parameters

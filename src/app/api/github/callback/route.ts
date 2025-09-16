@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
+    // Deprecation notice for GitHub OAuth callback — migration to GitHub App underway.
+    // Behavior remains unchanged during migration phases.
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const state = searchParams.get('state');

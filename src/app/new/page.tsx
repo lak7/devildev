@@ -48,10 +48,12 @@ export default function NewPage() {
     const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleImport = async (repo: Repository) => {
+  const handleImport = async (repo: Repository, installationId?: string | null) => {
     setImporting(true); 
+    alert("Installation NEW: " + installationId)
     try { 
-      const res = await checkPackageAndFramework(repo.id.toString(), repo.fullName);
+      alert("DOING")
+      const res = await checkPackageAndFramework(repo.id.toString(), repo.fullName, installationId || undefined);
       const {result: response, project: project} = res;
       // const {repoInfo: response, defaultBranch: project} = await checkInfo(repo.id.toString(), repo.fullName);
       let cleanedResult = response;
@@ -63,6 +65,7 @@ export default function NewPage() {
           .replace(/\s*```\s*$/, '')
           .trim();
       } 
+      alert("DONE")
 
       const parsedResponse = typeof cleanedResult === 'string' 
         ? JSON.parse(cleanedResult)  
