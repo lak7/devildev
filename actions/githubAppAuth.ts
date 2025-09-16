@@ -6,6 +6,21 @@ import crypto from "crypto";
 type CachedToken = { token: string; expiresAt: number };
 const installationTokenCache: Map<string, CachedToken> = new Map();
 
+// Lightweight metrics (in-memory counters)
+const metrics = {
+  cacheHit: 0,
+  cacheMiss: 0,
+  fetchFailure: 0,
+  invalidationCount: 0,
+};
+
+function log(event: string, details: Record<string, unknown>) {
+  if (process.env.GITHUB_APP_LOGGING === "true") {
+    // Keep logs concise and structured
+    console.log(`[githubAppAuth] ${event}`, details);
+  }
+}
+
 function assertServerRuntime() {
   if (typeof window !== "undefined") {
     throw new Error("githubAppAuth must be imported server-side only");
@@ -61,9 +76,13 @@ export async function getInstallationToken(installationId: number | bigint | str
   const nowMs = Date.now();
   const cached = installationTokenCache.get(cacheKey);
   if (cached && cached.expiresAt - nowMs > 60_000) {
+    metrics.cacheHit += 1;
+    const ttlMs = Math.max(0, cached.expiresAt - nowMs);
+    log("cache_hit", { installationId: id, ttlMs });
     return { token: cached.token, expiresAt: new Date(cached.expiresAt).toISOString() };
   }
 
+  const start = Date.now();
   const jwt = await getAppJWT();
   const res = await fetch(`https://api.github.com/app/installations/${id}/access_tokens`, {
     method: "POST",
@@ -76,20 +95,29 @@ export async function getInstallationToken(installationId: number | bigint | str
 
   if (!res.ok) {
     const text = await res.text();
+    metrics.fetchFailure += 1;
+    log("fetch_failure", { installationId: id, status: res.status, bodySize: text?.length ?? 0 });
     throw new Error(`Failed to get installation token (${res.status}): ${text}`);
   }
   const data = (await res.json()) as { token: string; expires_at: string };
   const expiresMs = new Date(data.expires_at).getTime();
   installationTokenCache.set(cacheKey, { token: data.token, expiresAt: expiresMs });
+  metrics.cacheMiss += 1;
+  const latencyMs = Date.now() - start;
+  log("cache_miss", { installationId: id, latencyMs, expiresAt: data.expires_at });
   return { token: data.token, expiresAt: data.expires_at };
 }
 
 export async function clearInstallationTokenCache(installationId?: string | number | bigint) {
   if (installationId === undefined) {
     installationTokenCache.clear();
+    metrics.invalidationCount += 1;
+    log("cache_invalidate_all", {});
     return;
   }
   installationTokenCache.delete(String(installationId));
+  metrics.invalidationCount += 1;
+  log("cache_invalidate", { installationId: String(installationId) });
 }
 
 
