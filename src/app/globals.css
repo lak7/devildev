@@ -121,6 +121,29 @@
   }
 }
 
+/* Safe area and background rules moved from inline <style> in layout to avoid hydration mismatches */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-right: env(safe-area-inset-right);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+}
+
+@supports (-webkit-touch-callout: none) {
+  body {
+    background-color: #000000 !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  html {
+    background-color: #000000 !important;
+  }
+  body {
+    background-color: #000000 !important;
+  }
+}
+
 /* Custom scrollbar styles for textarea */
 textarea::-webkit-scrollbar {
   width: 6px;
