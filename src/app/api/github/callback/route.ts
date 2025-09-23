@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     // Deprecation notice for GitHub OAuth callback — migration to GitHub App underway.
     // Behavior remains unchanged during migration phases.
     const { searchParams } = new URL(request.url);
-    const code = searchParams.get('code');
+    const code = searchParams.get('code'); 
     const state = searchParams.get('state');
     const error = searchParams.get('error');
 

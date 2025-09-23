@@ -57,7 +57,7 @@ export default function NewPage() {
       const {result: response, project: project} = res;
       // const {repoInfo: response, defaultBranch: project} = await checkInfo(repo.id.toString(), repo.fullName);
       let cleanedResult = response;
-      if (typeof response === 'string') {
+      if (typeof response === 'string') { 
         // Remove markdown code blocks (```json...``` or ```...```)
         cleanedResult = response
           .replace(/^```json\s*/i, '')
@@ -135,11 +135,7 @@ export default function NewPage() {
       
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-4xl">
-          <ImportGitRepository onImport={handleImport} />
-        </div>
-      </div>
+      <ImportGitRepository onImport={handleImport} />
 
       {/* Loading Overlay */}
       {importing && (

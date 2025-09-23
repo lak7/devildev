@@ -84,7 +84,7 @@ export async function initiateGitHubConnection(): Promise<{ success: boolean; re
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const redirectUrl = `${baseUrl}/api/github/auth`;
+    const redirectUrl = `${baseUrl}/api/github/mcp-auth`;
 
     return { success: true, redirectUrl };
   } catch (error) {

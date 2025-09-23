@@ -86,7 +86,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     try {
       const response = await fetch('/api/github/status');
       const data = await response.json();
-      setGithubConnected(data.isConnected);
+      setGithubConnected(data.isConnected); 
       setIsGithubStatusLoading(false);
     } catch (error) {
       console.error('Error checking GitHub status:', error);
@@ -97,9 +97,9 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     try {
       const res = await fetch('/api/github/app/installations', { cache: 'no-store' });
       const data = await res.json();
-      const list = (data?.installations || []) as Array<{ id: number }>;
+      const list = (data?.installations || []) as Array<{ installationId: bigint }>;
       if (list.length > 0) {
-        setInstallationId(String(list[0].id));
+        setInstallationId(String(list[0].installationId));
       }
     } catch (e) {
       // ignore
@@ -273,7 +273,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const confirmImport = async () => {
     if (!selectedRepo) return;
     setIsConfirmOpen(false);
-    await handleImport(selectedRepo, installationId);
+    await handleImport(selectedRepo);
     setSelectedRepo(null);
   };
 
@@ -297,8 +297,10 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   if (isGithubStatusLoading) {
     return (
-      <div className="w-full flex items-center justify-center min-h-[200px]">
-        <div className="text-center space-y-6">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="w-full h-full max-w-4xl">
+          <div className="w-full h-full flex items-center justify-center min-h-[200px]">
+            <div className="text-center space-y-6">
           <div className="relative w-80 h-3 bg-gray-800/50 rounded-full overflow-hidden border border-gray-700/50">
             <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-full"></div>
             <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 rounded-full animate-[loading_2.5s_ease-in-out_infinite] shadow-lg shadow-red-500/25"></div>
@@ -307,6 +309,8 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
             <p className="text-gray-300 text-sm font-medium">Connecting to GitHub</p>
             <p className="text-gray-500 text-xs">Please wait while we verify your connection...</p>
           </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -314,37 +318,41 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   if (!githubConnected && !installationId) {
     return (
-      <div className="w-full flex items-center justify-center ">
-        <div className="w-full max-w-lg">
-          <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-10 shadow-xl">
-            <div className="flex flex-col items-center text-center">
-              <div className="relative">
-                <div className="absolute -inset-6 rounded-2xl bg-red-500/20 blur-2xl" aria-hidden="true" />
-                <Image
-                  src="/main00.png"
-                  alt="DevilDev"
-                  width={96}
-                  height={96}
-                  className="rounded-xl shadow-xl"
-                  priority
-                />
-              </div>
-              <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                Connect your GitHub to DevilDev
-              </h1>
-              <p className="mt-2 text-sm text-gray-400 max-w-md">
-                Import your repositories to reverse engineer their architecture and ship changes faster with AI assistance.
-              </p>
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="w-full h-full max-w-4xl">
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full max-w-lg">
+              <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-10 shadow-xl">
+                <div className="flex flex-col items-center text-center">
+                  <div className="relative">
+                    <div className="absolute -inset-6 rounded-2xl bg-red-500/20 blur-2xl" aria-hidden="true" />
+                    <Image
+                      src="/main00.png"
+                      alt="DevilDev"
+                      width={96}
+                      height={96}
+                      className="rounded-xl shadow-xl"
+                      priority
+                    />
+                  </div>
+                  <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                    Connect your GitHub to DevilDev
+                  </h1>
+                  <p className="mt-2 text-sm text-gray-400 max-w-md">
+                    Import your repositories to reverse engineer their architecture and ship changes faster with AI assistance.
+                  </p>
 
-              <div className="w-full h-px bg-white/10 my-6" />
-              <Button
-                onClick={() => window.location.href = '/api/github/auth'}
-                className="w-full cursor-pointer h-11 bg-white text-black hover:bg-zinc-100/69 rounded-xl inline-flex items-center justify-center"
-              >
-                <Github className="w-4 h-4 mr-2" />
-                {installationId ? 'Continue' : 'Connect GitHub Account'}
-              </Button>
-              <p className="mt-3 text-xs text-gray-500">We only request access needed to list your repos.</p>
+                  <div className="w-full h-px bg-white/10 my-6" />
+                  <Button
+                    onClick={() => window.location.href = '/api/github/auth'}
+                    className="w-full cursor-pointer h-11 bg-white text-black hover:bg-zinc-100/69 rounded-xl inline-flex items-center justify-center"
+                  >
+                    <Github className="w-4 h-4 mr-2" />
+                    {installationId ? 'Continue' : 'Connect GitHub Account'}
+                  </Button>
+                  <p className="mt-3 text-xs text-gray-500">We only request access needed to list your repos.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -355,26 +363,30 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   // Check if user has reached project limit
   if (hasReachedProjectLimit()) {
     return (
-      <div className="w-full flex items-center justify-center">
-        <div className="w-full max-w-lg">
-          <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-10 shadow-xl">
-            <div className="flex flex-col items-center text-center">
-              <div className="relative">
-                <div className="absolute -inset-6 rounded-2xl bg-yellow-500/20 blur-2xl" aria-hidden="true" />
-                <div className="w-24 h-24 bg-yellow-500/20 rounded-xl flex items-center justify-center">
-                  <span className="text-4xl">⚠️</span>
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="w-full h-full max-w-4xl">
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full max-w-lg">
+              <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-10 shadow-xl">
+                <div className="flex flex-col items-center text-center">
+                  <div className="relative">
+                    <div className="absolute -inset-6 rounded-2xl bg-yellow-500/20 blur-2xl" aria-hidden="true" />
+                    <div className="w-24 h-24 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                      <span className="text-4xl">⚠️</span>
+                    </div>
+                  </div>
+                  <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                    Project Limit Reached
+                  </h1>
+                  <p className="mt-2 text-sm text-gray-400 max-w-md">
+                    You have reached the maximum limit of 1 project. If you want to import more repositories, then please contact or mail to lakshay@devildev.com
+                  </p>
+                  <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-sm text-yellow-200">
+                      <strong>Current projects:</strong> {userProjects.length}/1
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                Project Limit Reached
-              </h1>
-              <p className="mt-2 text-sm text-gray-400 max-w-md">
-                You have reached the maximum limit of 1 project. If you want to import more repositories, then please contact or mail to lakshay@devildev.com
-              </p>
-              <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                <p className="text-sm text-yellow-200">
-                  <strong>Current projects:</strong> {userProjects.length}/1
-                </p>
               </div>
             </div>
           </div>
@@ -384,7 +396,9 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   }
 
   return (
-    <div className="w-full">
+    <div className="flex-1 flex items-start justify-center px-4 sm:px-6 lg:px-8">
+      <div className="w-full h-full max-w-4xl">
+      <div className="w-full mt-14">
       {/* Header Section */}
       <div className="text-left mb-8">
         <h1 className="text-5xl font-bold text-white mb-2">Let's reverse engineer your code</h1>
@@ -418,7 +432,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
             <Button
               onClick={handleImportByUrl}
               disabled={pasteLoading || hasReachedProjectLimit() || projectsLoading}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white whitespace-nowrap"
+              className="bg-gradient-to-r w-1/5 from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white whitespace-nowrap"
             >
               {pasteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Import via Link'}
             </Button>
@@ -428,11 +442,12 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
           )}
         </div>
         <div className="mb-4">
-          <div className="relative">
+          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative w-full">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
               type="text"
-              placeholder="Search your repositories..."
+              placeholder="Search any public repositories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 pr-4 py-3 w-full bg-black/50 border border-white/20 rounded-xl focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 text-white placeholder-gray-400 transition-all duration-200"
@@ -443,6 +458,16 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
               </div>
             )}
           </div>
+          <Button
+              onClick={() => window.location.href = '/api/github/auth'}
+              variant="outline"
+              className="border-white/20 text-black w-1/5 hover:bg-white/10 hover:border-white/40 hover:text-white"
+            >
+              {/* <Github className="w-4 h-4 mr-2" /> */}
+              Configure GitHub
+            </Button>
+          </div>
+          
           {searchTerm && (
             <div className="mt-3">
               <Button
@@ -616,6 +641,8 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
           </div>
         </div>
       )}
+      </div>
+    </div>
     </div>
   );
 }

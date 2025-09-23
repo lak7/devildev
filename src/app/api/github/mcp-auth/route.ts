@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { db } from '@/lib/db';
-import crypto from 'crypto';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,42 +10,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // If enabled, new users are routed to GitHub App installation instead of OAuth
-    const appNewUsers = process.env.GITHUB_APP_NEW_USERS === 'true';
-    const appSlug = process.env.GITHUB_APP_SLUG;
-
-    if (appNewUsers && appSlug) {
-      const user = await db.user.findUnique({
-        where: { id: userId },
-        select: { isGithubConnected: true, githubAccessToken: true },
-      });
-
-      // New user path: no existing OAuth connection → redirect to App installation
-      if (!user?.isGithubConnected || !user.githubAccessToken) {
-        const state = crypto.randomUUID();
-
-        console.log('Github auth state: ', state);
-        
-        // Store the state mapping in database for webhook lookup
-        await db.pendingGitHubInstallation.create({
-          data: {
-            state: state,
-            userId: userId,
-            expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-          }
-        });
-
-        // console.log('Github auth state stored in database',);
-        
-        const installUrl = new URL(`https://github.com/apps/${appSlug}/installations/new`);
-        installUrl.searchParams.set('state', state); // Just the state, not userId
-        installUrl.searchParams.set('setup_action', 'install');
-        return NextResponse.redirect(installUrl.toString()); 
-      }
-    }
-
     // GitHub OAuth parameters
-    const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientId = process.env.GITHUB_OAUTH_CLIENT_ID;
     const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/github/callback`;
     
     if (!clientId) {
