@@ -50,8 +50,8 @@ export default function RootLayout({
       signInFallbackRedirectUrl="/"
       signUpFallbackRedirectUrl="/"
     >
-      <html lang="en">
-        <head>
+      <html lang="en" suppressHydrationWarning>
+        <head suppressHydrationWarning>
           <meta name="theme-color" content="#000000" />
           <meta
             name="theme-color"
@@ -74,7 +74,6 @@ export default function RootLayout({
         </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-          style={{ backgroundColor: "#000000" }}
         >
           {children}
           <Analytics />

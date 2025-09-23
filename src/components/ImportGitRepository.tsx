@@ -398,7 +398,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   return (
     <div className="flex-1 flex items-start justify-center px-4 sm:px-6 lg:px-8">
       <div className="w-full h-full max-w-4xl">
-      <div className="w-full mt-14">
+      <div className="w-full mt-10">
       {/* Header Section */}
       <div className="text-left mb-8">
         <h1 className="text-5xl font-bold text-white mb-2">Let's reverse engineer your code</h1>
