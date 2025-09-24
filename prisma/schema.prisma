@@ -244,7 +244,7 @@ model GitHubAppInstallation {
 
 /// Webhook received events for idempotency/deduplication (Phase 1)
 model WebhookEvent {
-  id        Int      @id
+  id        Int      @id @default(autoincrement())
   eventId   String   @unique
   source    String
   createdAt DateTime @default(now())

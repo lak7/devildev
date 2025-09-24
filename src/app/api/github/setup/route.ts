@@ -42,10 +42,19 @@ export async function GET(request: NextRequest) {
       console.log('Installation not found in DB yet, it will be created by webhook');
     }
     
-    // Update user's GitHub App connection status
+    // Fetch installation to obtain the GitHub username (accountLogin)
+    const installationRecord = await db.gitHubAppInstallation.findUnique({
+      where: { installationId: BigInt(installationId) },
+      select: { accountLogin: true }
+    });
+
+    // Update user's GitHub App connection status and username
     await db.user.update({
       where: { id: userId },
-      data: { isGithubAppConnected: true }
+      data: { 
+        isGithubAppConnected: true,
+        githubUsername: installationRecord?.accountLogin ?? null
+      }
     });
     
     // Clean up the temporary record
@@ -54,7 +63,7 @@ export async function GET(request: NextRequest) {
     });
     
     // Redirect to success page
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/?github_app_connected=true`);
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/new?github_app_connected=true`);
     
   } catch (error) {
     console.error('Error in GitHub App setup callback:', error);

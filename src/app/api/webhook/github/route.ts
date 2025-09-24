@@ -42,15 +42,13 @@ export async function POST(req: NextRequest) {
     }
     console.log('Webhook 3');
 
-    // Dedupe by event id
-    try {
-      console.log('Webhook 3.1');
-      await db.webhookEvent.create({ data: { id: Number(BigInt.asUintN(32, BigInt(`0x${delivery.slice(0, 8)}`))), eventId: delivery, source: 'github' } });
-    } catch (e) {
-      console.log('Webhook 3.2');
-      // Unique constraint -> duplicate
-      return NextResponse.json({ ok: true, deduped: true });
-    }
+    // Dedupe strictly on unique delivery eventId
+    console.log('Webhook 3.1');
+    await db.webhookEvent.upsert({
+      where: { eventId: delivery },
+      create: { eventId: delivery, source: 'github' },
+      update: {}
+    });
 
     const payload = JSON.parse(rawBody);
     console.log('Webhook 4');
@@ -60,7 +58,7 @@ export async function POST(req: NextRequest) {
       const installation = payload.installation;
       console.log('Webhook 5.1: ', installation);
       
-      if (installation) {
+      if (installation) { 
         if (action === 'created') {
           console.log('Webhook 5.2: Creating installation record');
           
@@ -109,7 +107,7 @@ export async function POST(req: NextRequest) {
             // Update user to set isGithubAppConnected to false
             await db.user.update({
               where: { id: installationRecord.userId },
-              data: { isGithubAppConnected: false }
+              data: { isGithubAppConnected: false, githubUsername: null }
             });
             
             console.log('Webhook 5.5: Updated user and deleted pending installations');

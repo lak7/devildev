@@ -9,6 +9,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)', // Catch-all for sign-up routes
   '/about',
   '/api/webhook',
+  '/api/github/setup',
   '/api/webhook/:path*', // All webhooks should bypass Clerk
   '/api/github/callback',
   '/api/github/callback/:path*', // All webhooks should bypass Clerk
