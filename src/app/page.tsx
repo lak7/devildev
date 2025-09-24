@@ -388,9 +388,14 @@ export default function Page() {
                 <PopoverContent align="end" className="w-48">
                   <div className="text-sm px-2 py-1">{user?.fullName || user?.username || 'User'}</div>
                   <div className="border-t my-2 border-white/10" />
-                  <SignOutButton>
-                    <button className="w-full text-left px-2 py-1.5 hover:bg-white/5 rounded">Sign out</button>
-                  </SignOutButton>
+                  <div className="pt-1">
+                    <Link href="/settings" className="block w-full mb-2">
+                      <span className="w-full px-2 py-1.5 text-sm bg-zinc-900 border border-zinc-200 text-white rounded-md hover:bg-zinc-700 transition-colors inline-block text-center">Settings</span>
+                    </Link>
+                    <SignOutButton>
+                      <button className="w-full text-left px-2 py-1.5 hover:bg-white/5 rounded">Sign out</button>
+                    </SignOutButton>
+                  </div>
                 </PopoverContent>
               </Popover>
             ) : (

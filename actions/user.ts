@@ -1,6 +1,7 @@
 "use server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { auth } from "@clerk/nextjs/server";
 
 export async function joinWaitlist(email: string) {
   try {
@@ -40,11 +41,6 @@ export async function joinWaitlist(email: string) {
     return { error: "Failed to join waitlist", details: String(error) };
   }
 }
- 
-
-
-
-
 
 //IDK
 export async function getUserById(userId: string) {
@@ -67,6 +63,7 @@ export async function getUserById(userId: string) {
 export async function updateUserProfile(
   userId: string,
   data: {
+    name?: string;
     username?: string;
     level?: string;
     preferredIde?: string;
@@ -80,6 +77,12 @@ export async function updateUserProfile(
     return user;
   } catch (error) {
     console.error('Error updating user:', error);
+    // Handle unique username violation gracefully
+    if (typeof error === 'object' && error && (error as any).code === 'P2002') {
+      return {
+        error: 'Username already taken',
+      } as const;
+    }
     throw error;
   }
 }
@@ -155,5 +158,89 @@ export async function contact(data: {
   } catch (error) {
     console.error("Error saving contact message:", error);
     return { error: "Failed to send message", details: String(error) };
+  }
+}
+
+// Server action to save user profile from a <form action={...}> in a Client Component
+export async function saveUserProfile(
+  userId: string,
+  formData: FormData
+) {
+  try {
+    const schema = z.object({
+      name: z
+        .string()
+        .trim()
+        .max(100, 'Name is too long')
+        .optional()
+        .transform((v) => (v === '' ? undefined : v)),
+      username: z
+        .string()
+        .trim()
+        .min(3, 'Username must be at least 3 characters')
+        .max(30, 'Username is too long')
+        .regex(/^[a-zA-Z0-9_\.\-]+$/, 'Only letters, numbers, underscore, dot, and hyphen allowed')
+        .optional()
+        .transform((v) => (v === '' ? undefined : v)),
+      level: z
+        .enum(['beginner', 'intermediate', 'advanced'])
+        .optional(),
+      preferredIde: z
+        .enum(['cursor', 'vscode', 'windsurf', 'other'])
+        .optional(),
+    });
+
+    const parsed = schema.safeParse({
+      name: formData.get('name') as string | null,
+      username: formData.get('username') as string | null,
+      level: (formData.get('level') as string | null)?.toLowerCase() ?? undefined,
+      preferredIde: (formData.get('preferredIde') as string | null)?.toLowerCase() ?? undefined,
+    });
+
+    if (!parsed.success) {
+      return {
+        error: 'Validation failed',
+        issues: parsed.error.flatten().fieldErrors,
+      } as const;
+    }
+
+    const updateResult = await updateUserProfile(userId, parsed.data);
+
+    if ((updateResult as any)?.error) {
+      return updateResult;
+    }
+
+    return { success: 'Profile updated' } as const;
+  } catch (error) {
+    console.error('Error saving user profile:', error);
+    return { error: 'Failed to update profile' } as const;
+  }
+}
+
+// Fetch the current user's profile (server-authenticated)
+export async function getCurrentUserProfile() {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return { error: 'Not authenticated' } as const;
+    }
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        username: true,
+        level: true,
+        preferredIde: true,
+      },
+    });
+    if (!user) {
+      return { error: 'User not found' } as const;
+    }
+    return { success: true, data: user } as const;
+  } catch (error) {
+    console.error('Error fetching current user profile:', error);
+    return { error: 'Failed to fetch profile' } as const;
   }
 }
