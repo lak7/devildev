@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 
 export interface GitHubStatus {
+  githubAppConnected: boolean;
   isConnected: boolean;
   githubUsername?: string;
   githubAvatarUrl?: string;
@@ -21,6 +22,7 @@ export async function getGitHubStatus(): Promise<{ success: boolean; data?: GitH
     const user = await db.user.findUnique({
       where: { id: userId },
       select: {
+        isGithubAppConnected: true,
         isGithubConnected: true,
         githubUsername: true,
         githubAvatarUrl: true,
@@ -36,6 +38,7 @@ export async function getGitHubStatus(): Promise<{ success: boolean; data?: GitH
       success: true,
       data: {
         isConnected: user.isGithubConnected,
+        githubAppConnected: user.isGithubAppConnected,
         githubUsername: user.githubUsername || undefined,
         githubAvatarUrl: user.githubAvatarUrl || undefined,
         connectedAt: user.githubConnectedAt || undefined,

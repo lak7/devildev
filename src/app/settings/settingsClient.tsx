@@ -17,10 +17,11 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { Edit, Trash2, Moon, Sun, SlidersHorizontal, User as UserIcon, Loader2 } from "lucide-react";
+import { Edit, Trash2, Moon, Sun, SlidersHorizontal, User as UserIcon, Loader2, Github } from "lucide-react";
 // import { saveUserProfile, getCurrentUserProfile } from "@/actions/user";
 import { saveUserProfile, getCurrentUserProfile } from "../../../actions/user";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 
 const menuItems = [
   { id: "profile", title: "Profile", icon: UserIcon },
@@ -49,6 +50,8 @@ export default function SettingsClient({ userId }: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [githubConnected, setGithubConnected] = useState<boolean | null>(null);
+  const [githubAppConnected, setGithubAppConnected] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +94,68 @@ export default function SettingsClient({ userId }: Props) {
       cancelled = true;
     };
   }, [user]);
+
+  // Frontend-only demo state for GitHub OAuth connection
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("github_oauth_connected");
+      if (saved === null) {
+        setGithubConnected(false);
+      } else {
+        setGithubConnected(saved === "true");
+      }
+    } catch {
+      setGithubConnected(false);
+    }
+  }, []);
+
+  // Frontend-only demo state for GitHub App installation
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("github_app_connected");
+      if (saved === null) {
+        setGithubAppConnected(false);
+      } else {
+        setGithubAppConnected(saved === "true");
+      }
+    } catch {
+      setGithubAppConnected(false);
+    }
+  }, []);
+
+  const handleGithubConnect = () => {
+    // Frontend-only: simulate connect
+    try {
+      localStorage.setItem("github_oauth_connected", "true");
+    } catch {}
+    setGithubConnected(true);
+    setMessage("GitHub connected (frontend-only)");
+  };
+
+  const handleGithubDisconnect = () => {
+    // Frontend-only: simulate disconnect
+    try {
+      localStorage.setItem("github_oauth_connected", "false");
+    } catch {}
+    setGithubConnected(false);
+    setMessage("GitHub disconnected (frontend-only)");
+  };
+
+  const handleGithubAppConnect = () => {
+    try {
+      localStorage.setItem("github_app_connected", "true");
+    } catch {}
+    setGithubAppConnected(true);
+    setMessage("GitHub App connected (frontend-only)");
+  };
+
+  const handleGithubAppDisconnect = () => {
+    try {
+      localStorage.setItem("github_app_connected", "false");
+    } catch {}
+    setGithubAppConnected(false);
+    setMessage("GitHub App disconnected (frontend-only)");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -329,14 +394,93 @@ export default function SettingsClient({ userId }: Props) {
             <div className="max-w-6xl mx-auto p-8">
               <div className="mb-8">
                 <h1 className="text-3xl font-bold text-white mb-2">Integrations</h1>
-                <p className="text-zinc-400">Manage your account settings and preferences</p>
+                <p className="text-zinc-400">Connect third-party services to enhance your workflow</p>
               </div>
-              <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-8">
-                <div className="mb-12">
-                  <div className="mb-6">
-                    <p className="text-zinc-400">Set your account details</p>
+
+              {/* GitHub App */}
+              <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8 mb-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700">
+                      <Github className="h-6 w-6 text-zinc-200" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-semibold text-white">GitHub App</h2>
+                        {githubAppConnected ? (
+                          <Badge className="bg-emerald-600 hover:bg-emerald-600/90">Installed</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Not installed</Badge>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm text-zinc-400 max-w-prose">
+                        Install the GitHub App to grant repository access for automated workflows and deeper integration.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {githubAppConnected ? (
+                      <Button onClick={handleGithubAppDisconnect} className="bg-red-600 hover:bg-red-700">Uninstall</Button>
+                    ) : (
+                      <Button onClick={handleGithubAppConnect} className="bg-white text-black hover:bg-zinc-200">Install App</Button>
+                    )}
                   </div>
                 </div>
+
+                {message && (
+                  <div className="mt-6 text-sm text-zinc-300">
+                    {message}
+                  </div>
+                )}
+                {error && (
+                  <div className="mt-2 text-sm text-red-400">
+                    {error}
+                  </div>
+                )}
+              </div>
+
+              {/* GitHub OAuth */}
+              <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700">
+                      <Github className="h-6 w-6 text-zinc-200" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-semibold text-white">GitHub OAuth</h2>
+                        {githubConnected ? (
+                          <Badge className="bg-emerald-600 hover:bg-emerald-600/90">Connected</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Not connected</Badge>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm text-zinc-400 max-w-prose">
+                        Authenticate with GitHub to import repositories, manage issues, and streamline your development.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {githubConnected ? (
+                      <Button onClick={handleGithubDisconnect} className="bg-red-600 hover:bg-red-700">Disconnect</Button>
+                    ) : (
+                      <Button onClick={handleGithubConnect} className="bg-white text-black hover:bg-zinc-200">Connect GitHub</Button>
+                    )}
+                  </div>
+                </div>
+
+                {message && (
+                  <div className="mt-6 text-sm text-zinc-300">
+                    {message}
+                  </div>
+                )}
+                {error && (
+                  <div className="mt-2 text-sm text-red-400">
+                    {error}
+                  </div>
+                )}
               </div>
             </div>
           </main>

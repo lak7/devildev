@@ -11,7 +11,7 @@ import Image from "next/image"
 
 export default function ConnectMCPPage() {
   const { isSignedIn } = useUser()
-  const [githubStatus, setGithubStatus] = useState<GitHubStatus>({ isConnected: false })
+  const [githubStatus, setGithubStatus] = useState<GitHubStatus>({ isConnected: false, githubAppConnected: false })
   const [githubLoading, setGithubLoading] = useState(false)
   const [statusLoading, setStatusLoading] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -27,12 +27,12 @@ export default function ConnectMCPPage() {
       } else {
         console.error('Failed to fetch GitHub status:', result.error);
         // Set default status if fetch fails
-        setGithubStatus({ isConnected: false });
+        setGithubStatus({ isConnected: false, githubAppConnected: false });
       }
     } catch (error) {
       console.error('Error fetching GitHub status:', error);
       // Set default status if there's an exception
-      setGithubStatus({ isConnected: false });
+      setGithubStatus({ isConnected: false, githubAppConnected:  false });
     } finally {
       setStatusLoading(false);
     }
@@ -81,7 +81,7 @@ export default function ConnectMCPPage() {
   }
 
   // Show GitHub connection required page if not connected
-  if (!githubStatus.isConnected) {
+  if (!githubStatus.githubAppConnected) {
     return (
       <div className="h-dvh overflow-hidden bg-black text-white p-4 sm:p-6 lg:p-8 xl:p-12">
         <div className="w-full max-w-4xl mx-auto flex items-center justify-center h-full">
