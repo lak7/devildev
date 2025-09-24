@@ -61,7 +61,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [pasteError, setPasteError] = useState<string | null>(null);
 
   useEffect(() => {
-    checkGithubStatus();
+    // checkGithubStatus();
     checkAppInstallation();
     fetchUserProjects();
   }, []);
@@ -103,6 +103,8 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
       }
     } catch (e) {
       // ignore
+    }finally{
+      setIsGithubStatusLoading(false);
     }
   };
 
@@ -133,6 +135,10 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   };
 
   const fetchRepos = async (search?: string) => {
+    // Only fetch when the user is connected to GitHub or we have an installationId
+    if (!githubConnected && !installationId) {
+      return;
+    }
     try {
       setSearchLoading(!!search);
       if (!search) setLoading(true); 
@@ -249,7 +255,6 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   const handleImport = async (repo: Repository) => {
     setImporting(repo.id);
-    alert("Importing")
     try {
       // Call the parent's import handler 
       await onImport(repo, installationId);
@@ -316,7 +321,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     );
   }
 
-  if (!githubConnected && !installationId) {
+  if (!installationId) {
     return (
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full h-full max-w-4xl">
@@ -447,7 +452,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
               type="text"
-              placeholder="Search any public repositories..."
+              placeholder="Search any public or private repositories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 pr-4 py-3 w-full bg-black/50 border border-white/20 rounded-xl focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 text-white placeholder-gray-400 transition-all duration-200"

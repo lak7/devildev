@@ -50,9 +50,7 @@ export default function NewPage() {
 
   const handleImport = async (repo: Repository, installationId?: string | null) => {
     setImporting(true); 
-    alert("Installation NEW: " + installationId)
     try { 
-      alert("DOING")
       const res = await checkPackageAndFramework(repo.id.toString(), repo.fullName, installationId || undefined);
       const {result: response, project: project} = res;
       // const {repoInfo: response, defaultBranch: project} = await checkInfo(repo.id.toString(), repo.fullName);
@@ -65,7 +63,6 @@ export default function NewPage() {
           .replace(/\s*```\s*$/, '')
           .trim();
       } 
-      alert("DONE")
 
       const parsedResponse = typeof cleanedResult === 'string' 
         ? JSON.parse(cleanedResult)  
