@@ -20,6 +20,7 @@ import {
 import { Edit, Trash2, Moon, Sun, SlidersHorizontal, User as UserIcon, Loader2, Github } from "lucide-react";
 // import { saveUserProfile, getCurrentUserProfile } from "@/actions/user";
 import { saveUserProfile, getCurrentUserProfile } from "../../../actions/user";
+import { disconnectGitHubOAuth } from "../../../actions/github";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
@@ -50,8 +51,9 @@ export default function SettingsClient({ userId }: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
-  const [githubConnected, setGithubConnected] = useState<boolean | null>(null);
+  const [githubOAuthConnected, setGithubOAuthConnected] = useState<boolean | null>(null);
   const [githubAppConnected, setGithubAppConnected] = useState<boolean | null>(null);
+  const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,16 +99,7 @@ export default function SettingsClient({ userId }: Props) {
 
   // Frontend-only demo state for GitHub OAuth connection
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("github_oauth_connected");
-      if (saved === null) {
-        setGithubConnected(false);
-      } else {
-        setGithubConnected(saved === "true");
-      }
-    } catch {
-      setGithubConnected(false);
-    }
+    checkGithubOAuthStatus();
   }, []);
 
   // Frontend-only demo state for GitHub App installation
@@ -123,22 +116,18 @@ export default function SettingsClient({ userId }: Props) {
     }
   }, []);
 
-  const handleGithubConnect = () => {
-    // Frontend-only: simulate connect
-    try {
-      localStorage.setItem("github_oauth_connected", "true");
-    } catch {}
-    setGithubConnected(true);
-    setMessage("GitHub connected (frontend-only)");
-  };
-
-  const handleGithubDisconnect = () => {
-    // Frontend-only: simulate disconnect
-    try {
-      localStorage.setItem("github_oauth_connected", "false");
-    } catch {}
-    setGithubConnected(false);
-    setMessage("GitHub disconnected (frontend-only)");
+  const handleGithubOAuthDisconnect = () => {
+    setMessage(null);
+    setError(null);
+    startTransition(async () => {
+      const res = await disconnectGitHubOAuth();
+      if ((res as any)?.success) {
+        setGithubOAuthConnected(false);
+        setMessage("GitHub disconnected");
+      } else {
+        setError((res as any)?.error || "Failed to disconnect GitHub");
+      }
+    });
   };
 
   const handleGithubAppConnect = () => {
@@ -178,6 +167,18 @@ export default function SettingsClient({ userId }: Props) {
         setMessage("Saved");
       }
     });
+  };
+
+  const checkGithubOAuthStatus = async () => { 
+    setIsGithubStatusLoading(true);
+    try {
+      const response = await fetch('/api/github/status');
+      const data = await response.json();
+      setGithubOAuthConnected(data.isConnected); 
+      setIsGithubStatusLoading(false);
+    } catch (error) {
+      console.error('Error checking GitHub status:', error);
+    }
   };
 
   // Inline sections to avoid redefining component types each render (which can remount inputs)
@@ -441,47 +442,52 @@ export default function SettingsClient({ userId }: Props) {
               </div>
 
               {/* GitHub OAuth */}
-              <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700">
-                      <Github className="h-6 w-6 text-zinc-200" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-semibold text-white">GitHub OAuth</h2>
-                        {githubConnected ? (
-                          <Badge className="bg-emerald-600 hover:bg-emerald-600/90">Connected</Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Not connected</Badge>
-                        )}
-                      </div>
-                      <p className="mt-1 text-sm text-zinc-400 max-w-prose">
-                        Authenticate with GitHub to import repositories, manage issues, and streamline your development.
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-3">
-                    {githubConnected ? (
-                      <Button onClick={handleGithubDisconnect} className="bg-red-600 hover:bg-red-700">Disconnect</Button>
-                    ) : (
-                      <Button onClick={handleGithubConnect} className="bg-white text-black hover:bg-zinc-200">Connect GitHub</Button>
-                    )}
-                  </div>
-                </div>
+              {githubOAuthConnected && (
+                 <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8">
+                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                   <div className="flex items-start gap-4">
+                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700">
+                       <Github className="h-6 w-6 text-zinc-200" />
+                     </div>
+                     <div>
+                       <div className="flex items-center gap-3">
+                         <h2 className="text-xl font-semibold text-white">GitHub OAuth</h2>
+                         {githubOAuthConnected ? (
+                           <Badge className="bg-emerald-600 hover:bg-emerald-600/90">Connected</Badge>
+                         ) : (
+                           <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Not connected</Badge>
+                         )}
+                       </div>
+                       <p className="mt-1 text-sm text-zinc-400 max-w-prose">
+                         Authenticate with GitHub to import repositories, manage issues, and streamline your development.
+                       </p>
+                     </div>
+                   </div>
+ 
+                   <div className="flex items-center gap-3">
+                     {githubOAuthConnected ? (
+                       <Button onClick={handleGithubOAuthDisconnect} className="bg-red-600 hover:bg-red-700">Disconnect</Button>
+                     ) : (
+                       <Button disabled className="bg-white text-black hover:bg-zinc-200 opacity-50 cursor-not-allowed">Connect GitHub</Button>
+                     )}
+                   </div>
+                 </div>
+ 
+                 {message && (
+                   <div className="mt-6 text-sm text-zinc-300">
+                     {message}
+                   </div>
+                 )}
+                 {error && (
+                   <div className="mt-2 text-sm text-red-400">
+                     {error}
+                   </div>
+                 )}
+               </div>
+              )}
 
-                {message && (
-                  <div className="mt-6 text-sm text-zinc-300">
-                    {message}
-                  </div>
-                )}
-                {error && (
-                  <div className="mt-2 text-sm text-red-400">
-                    {error}
-                  </div>
-                )}
-              </div>
+             
             </div>
           </main>
         )}

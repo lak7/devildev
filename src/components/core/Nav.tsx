@@ -90,7 +90,7 @@ export default function Nav({ setIsFeedbackOpen, isMCP = false, isProject = fals
           <div className="flex items-center">
           <Popover>
            <PopoverTrigger asChild>
-             <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500/50">
+             <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 cursor-pointer focus:ring-gray-500/50">
                <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
                  <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
                  <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">

@@ -12,7 +12,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../actions/architecture'; 
 import { getUserChats } from '../../actions/chat';
-import { getGitHubStatus, disconnectGitHub, initiateGitHubConnection } from '../../actions/github';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
 import { SignOutButton, UserProfile, useUser } from '@clerk/nextjs';
@@ -111,25 +110,6 @@ export default function Page() {
     }
   };
 
-  // Function to fetch GitHub status
-  const fetchGithubStatus = async () => {
-    if (!isSignedIn) return;
-    
-    try {
-      const result = await getGitHubStatus();
-      if (result.success && result.data) {
-        setGithubStatus(result.data);
-      } else {
-        console.error('Failed to fetch GitHub status:', result.error);
-        // Set default status if fetch fails
-        setGithubStatus({ isConnected: false });
-      }
-    } catch (error) {
-      console.error('Error fetching GitHub status:', error);
-      // Set default status if there's an exception
-      setGithubStatus({ isConnected: false });
-    }
-  };
 
   useEffect(() => {
     setMounted(true);
@@ -192,47 +172,6 @@ export default function Page() {
     };
   }, []);
 
-  // Function to handle GitHub connection
-  const handleGithubConnect = async () => {
-    if (githubStatus.isConnected) {
-      // If already connected, show option to disconnect
-      const confirmed = window.confirm('Are you sure you want to disconnect your GitHub account?');
-      if (!confirmed) return;
-      
-      setGithubLoading(true);
-      try {
-        const result = await disconnectGitHub();
-        if (result.success) {
-          setGithubStatus({ isConnected: false });
-        } else {
-          console.error('Failed to disconnect GitHub:', result.error);
-          // alert('Failed to disconnect GitHub. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error disconnecting GitHub:', error);
-        // alert('Failed to disconnect GitHub. Please try again.');
-      } finally {
-        setGithubLoading(false);
-      }
-    } else {
-      // Initiate GitHub connection
-      setGithubLoading(true);
-      try {
-        const result = await initiateGitHubConnection();
-        if (result.success && result.redirectUrl) {
-          window.location.href = result.redirectUrl;
-        } else {
-          console.error('Failed to initiate GitHub connection:', result.error);
-          // alert('Failed to connect GitHub. Please try again.');
-          setGithubLoading(false);
-        }
-      } catch (error) {
-        console.error('Error connecting GitHub:', error);
-        // alert('Failed to connect GitHub. Please try again.');
-        setGithubLoading(false);
-      }
-    }
-  };
 
   // Fetch chats and GitHub status when user is signed in
   useEffect(() => {
