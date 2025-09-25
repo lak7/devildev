@@ -23,6 +23,7 @@ import { saveUserProfile, getCurrentUserProfile } from "../../../actions/user";
 import { disconnectGitHubOAuth } from "../../../actions/github";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const menuItems = [
   { id: "profile", title: "Profile", icon: UserIcon },
@@ -54,6 +55,8 @@ export default function SettingsClient({ userId }: Props) {
   const [githubOAuthConnected, setGithubOAuthConnected] = useState<boolean | null>(null);
   const [githubAppConnected, setGithubAppConnected] = useState<boolean | null>(null);
   const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,14 +122,17 @@ export default function SettingsClient({ userId }: Props) {
   const handleGithubOAuthDisconnect = () => {
     setMessage(null);
     setError(null);
+    setIsDisconnecting(true);
     startTransition(async () => {
       const res = await disconnectGitHubOAuth();
       if ((res as any)?.success) {
         setGithubOAuthConnected(false);
         setMessage("GitHub disconnected");
+        setIsDisconnectDialogOpen(true);
       } else {
         setError((res as any)?.error || "Failed to disconnect GitHub");
       }
+      setIsDisconnecting(false);
     });
   };
 
@@ -443,8 +449,7 @@ export default function SettingsClient({ userId }: Props) {
 
               {/* GitHub OAuth */}
 
-              {githubOAuthConnected && (
-                 <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8">
+              <div className={`relative bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8 transition-all ${!githubOAuthConnected ? "opacity-60 grayscale hover:cursor-not-allowed" : ""}`}>
                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                    <div className="flex items-start gap-4">
                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700">
@@ -466,32 +471,50 @@ export default function SettingsClient({ userId }: Props) {
                    </div>
  
                    <div className="flex items-center gap-3">
-                     {githubOAuthConnected ? (
-                       <Button onClick={handleGithubOAuthDisconnect} className="bg-red-600 hover:bg-red-700">Disconnect</Button>
-                     ) : (
-                       <Button disabled className="bg-white text-black hover:bg-zinc-200 opacity-50 cursor-not-allowed">Connect GitHub</Button>
+                    {githubOAuthConnected ? (
+                      <Button onClick={handleGithubOAuthDisconnect} disabled={isDisconnecting} className="bg-red-600 hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed">
+                        {isDisconnecting ? (
+                          <span className="inline-flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Disconnecting...
+                          </span>
+                        ) : (
+                          "Disconnect"
+                        )}
+                      </Button>
+                    ) : (
+                       <Button className="bg-white text-black hover:bg-zinc-200 opacity-50 cursor-not-allowed">DEPRECATED</Button>
                      )}
                    </div>
                  </div>
- 
-                 {message && (
-                   <div className="mt-6 text-sm text-zinc-300">
-                     {message}
-                   </div>
-                 )}
                  {error && (
                    <div className="mt-2 text-sm text-red-400">
                      {error}
                    </div>
                  )}
                </div>
-              )}
 
              
             </div>
           </main>
         )}
       </div>
+      {/* Success dialog for GitHub OAuth disconnect */}
+      <Dialog open={isDisconnectDialogOpen} onOpenChange={setIsDisconnectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Disconnected successfully</DialogTitle>
+            <DialogDescription>
+              Your GitHub account has been disconnected.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setIsDisconnectDialogOpen(false)} className="bg-white text-black hover:bg-zinc-200">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 }
