@@ -57,6 +57,7 @@ export default function SettingsClient({ userId }: Props) {
   const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = useState(false);
+  const [showDisconnectHighlight, setShowDisconnectHighlight] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,7 +192,10 @@ export default function SettingsClient({ userId }: Props) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-black text-white">
+      <div className="flex min-h-screen w-full bg-black text-white relative">
+        {showDisconnectHighlight && activeTab === "integrations" && githubOAuthConnected && (
+          <div className="pointer-events-none fixed inset-0 bg-black/60 z-10" />
+        )}
         <Sidebar className="w-64 border-r border-zinc-800 bg-black">
           <SidebarContent className="p-6 bg-black text-zinc-300">
             <div className="mb-8 flex items-center gap-3">
@@ -459,9 +463,9 @@ export default function SettingsClient({ userId }: Props) {
                        <div className="flex items-center gap-3">
                          <h2 className="text-xl font-semibold text-white">GitHub OAuth</h2>
                          {githubOAuthConnected ? (
-                           <Badge className="bg-emerald-600 hover:bg-emerald-600/90">Connected</Badge>
+                           <Badge className="bg-red-600">Deprecated</Badge>
                          ) : (
-                           <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Not connected</Badge>
+                           <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Deprecated</Badge>
                          )}
                        </div>
                        <p className="mt-1 text-sm text-zinc-400 max-w-prose">
@@ -470,9 +474,25 @@ export default function SettingsClient({ userId }: Props) {
                      </div>
                    </div>
  
-                   <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-3 relative">
                     {githubOAuthConnected ? (
-                      <Button onClick={handleGithubOAuthDisconnect} disabled={isDisconnecting} className="bg-red-600 hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed">
+                      <>
+                        {showDisconnectHighlight && (
+                          <svg
+                            className="absolute -left-5 -top-4 -rotate-45 md:-left-7 md:-top-7 h-8 w-8 md:h-10 md:w-10 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] animate-bounce z-20"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                            focusable="false"
+                          >
+                            <path d="M12 2c.552 0 1 .448 1 1v8.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-4 4a1 1 0 0 1-1.414 0l-4-4A1 1 0 1 1 8.707 9.293L11 11.586V3c0-.552.448-1 1-1z" />
+                          </svg>
+                        )}
+                        <Button
+                          onClick={() => { setShowDisconnectHighlight(false); handleGithubOAuthDisconnect(); }}
+                          disabled={isDisconnecting}
+                          className={`bg-red-600 hover:bg-red-700 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${showDisconnectHighlight ? "relative z-20" : ""}`}
+                        >
                         {isDisconnecting ? (
                           <span className="inline-flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -481,9 +501,10 @@ export default function SettingsClient({ userId }: Props) {
                         ) : (
                           "Disconnect"
                         )}
-                      </Button>
+                        </Button>
+                      </>
                     ) : (
-                       <Button className="bg-white text-black hover:bg-zinc-200 opacity-50 cursor-not-allowed">DEPRECATED</Button>
+                       <Button className="bg-white text-black hover:bg-zinc-200 opacity-50 cursor-not-allowed">Connect GitHub</Button>
                      )}
                    </div>
                  </div>
@@ -505,7 +526,7 @@ export default function SettingsClient({ userId }: Props) {
           <DialogHeader>
             <DialogTitle>Disconnected successfully</DialogTitle>
             <DialogDescription>
-              Your GitHub account has been disconnected.
+              Your GitHub OAuth account has been disconnected.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
