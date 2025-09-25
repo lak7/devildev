@@ -21,7 +21,7 @@ import { Edit, Trash2, Moon, Sun, SlidersHorizontal, User as UserIcon, Loader2, 
 // import { saveUserProfile, getCurrentUserProfile } from "@/actions/user";
 import { saveUserProfile, getCurrentUserProfile } from "../../../actions/user";
 import { disconnectGitHubOAuth } from "../../../actions/github";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -36,6 +36,7 @@ interface Props {
 
 export default function SettingsClient({ userId }: Props) {
     const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("profile");
   const [isDark, setIsDark] = useState(true);
   const { user } = useUser();
@@ -54,7 +55,8 @@ export default function SettingsClient({ userId }: Props) {
   const [profileLoading, setProfileLoading] = useState(true);
   const [githubOAuthConnected, setGithubOAuthConnected] = useState<boolean | null>(null);
   const [githubAppConnected, setGithubAppConnected] = useState<boolean | null>(null);
-  const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(false);
+  const [isOAuthStatusLoading, setIsOAuthStatusLoading] = useState(true);
+  const [isAppInstallationLoading, setIsAppInstallationLoading] = useState(true);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = useState(false);
   const [showDisconnectHighlight, setShowDisconnectHighlight] = useState(true);
@@ -108,6 +110,14 @@ export default function SettingsClient({ userId }: Props) {
     checkAppInstallation();
   }, []);
 
+  // Initialize active tab from query param (?tab=integrations|profile)
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "integrations" || tab === "profile") {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
 
 
   const handleGithubOAuthDisconnect = () => {
@@ -152,6 +162,7 @@ export default function SettingsClient({ userId }: Props) {
 
   const checkAppInstallation = async () => {
     try {
+      setIsAppInstallationLoading(true);
       const res = await fetch('/api/github/app/installations', { cache: 'no-store' });
       const data = await res.json();
       const list = (data?.installations || []) as Array<{ installationId: bigint }>;
@@ -162,19 +173,20 @@ export default function SettingsClient({ userId }: Props) {
     } catch (e) {
       // ignore
     }finally{
-      setIsGithubStatusLoading(false);
+      setIsAppInstallationLoading(false);
     }
   };
 
   const checkGithubOAuthStatus = async () => { 
-    setIsGithubStatusLoading(true);
+    setIsOAuthStatusLoading(true);
     try {
       const response = await fetch('/api/github/status');
       const data = await response.json();
       setGithubOAuthConnected(data.isConnected); 
-      setIsGithubStatusLoading(false);
     } catch (error) {
       console.error('Error checking GitHub status:', error);
+    } finally {
+      setIsOAuthStatusLoading(false);
     }
   };
 
@@ -397,117 +409,125 @@ export default function SettingsClient({ userId }: Props) {
                 <h1 className="text-3xl font-bold text-white mb-2">Integrations</h1>
                 <p className="text-zinc-400">Connect third-party services to enhance your workflow</p>
               </div>
-
-              {/* GitHub App */}
-              <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8 mb-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700">
-                      <Github className="h-6 w-6 text-zinc-200" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-semibold text-white">GitHub App</h2>
-                        {githubAppConnected ? (
-                          <Badge className="bg-emerald-600 hover:bg-emerald-600/90">Installed</Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Not installed</Badge>
-                        )}
-                      </div>
-                      <p className="mt-1 text-sm text-zinc-400 max-w-prose">
-                        Install the GitHub App to grant repository access for automated workflows and deeper integration.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                  <Button
-              onClick={() => window.location.href = '/api/github/auth'}
-              variant="outline"
-              className={`border-white/20 text-black cursor-pointer  hover:bg-white/10 hover:border-white/40 hover:text-white ${githubAppConnected ? "" : "bg-green-700 text-white hover:bg-green-700/90 hover:border-green-700/90 hover:text-white"}`}
-            >
-              {githubAppConnected ? 'Configure GitHub App' : 'Install GitHub App'}
-            </Button>
+              {(isOAuthStatusLoading || isAppInstallationLoading) ? (
+                <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-12 flex items-center justify-center">
+                  <div className="flex items-center gap-3 text-zinc-300">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading integrations...</span>
                   </div>
                 </div>
+              ) : (
+                <>
+                  {/* GitHub App */}
+                  <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8 mb-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700">
+                          <Github className="h-6 w-6 text-zinc-200" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-semibold text-white">GitHub App</h2>
+                            {githubAppConnected ? (
+                              <Badge className="bg-emerald-600 hover:bg-emerald-600/90">Installed</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Not installed</Badge>
+                            )}
+                          </div>
+                          <p className="mt-1 text-sm text-zinc-400 max-w-prose">
+                            Install the GitHub App to grant repository access for automated workflows and deeper integration.
+                          </p>
+                        </div>
+                      </div>
 
-                {message && (
-                  <div className="mt-6 text-sm text-zinc-300">
-                    {message}
+                      <div className="flex items-center gap-3">
+                      <Button
+                  onClick={() => window.location.href = '/api/github/auth'}
+                  variant="outline"
+                  className={`border-white/20 text-black cursor-pointer  hover:bg-white/10 hover:border-white/40 hover:text-white ${githubAppConnected ? "" : "bg-green-700 text-white hover:bg-green-700/90 hover:border-green-700/90 hover:text-white"}`}
+                >
+                  {githubAppConnected ? 'Configure GitHub App' : 'Install GitHub App'}
+                </Button>
+                      </div>
+                    </div>
+
+                    {message && (
+                      <div className="mt-6 text-sm text-zinc-300">
+                        {message}
+                      </div>
+                    )}
+                    {error && (
+                      <div className="mt-2 text-sm text-red-400">
+                        {error}
+                      </div>
+                    )}
                   </div>
-                )}
-                {error && (
-                  <div className="mt-2 text-sm text-red-400">
-                    {error}
-                  </div>
-                )}
-              </div>
 
-              {/* GitHub OAuth */}
+                  {/* GitHub OAuth */}
 
-              <div className={`relative bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8 transition-all ${!githubOAuthConnected ? "opacity-60 grayscale hover:cursor-not-allowed" : ""}`}>
-                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                   <div className="flex items-start gap-4">
-                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700">
-                       <Github className="h-6 w-6 text-zinc-200" />
-                     </div>
-                     <div>
-                       <div className="flex items-center gap-3">
-                         <h2 className="text-xl font-semibold text-white">GitHub OAuth</h2>
-                         {githubOAuthConnected ? (
-                           <Badge className="bg-red-600">Deprecated</Badge>
-                         ) : (
-                           <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Deprecated</Badge>
+                  <div className={`relative bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8 transition-all ${!githubOAuthConnected ? "opacity-60 grayscale hover:cursor-not-allowed" : ""}`}>
+                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                       <div className="flex items-start gap-4">
+                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700">
+                           <Github className="h-6 w-6 text-zinc-200" />
+                         </div>
+                         <div>
+                           <div className="flex items-center gap-3">
+                             <h2 className="text-xl font-semibold text-white">GitHub OAuth</h2>
+                             {githubOAuthConnected ? (
+                               <Badge className="bg-red-600">Deprecated</Badge>
+                             ) : (
+                               <Badge variant="secondary" className="bg-zinc-800 text-zinc-200 hover:bg-zinc-800">Deprecated</Badge>
+                             )}
+                           </div>
+                           <p className="mt-1 text-sm text-zinc-400 max-w-prose">
+                             Authenticate with GitHub to import repositories, manage issues, and streamline your development.
+                           </p>
+                         </div>
+                       </div>
+ 
+                       <div className="flex items-center gap-3 relative">
+                        {githubOAuthConnected ? (
+                          <>
+                            {showDisconnectHighlight && (
+                              <svg
+                                className="absolute -left-5 -top-4 -rotate-45 md:-left-7 md:-top-7 h-8 w-8 md:h-10 md:w-10 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] animate-bounce z-20"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                aria-hidden="true"
+                                focusable="false"
+                              >
+                                <path d="M12 2c.552 0 1 .448 1 1v8.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-4 4a1 1 0 0 1-1.414 0l-4-4A1 1 0 1 1 8.707 9.293L11 11.586V3c0-.552.448-1 1-1z" />
+                              </svg>
+                            )}
+                            <Button
+                              onClick={() => { setShowDisconnectHighlight(false); handleGithubOAuthDisconnect(); }}
+                              disabled={isDisconnecting}
+                              className={`bg-red-600 hover:bg-red-700 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${showDisconnectHighlight ? "relative z-20" : ""}`}
+                            >
+                            {isDisconnecting ? (
+                              <span className="inline-flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Disconnecting...
+                              </span>
+                            ) : (
+                              "Disconnect"
+                            )}
+                            </Button>
+                          </>
+                        ) : (
+                           <Button className="bg-red-600 text-white  opacity-50 cursor-not-allowed">Connect GitHub</Button>
                          )}
                        </div>
-                       <p className="mt-1 text-sm text-zinc-400 max-w-prose">
-                         Authenticate with GitHub to import repositories, manage issues, and streamline your development.
-                       </p>
                      </div>
-                   </div>
- 
-                   <div className="flex items-center gap-3 relative">
-                    {githubOAuthConnected ? (
-                      <>
-                        {showDisconnectHighlight && (
-                          <svg
-                            className="absolute -left-5 -top-4 -rotate-45 md:-left-7 md:-top-7 h-8 w-8 md:h-10 md:w-10 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] animate-bounce z-20"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            aria-hidden="true"
-                            focusable="false"
-                          >
-                            <path d="M12 2c.552 0 1 .448 1 1v8.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-4 4a1 1 0 0 1-1.414 0l-4-4A1 1 0 1 1 8.707 9.293L11 11.586V3c0-.552.448-1 1-1z" />
-                          </svg>
-                        )}
-                        <Button
-                          onClick={() => { setShowDisconnectHighlight(false); handleGithubOAuthDisconnect(); }}
-                          disabled={isDisconnecting}
-                          className={`bg-red-600 hover:bg-red-700 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${showDisconnectHighlight ? "relative z-20" : ""}`}
-                        >
-                        {isDisconnecting ? (
-                          <span className="inline-flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Disconnecting...
-                          </span>
-                        ) : (
-                          "Disconnect"
-                        )}
-                        </Button>
-                      </>
-                    ) : (
-                       <Button className="bg-red-600 text-white  opacity-50 cursor-not-allowed">Connect GitHub</Button>
+                     {error && (
+                       <div className="mt-2 text-sm text-red-400">
+                         {error}
+                       </div>
                      )}
                    </div>
-                 </div>
-                 {error && (
-                   <div className="mt-2 text-sm text-red-400">
-                     {error}
-                   </div>
-                 )}
-               </div>
-
-             
+                </>
+              )}
             </div>
           </main>
         )}
