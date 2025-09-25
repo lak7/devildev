@@ -58,6 +58,7 @@ export default function SettingsClient({ userId }: Props) {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = useState(false);
   const [showDisconnectHighlight, setShowDisconnectHighlight] = useState(true);
+  const [installationId, setInstallationId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,21 +105,10 @@ export default function SettingsClient({ userId }: Props) {
   // Frontend-only demo state for GitHub OAuth connection
   useEffect(() => {
     checkGithubOAuthStatus();
+    checkAppInstallation();
   }, []);
 
-  // Frontend-only demo state for GitHub App installation
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("github_app_connected");
-      if (saved === null) {
-        setGithubAppConnected(false);
-      } else {
-        setGithubAppConnected(saved === "true");
-      }
-    } catch {
-      setGithubAppConnected(false);
-    }
-  }, []);
+
 
   const handleGithubOAuthDisconnect = () => {
     setMessage(null);
@@ -135,22 +125,6 @@ export default function SettingsClient({ userId }: Props) {
       }
       setIsDisconnecting(false);
     });
-  };
-
-  const handleGithubAppConnect = () => {
-    try {
-      localStorage.setItem("github_app_connected", "true");
-    } catch {}
-    setGithubAppConnected(true);
-    setMessage("GitHub App connected (frontend-only)");
-  };
-
-  const handleGithubAppDisconnect = () => {
-    try {
-      localStorage.setItem("github_app_connected", "false");
-    } catch {}
-    setGithubAppConnected(false);
-    setMessage("GitHub App disconnected (frontend-only)");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -174,6 +148,22 @@ export default function SettingsClient({ userId }: Props) {
         setMessage("Saved");
       }
     });
+  };
+
+  const checkAppInstallation = async () => {
+    try {
+      const res = await fetch('/api/github/app/installations', { cache: 'no-store' });
+      const data = await res.json();
+      const list = (data?.installations || []) as Array<{ installationId: bigint }>;
+      if (list.length > 0) {
+        setInstallationId(String(list[0].installationId));
+        setGithubAppConnected(true);
+      }
+    } catch (e) {
+      // ignore
+    }finally{
+      setIsGithubStatusLoading(false);
+    }
   };
 
   const checkGithubOAuthStatus = async () => { 
@@ -431,11 +421,13 @@ export default function SettingsClient({ userId }: Props) {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {githubAppConnected ? (
-                      <Button onClick={handleGithubAppDisconnect} className="bg-red-600 hover:bg-red-700">Uninstall</Button>
-                    ) : (
-                      <Button onClick={handleGithubAppConnect} className="bg-white text-black hover:bg-zinc-200">Install App</Button>
-                    )}
+                  <Button
+              onClick={() => window.location.href = '/api/github/auth'}
+              variant="outline"
+              className={`border-white/20 text-black cursor-pointer  hover:bg-white/10 hover:border-white/40 hover:text-white ${githubAppConnected ? "" : "bg-green-700 text-white hover:bg-green-700/90 hover:border-green-700/90 hover:text-white"}`}
+            >
+              {githubAppConnected ? 'Configure GitHub App' : 'Install GitHub App'}
+            </Button>
                   </div>
                 </div>
 
@@ -504,7 +496,7 @@ export default function SettingsClient({ userId }: Props) {
                         </Button>
                       </>
                     ) : (
-                       <Button className="bg-white text-black hover:bg-zinc-200 opacity-50 cursor-not-allowed">Connect GitHub</Button>
+                       <Button className="bg-red-600 text-white  opacity-50 cursor-not-allowed">Connect GitHub</Button>
                      )}
                    </div>
                  </div>
