@@ -56,9 +56,11 @@ model User {
   githubId          String?   @unique
   githubUsername    String?   @unique
   isGithubConnected Boolean   @default(false)
+  isGithubAppConnected Boolean   @default(false)
   chats             Chat[]
-
+  subscription Subscription?
   projects Project[]
+  githubAppInstallation GitHubAppInstallation?
 }
 
 model Chat {
@@ -135,6 +137,7 @@ model Project {
   language  String?
   repoId String? @unique
   repoFullName String?
+  githubInstallationId BigInt?
   ProjectChat ProjectChat[]
   packageJson Json?
   framework String?
@@ -195,7 +198,64 @@ model Contact {
   updatedAt DateTime @updatedAt
 }
 
+enum SubscriptionStatus {
+  FREE
+  ACTIVE
+  CANCELLED
+  ON_HOLD
+}
 
+enum SubscriptionPlan {
+  PRO
+}
 
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  subscriptionId String? @unique
+  status SubscriptionStatus @default(FREE)
+  plan   SubscriptionPlan   @default(PRO)
+  productId String?
+  quantity  Int              @default(1)
+  currency   String          @default("USD")
+  currentPeriodEnd DateTime?
+  canceledAt DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 
+/// GitHub App Installation records (introduced for GitHub App migration Phase 1)
+model GitHubAppInstallation {
+  id                  Int      @id
+  installationId      BigInt   @unique
+  accountLogin        String
+  accountId           BigInt
+  accountType         String
+  repositories        Json?
+  permissions         Json?
+  repositorySelection String?
+  lastSyncedAt        DateTime?
+  userId              String?   @unique
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+/// Webhook received events for idempotency/deduplication (Phase 1)
+model WebhookEvent {
+  id        Int      @id @default(autoincrement())
+  eventId   String   @unique
+  source    String
+  createdAt DateTime @default(now())
+}
+
+/// Temporary storage for GitHub App installation state matching
+model PendingGitHubInstallation {
+  id        String   @id @default(uuid())
+  state     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
  

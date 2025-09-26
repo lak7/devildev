@@ -6,6 +6,7 @@ import ImportGitRepository from '@/components/ImportGitRepository';
 import { checkInfo, checkPackageAndFramework } from '../../../actions/reverse-architecture';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GlowingEffect } from '@/components/ui/glow-effect';
+import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
 import { Loader2, Github, ArrowLeft, MessageSquare, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -48,14 +49,14 @@ export default function NewPage() {
     const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleImport = async (repo: Repository) => {
+  const handleImport = async (repo: Repository, installationId?: string | null) => {
     setImporting(true); 
     try { 
-      const res = await checkPackageAndFramework(repo.id.toString(), repo.fullName);
+      const res = await checkPackageAndFramework(repo.id.toString(), repo.fullName, installationId || undefined);
       const {result: response, project: project} = res;
       // const {repoInfo: response, defaultBranch: project} = await checkInfo(repo.id.toString(), repo.fullName);
       let cleanedResult = response;
-      if (typeof response === 'string') {
+      if (typeof response === 'string') { 
         // Remove markdown code blocks (```json...``` or ```...```)
         cleanedResult = response
           .replace(/^```json\s*/i, '')
@@ -132,11 +133,7 @@ export default function NewPage() {
       
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-4xl">
-          <ImportGitRepository onImport={handleImport} />
-        </div>
-      </div>
+      <ImportGitRepository onImport={handleImport} />
 
       {/* Loading Overlay */}
       {importing && (
@@ -284,6 +281,8 @@ export default function NewPage() {
           </div>
         </div>
       )}
+
+      <GithubOAuthDeprecatedNotice />
     </div>
   );
 }

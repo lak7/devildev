@@ -50,8 +50,8 @@ export default function RootLayout({
       signInFallbackRedirectUrl="/"
       signUpFallbackRedirectUrl="/"
     >
-      <html lang="en">
-        <head>
+      <html lang="en" suppressHydrationWarning>
+        <head suppressHydrationWarning>
           <meta name="theme-color" content="#000000" />
           <meta
             name="theme-color"
@@ -71,35 +71,9 @@ export default function RootLayout({
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="mobile-web-app-capable" content="yes" />
           <meta name="format-detection" content="telephone=no" />
-          <style
-            dangerouslySetInnerHTML={{
-              __html: `
-              :root {
-                --safe-area-inset-top: env(safe-area-inset-top);
-                --safe-area-inset-right: env(safe-area-inset-right);
-                --safe-area-inset-bottom: env(safe-area-inset-bottom);
-                --safe-area-inset-left: env(safe-area-inset-left);
-              }
-              @supports (-webkit-touch-callout: none) {
-                body {
-                  background-color: #000000 !important;
-                }
-              }
-              @media screen and (max-width: 768px) {
-                html {
-                  background-color: #000000 !important;
-                }
-                body {
-                  background-color: #000000 !important;
-                }
-              }
-            `,
-            }}
-          />
         </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-          style={{ backgroundColor: "#000000" }}
         >
           {children}
           <Analytics />

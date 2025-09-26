@@ -67,7 +67,7 @@ export const getRepoTreeTool = new DynamicStructuredTool({
     owner: z.string().describe("Repository owner/organization name"),
     repo: z.string().describe("Repository name"),
     branch: z.string().optional().default("main").describe("Branch name (defaults to 'main')"),
-    accessToken: z.string().describe("GitHub access token for authentication"),
+    accessToken: z.string().describe("GitHub access token for authentication (OAuth or installation token)"),
   }),
   
   func: async ({ owner, repo, branch = "main", accessToken }): Promise<string> => {
@@ -171,7 +171,7 @@ export const getFileContentTool = new DynamicStructuredTool({
     owner: z.string().describe("Repository owner/organization name"),
     repo: z.string().describe("Repository name"),
     path: z.string().describe("File path within the repository (e.g., 'src/app/page.tsx')"),
-    accessToken: z.string().describe("GitHub access token for authentication"),
+    accessToken: z.string().describe("GitHub access token for authentication (OAuth or installation token)"),
     branch: z.string().optional().describe("Branch name (optional, uses default branch if not specified)"),
   }),
   
@@ -231,7 +231,7 @@ export const searchCodeTool = new DynamicStructuredTool({
     owner: z.string().describe("Repository owner/organization name"),
     repo: z.string().describe("Repository name"),
     query: z.string().describe("Search query (e.g., 'useEffect', '@nestjs/', 'function component')"),
-    accessToken: z.string().describe("GitHub access token for authentication"),
+    accessToken: z.string().describe("GitHub access token for authentication (OAuth or installation token)"),
     language: z.string().optional().describe("Filter by programming language (e.g., 'typescript', 'javascript')"),
     extension: z.string().optional().describe("Filter by file extension (e.g., 'ts', 'tsx', 'js')"),
     path: z.string().optional().describe("Filter by file path pattern (e.g., 'src/', 'components/')"),

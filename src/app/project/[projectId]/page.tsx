@@ -959,7 +959,7 @@ const ProjectPage = () => {
           <div className="flex items-center">
           <Popover>
            <PopoverTrigger asChild>
-             <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500/50">
+             <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 cursor-pointer focus:ring-gray-500/50">
                <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
                  <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
                  <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
@@ -982,6 +982,11 @@ const ProjectPage = () => {
                </div>
              </div>
              <div className="pt-3">
+               <a href="/settings" className="block w-full mb-2">
+                 <span className="w-full px-3 py-2 text-sm bg-zinc-900 border border-zinc-200 text-white rounded-md hover:bg-zinc-700 transition-colors inline-block text-center">
+                   Settings
+                 </span>
+               </a>
                <SignOutButton>
                  <button className="w-full px-3 py-2 text-sm bg-white text-black rounded-md hover:bg-gray-200 transition-colors">
                    Sign out

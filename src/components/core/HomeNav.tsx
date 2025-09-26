@@ -62,6 +62,17 @@ export default function HomeNav({ currentPage }: HomeNavProps) {
                 >
                   Community
                 </a>
+                {/* COMMENTED PRICING FOR NOW  */}
+                {/* <a
+                  href="/pricing"
+                  className={`font-medium text-sm transition-all duration-200 ${
+                    currentPage === 'Contact' 
+                      ? 'text-white px-5 py-1 rounded-4xl bg-zinc-800/50 border border-gray-700/50' 
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Pricing
+                </a> */}
                 <a
                   href="/contact"
                   className={`font-medium text-sm transition-all duration-200 ${
@@ -91,7 +102,7 @@ export default function HomeNav({ currentPage }: HomeNavProps) {
                     <div className="flex items-center">
                       <Popover>
                         <PopoverTrigger asChild>
-                          <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500/50">
+                          <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 cursor-pointer focus:ring-gray-500/50">
                             <Avatar className="size-8 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
                               <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
                               <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
@@ -114,6 +125,11 @@ export default function HomeNav({ currentPage }: HomeNavProps) {
                             </div>
                           </div>
                           <div className="pt-3">
+                            <Link href="/settings" className="block w-full mb-2">
+                              <span className="w-full px-3 py-2 text-sm bg-zinc-900 border border-zinc-200 text-white rounded-md hover:bg-zinc-700 transition-colors inline-block text-center">
+                                Settings
+                              </span>
+                            </Link>
                             <SignOutButton>
                               <button className="w-full px-3 py-2 text-sm bg-white text-black rounded-md hover:bg-gray-200 transition-colors">
                                 Sign out

@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, SendHorizonal, Maximize, X, Menu, MessageCircle, Loader2, Github } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
@@ -12,13 +9,10 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot } from '../../actions/agentsFlow';
 import { generateArchitecture, generateArchitectureWithToolCalling } from '../../actions/architecture'; 
 import { getUserChats } from '../../actions/chat';
-import { getGitHubStatus, disconnectGitHub, initiateGitHubConnection } from '../../actions/github';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
 import { SignOutButton, UserProfile, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { FuturisticButton } from '@/components/ui/GlowButton01';
-// import { MatrixGlitchButton } from '@/components/ui/GlowButton02';
 import { GlowButton } from '@/components/ui/GlowButton05';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import Link from 'next/link';
@@ -26,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import HomeNav from '@/components/core/HomeNav';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
 
 
 
@@ -79,9 +74,7 @@ export default function Page() {
   const [userChats, setUserChats] = useState<UserChat[]>([]);
   const [chatsLoading, setChatsLoading] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [githubStatus, setGithubStatus] = useState<GitHubStatus>({ isConnected: false });
-  const [githubLoading, setGithubLoading] = useState(false);
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useMediaQuery('(max-width: 640px)'); 
   const [showMaxChatsDialog, setShowMaxChatsDialog] = useState(false);
   // Typewriter rotating heading state
   const rotatingTexts = ["Visualize your Codebase","10x your vibe coding"];
@@ -111,27 +104,8 @@ export default function Page() {
     }
   };
 
-  // Function to fetch GitHub status
-  const fetchGithubStatus = async () => {
-    if (!isSignedIn) return;
-    
-    try {
-      const result = await getGitHubStatus();
-      if (result.success && result.data) {
-        setGithubStatus(result.data);
-      } else {
-        console.error('Failed to fetch GitHub status:', result.error);
-        // Set default status if fetch fails
-        setGithubStatus({ isConnected: false });
-      }
-    } catch (error) {
-      console.error('Error fetching GitHub status:', error);
-      // Set default status if there's an exception
-      setGithubStatus({ isConnected: false });
-    }
-  };
 
-  useEffect(() => {
+  useEffect(() => { 
     setMounted(true);
   }, []);
 
@@ -192,47 +166,6 @@ export default function Page() {
     };
   }, []);
 
-  // Function to handle GitHub connection
-  const handleGithubConnect = async () => {
-    if (githubStatus.isConnected) {
-      // If already connected, show option to disconnect
-      const confirmed = window.confirm('Are you sure you want to disconnect your GitHub account?');
-      if (!confirmed) return;
-      
-      setGithubLoading(true);
-      try {
-        const result = await disconnectGitHub();
-        if (result.success) {
-          setGithubStatus({ isConnected: false });
-        } else {
-          console.error('Failed to disconnect GitHub:', result.error);
-          // alert('Failed to disconnect GitHub. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error disconnecting GitHub:', error);
-        // alert('Failed to disconnect GitHub. Please try again.');
-      } finally {
-        setGithubLoading(false);
-      }
-    } else {
-      // Initiate GitHub connection
-      setGithubLoading(true);
-      try {
-        const result = await initiateGitHubConnection();
-        if (result.success && result.redirectUrl) {
-          window.location.href = result.redirectUrl;
-        } else {
-          console.error('Failed to initiate GitHub connection:', result.error);
-          // alert('Failed to connect GitHub. Please try again.');
-          setGithubLoading(false);
-        }
-      } catch (error) {
-        console.error('Error connecting GitHub:', error);
-        // alert('Failed to connect GitHub. Please try again.');
-        setGithubLoading(false);
-      }
-    }
-  };
 
   // Fetch chats and GitHub status when user is signed in
   useEffect(() => {
@@ -253,9 +186,10 @@ export default function Page() {
     
     if (isSignedIn && isLoaded) {
       fetchUserChats();
-      // fetchGithubStatus();
     }
   }, [isSignedIn, isLoaded]);
+
+
 
 
   const handleFirstMessage = async (e: React.FormEvent) => {
@@ -388,9 +322,14 @@ export default function Page() {
                 <PopoverContent align="end" className="w-48">
                   <div className="text-sm px-2 py-1">{user?.fullName || user?.username || 'User'}</div>
                   <div className="border-t my-2 border-white/10" />
-                  <SignOutButton>
-                    <button className="w-full text-left px-2 py-1.5 hover:bg-white/5 rounded">Sign out</button>
-                  </SignOutButton>
+                  <div className="pt-1">
+                    <Link href="/settings" className="block w-full mb-2">
+                      <span className="w-full px-2 py-1.5 text-sm bg-zinc-900 border border-zinc-200 text-white rounded-md hover:bg-zinc-700 transition-colors inline-block text-center">Settings</span>
+                    </Link>
+                    <SignOutButton>
+                      <button className="w-full text-left px-2 py-1.5 hover:bg-white/5 rounded">Sign out</button>
+                    </SignOutButton>
+                  </div>
                 </PopoverContent>
               </Popover>
             ) : (
@@ -725,6 +664,9 @@ export default function Page() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* GitHub OAuth Deprecated Notice */}
+      <GithubOAuthDeprecatedNotice />
 
       
     </div>

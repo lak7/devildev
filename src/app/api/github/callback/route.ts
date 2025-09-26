@@ -3,8 +3,10 @@ import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
+    // Deprecation notice for GitHub OAuth callback — migration to GitHub App underway.
+    // Behavior remains unchanged during migration phases.
     const { searchParams } = new URL(request.url);
-    const code = searchParams.get('code');
+    const code = searchParams.get('code'); 
     const state = searchParams.get('state');
     const error = searchParams.get('error');
 
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
     const [stateValue, userId] = state.split(':');
     if (!userId) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/?error=${encodeURIComponent('Invalid state parameter')}`);
-    }
+    } 
 
     // Exchange code for access token
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
@@ -32,8 +34,8 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        client_id: process.env.GITHUB_CLIENT_ID,
-        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        client_id: process.env.GITHUB_OAUTH_CLIENT_ID,
+        client_secret: process.env.GITHUB_OAUTH_CLIENT_SECRET,
         code,
       }),
     });

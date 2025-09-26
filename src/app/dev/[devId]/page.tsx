@@ -1096,7 +1096,7 @@ const DevPage = () => {
 
           {/* User Avatar */}
           <div className="flex items-center">
-            <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all duration-200">
+            <Avatar className="size-9 ring-2 ring-gray-600/30 hover:ring-gray-500/50 transition-all cursor-pointer duration-200">
               <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
               <AvatarFallback className="bg-red-500/20 text-red-400 font-semibold">
                 {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress.charAt(0) || "U"}

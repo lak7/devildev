@@ -37,6 +37,7 @@ import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from "react"
 import { submitFeedback } from "../../../actions/feedback"
 import Nav from "@/components/core/Nav"
+import GithubOAuthDeprecatedNotice from "@/components/GithubOAuthDeprecatedNotice"
 
 interface Project {
   id: string;
@@ -424,6 +425,8 @@ export default function ProjectsPage() {
           </div>
         </div>
       )}
+
+      <GithubOAuthDeprecatedNotice />
     </div>
   )
 }

@@ -11,7 +11,7 @@ import Image from "next/image"
 
 export default function ConnectMCPPage() {
   const { isSignedIn } = useUser()
-  const [githubStatus, setGithubStatus] = useState<GitHubStatus>({ isConnected: false })
+  const [githubStatus, setGithubStatus] = useState<GitHubStatus>({ isConnected: false, githubAppConnected: false })
   const [githubLoading, setGithubLoading] = useState(false)
   const [statusLoading, setStatusLoading] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -27,33 +27,14 @@ export default function ConnectMCPPage() {
       } else {
         console.error('Failed to fetch GitHub status:', result.error);
         // Set default status if fetch fails
-        setGithubStatus({ isConnected: false });
+        setGithubStatus({ isConnected: false, githubAppConnected: false });
       }
     } catch (error) {
       console.error('Error fetching GitHub status:', error);
       // Set default status if there's an exception
-      setGithubStatus({ isConnected: false });
+      setGithubStatus({ isConnected: false, githubAppConnected:  false });
     } finally {
       setStatusLoading(false);
-    }
-  };
-
-  // Function to handle GitHub connection
-  const handleGithubConnect = async () => {
-    setGithubLoading(true);
-    try {
-      const result = await initiateGitHubConnection();
-      if (result.success && result.redirectUrl) {
-        window.location.href = result.redirectUrl;
-      } else {
-        console.error('Failed to initiate GitHub connection:', result.error);
-        // alert('Failed to connect GitHub. Please try again.');
-        setGithubLoading(false);
-      }
-    } catch (error) {
-      console.error('Error connecting GitHub:', error);
-      // alert('Failed to connect GitHub. Please try again.');
-      setGithubLoading(false);
     }
   };
 
@@ -81,7 +62,7 @@ export default function ConnectMCPPage() {
   }
 
   // Show GitHub connection required page if not connected
-  if (!githubStatus.isConnected) {
+  if (!githubStatus.githubAppConnected) {
     return (
       <div className="h-dvh overflow-hidden bg-black text-white p-4 sm:p-6 lg:p-8 xl:p-12">
         <div className="w-full max-w-4xl mx-auto flex items-center justify-center h-full">
@@ -99,8 +80,8 @@ export default function ConnectMCPPage() {
             <CardContent className="p-6 sm:p-8 lg:p-10 space-y-6 text-center">
    
 
-              <Button
-                onClick={handleGithubConnect}
+              <Button 
+                onClick={() => window.location.href = '/api/github/auth'}
                 disabled={githubLoading}
                 className="relative w-full h-12 bg-white text-black hover:bg-gray-100 transition-all duration-200 font-semibold text-base rounded-lg"
               >
