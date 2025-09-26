@@ -5,12 +5,19 @@ import { WebhookPayload, SubscriptionEventData } from "@/types/dodo-webhook";
 import { SubscriptionService } from "@/lib/subscription-helpers";
 import { SubscriptionStatus } from "@prisma/client";
 
-const webhook = new Webhook(process.env.DODO_WEBHOOK_KEY!);
+function getWebhook(): Webhook {
+  const secret = process.env.DODO_WEBHOOK_KEY;
+  if (!secret) {
+    throw new Error("DODO_WEBHOOK_KEY is not set");
+  }
+  return new Webhook(secret);
+}
 
 export async function POST(request: Request) {
   try {
     const headersList = await headers();
     const rawBody = await request.text();
+    const webhook = getWebhook();
 
     const webhookHeaders = {
       "webhook-id": headersList.get("webhook-id") || "",
