@@ -127,6 +127,7 @@ export default function SettingsClient({ userId }: Props) {
     startTransition(async () => {
       const res = await disconnectGitHubOAuth();
       if ((res as any)?.success) {
+        localStorage.setItem('githubOAuthConnected', 'false');
         setGithubOAuthConnected(false);
         setMessage("GitHub disconnected");
         setIsDisconnectDialogOpen(true);

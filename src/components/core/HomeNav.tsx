@@ -62,7 +62,8 @@ export default function HomeNav({ currentPage }: HomeNavProps) {
                 >
                   Community
                 </a>
-                <a
+                {/* COMMENTED PRICING FOR NOW  */}
+                {/* <a
                   href="/pricing"
                   className={`font-medium text-sm transition-all duration-200 ${
                     currentPage === 'Contact' 
@@ -71,7 +72,7 @@ export default function HomeNav({ currentPage }: HomeNavProps) {
                   }`}
                 >
                   Pricing
-                </a>
+                </a> */}
                 <a
                   href="/contact"
                   className={`font-medium text-sm transition-all duration-200 ${

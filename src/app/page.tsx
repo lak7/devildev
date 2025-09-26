@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import HomeNav from '@/components/core/HomeNav';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { GlowDiv } from '@/components/ui/GlowDiv';
+import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
 
 
 
@@ -74,8 +74,6 @@ export default function Page() {
   const [userChats, setUserChats] = useState<UserChat[]>([]);
   const [chatsLoading, setChatsLoading] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [githubOAuthConnected, setGithubOAuthConnected] = useState<boolean>(false);
-  const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(false);
   const isMobile = useMediaQuery('(max-width: 640px)'); 
   const [showMaxChatsDialog, setShowMaxChatsDialog] = useState(false);
   // Typewriter rotating heading state
@@ -188,21 +186,10 @@ export default function Page() {
     
     if (isSignedIn && isLoaded) {
       fetchUserChats();
-      checkGithubOAuthStatus();
     }
   }, [isSignedIn, isLoaded]);
 
-  const checkGithubOAuthStatus = async () => { 
-    setIsGithubStatusLoading(true);
-    try {
-      const response = await fetch('/api/github/status');
-      const data = await response.json();
-      setGithubOAuthConnected(data.isConnected); 
-      setIsGithubStatusLoading(false);
-    } catch (error) {
-      console.error('Error checking GitHub status:', error);
-    }
-  };
+
 
 
   const handleFirstMessage = async (e: React.FormEvent) => {
@@ -679,38 +666,7 @@ export default function Page() {
       </Dialog>
 
       {/* GitHub OAuth Deprecated Notice */}
-      {githubOAuthConnected && (
-        <div className="fixed bottom-4 right-4 z-50 notice-anim">
-          <GlowDiv variant="red" size="md" className="w-64 h-64 p-4 flex flex-col justify-between">
-            <div>
-            <div className="flex flex-col items-start text-center">
-                  <div className="relative">
-                    <div className="absolute -inset-6 rounded-2xl bg-yellow-500/20 blur-2xl" aria-hidden="true" />
-                    <div className="w-full px-2 h-7 bg-yellow-500/20 rounded-sm flex items-center justify-center">
-                      <span className="text-sm">{"⚠️ IMPORTANT NOTICE"} </span>
-                    </div>
-                  </div>
-                  <h1 className="mt-3 text-md sm:text-xl font-bold tracking-tight text-left text-white">
-                    Github OAuth is Deprecated. Please <span className="text-red-500">Disconnect</span>  it from the settings page.
-                  </h1>
-                </div>
-            </div>
-            <button
-              onClick={() => router.push('/settings?tab=integrations')}
-              className="mt-3 px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm cursor-pointer"
-            >
-              Go to Settings
-            </button>
-          </GlowDiv>
-          <style jsx>{`
-            @keyframes gentle-float {
-              0%, 100% { transform: translateY(0px); }
-              50% { transform: translateY(-4px); }
-            }
-            .notice-anim { animation: gentle-float 3.5s ease-in-out infinite; }
-          `}</style>
-        </div>
-      )}
+      <GithubOAuthDeprecatedNotice />
 
       
     </div>

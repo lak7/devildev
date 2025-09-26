@@ -6,6 +6,7 @@ import ImportGitRepository from '@/components/ImportGitRepository';
 import { checkInfo, checkPackageAndFramework } from '../../../actions/reverse-architecture';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GlowingEffect } from '@/components/ui/glow-effect';
+import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
 import { Loader2, Github, ArrowLeft, MessageSquare, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -280,6 +281,8 @@ export default function NewPage() {
           </div>
         </div>
       )}
+
+      <GithubOAuthDeprecatedNotice />
     </div>
   );
 }
