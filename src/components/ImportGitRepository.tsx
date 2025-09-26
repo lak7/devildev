@@ -388,7 +388,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
                   </p>
                   <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <p className="text-sm text-yellow-200">
-                      <strong>Current projects:</strong> {userProjects.length}/1
+                      <strong>Current projects:</strong> {userProjects.length}/{maxNumberOfProjectsFree}
                     </p>
                   </div>
                 </div>
