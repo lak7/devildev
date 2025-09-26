@@ -38,25 +38,6 @@ export default function ConnectMCPPage() {
     }
   };
 
-  // Function to handle GitHub connection
-  const handleGithubConnect = async () => {
-    setGithubLoading(true);
-    try {
-      const result = await initiateGitHubConnection();
-      if (result.success && result.redirectUrl) {
-        window.location.href = result.redirectUrl;
-      } else {
-        console.error('Failed to initiate GitHub connection:', result.error);
-        // alert('Failed to connect GitHub. Please try again.');
-        setGithubLoading(false);
-      }
-    } catch (error) {
-      console.error('Error connecting GitHub:', error);
-      // alert('Failed to connect GitHub. Please try again.');
-      setGithubLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (isSignedIn) {
       fetchGithubStatus();
@@ -99,8 +80,8 @@ export default function ConnectMCPPage() {
             <CardContent className="p-6 sm:p-8 lg:p-10 space-y-6 text-center">
    
 
-              <Button
-                onClick={handleGithubConnect}
+              <Button 
+                onClick={() => window.location.href = '/api/github/auth'}
                 disabled={githubLoading}
                 className="relative w-full h-12 bg-white text-black hover:bg-gray-100 transition-all duration-200 font-semibold text-base rounded-lg"
               >
