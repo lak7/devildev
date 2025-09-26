@@ -107,8 +107,7 @@ export default function Page() {
   };
 
 
-  useEffect(() => {
-    checkGithubOAuthStatus();
+  useEffect(() => { 
     setMounted(true);
   }, []);
 
@@ -189,7 +188,7 @@ export default function Page() {
     
     if (isSignedIn && isLoaded) {
       fetchUserChats();
-      // fetchGithubStatus();
+      checkGithubOAuthStatus();
     }
   }, [isSignedIn, isLoaded]);
 
@@ -692,13 +691,13 @@ export default function Page() {
                     </div>
                   </div>
                   <h1 className="mt-3 text-md sm:text-xl font-bold tracking-tight text-left text-white">
-                    Github OAuth is Deprecated. Please Disconnect it from the settings page.
+                    Github OAuth is Deprecated. Please <span className="text-red-500">Disconnect</span>  it from the settings page.
                   </h1>
                 </div>
             </div>
             <button
               onClick={() => router.push('/settings?tab=integrations')}
-              className="mt-3 px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm"
+              className="mt-3 px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm cursor-pointer"
             >
               Go to Settings
             </button>

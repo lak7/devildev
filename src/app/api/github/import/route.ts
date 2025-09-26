@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { getInstallationToken } from '@/../../../actions/githubAppAuth';
+import { getInstallationToken } from '@/actions/githubAppAuth';
 import { createOctokitWithToken } from '@/lib/githubClient';
 
 export async function POST(request: NextRequest) {
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       fullName,
       theProjectStructure,
       packageJson,
-      installationId: installationId ?? null,
+      installationId: authToken,
     });
 
   } catch (error) {
