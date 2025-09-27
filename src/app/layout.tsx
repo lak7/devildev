@@ -52,6 +52,18 @@ export default function RootLayout({
     >
       <html lang="en" suppressHydrationWarning>
         <head suppressHydrationWarning>
+          {/* Google Analytics */}
+          <script async src="https://www.googletagmanager.com/gtag/js?id=G-875ZFE6Y2B"></script>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-875ZFE6Y2B');
+              `,
+            }}
+          />
           <meta name="theme-color" content="#000000" />
           <meta
             name="theme-color"
