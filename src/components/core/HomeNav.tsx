@@ -10,7 +10,7 @@ import { useUser } from "@clerk/nextjs";
 import { Button } from '../ui/button';
 
 interface HomeNavProps {
-  currentPage?: 'Home' | 'Community' | 'Contact';
+  currentPage?: 'Home' | 'Community' | 'Pricing' | 'Contact';
 }
 
 export default function HomeNav({ currentPage }: HomeNavProps) {
@@ -62,17 +62,16 @@ export default function HomeNav({ currentPage }: HomeNavProps) {
                 >
                   Community
                 </a>
-                {/* COMMENTED PRICING FOR NOW  */}
-                {/* <a
+                <a
                   href="/pricing"
                   className={`font-medium text-sm transition-all duration-200 ${
-                    currentPage === 'Contact' 
+                    currentPage === 'Pricing' 
                       ? 'text-white px-5 py-1 rounded-4xl bg-zinc-800/50 border border-gray-700/50' 
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   Pricing
-                </a> */}
+                </a>
                 <a
                   href="/contact"
                   className={`font-medium text-sm transition-all duration-200 ${
