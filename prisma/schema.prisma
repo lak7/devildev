@@ -59,6 +59,7 @@ model User {
   isGithubAppConnected Boolean   @default(false)
   chats             Chat[]
   subscription Subscription?
+  subscriptionPlan   SubscriptionPlan   @default(FREE)
   projects Project[]
   githubAppInstallation GitHubAppInstallation?
 }
@@ -199,13 +200,14 @@ model Contact {
 }
 
 enum SubscriptionStatus {
-  FREE
+  NONE
   ACTIVE
   CANCELLED
   ON_HOLD
 }
 
 enum SubscriptionPlan {
+  FREE
   PRO
 }
 
@@ -215,8 +217,7 @@ model Subscription {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   subscriptionId String? @unique
-  status SubscriptionStatus @default(FREE)
-  plan   SubscriptionPlan   @default(PRO)
+  status SubscriptionStatus @default(NONE)
   productId String?
   quantity  Int              @default(1)
   currency   String          @default("USD")
