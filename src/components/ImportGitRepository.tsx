@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { getUserProjects } from '../../actions/reverse-architecture';
+import { fetchUserInstallationIdProjectAndPlan } from '../../actions/user';
+import { useUser } from '@clerk/nextjs';
 import { maxNumberOfProjectsFree } from '../../Limits';
 // Removed card and glow imports for a minimalist view
 
@@ -44,6 +46,7 @@ interface ImportGitRepositoryProps {
 } 
 
 export default function ImportGitRepository({ onImport }: ImportGitRepositoryProps) {
+  const { user } = useUser();
   const [repos, setRepos] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,11 +61,14 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [pasteUrl, setPasteUrl] = useState('');
   const [pasteLoading, setPasteLoading] = useState(false);
   const [pasteError, setPasteError] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<any | null>(null);
+  const [userProfile, setUserProfile] = useState<any | null>(null);
 
   useEffect(() => {
-    checkAppInstallation();
-    fetchUserProjects();
-  }, []);
+    if (user?.id) {
+      fetchEmAll();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (installationId) {
@@ -79,20 +85,33 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
 
-  const checkAppInstallation = async () => {
+  const fetchEmAll = async () => {
     try {
-      const res = await fetch('/api/github/app/installations', { cache: 'no-store' });
-      const data = await res.json();
+      setIsGithubStatusLoading(true);
+      if (!user?.id) return;
+      const result = await fetchUserInstallationIdProjectAndPlan(user.id);
       alert("Check")
-      console.log("This is the data: ", data)
-      const list = (data?.installations || []) as Array<{ installationId: bigint }>;
-      if (list.length > 0) {
-        setInstallationId(String(list[0].installationId));
+      console.log("This is the result: ", result)
+      if ((result as any)?.success) {
+        const installation = (result as any).installation;
+        if (installation?.installationId) {
+          setInstallationId(String(installation.installationId));
+        } else {
+          setInstallationId(null);
+        }
+        if ((result as any).projects) {
+          setUserProjects((result as any).projects);
+        }
+        setSubscription((result as any).subscription ?? null);
+        setUserProfile((result as any).user ?? null);
+      } else {
+        setInstallationId(null);
       }
     } catch (e) {
       // ignore
-    }finally{
+    } finally {
       setIsGithubStatusLoading(false);
+      setProjectsLoading(false);
     }
   };
 
