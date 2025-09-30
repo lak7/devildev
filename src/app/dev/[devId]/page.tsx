@@ -32,6 +32,7 @@ import { CoachMark } from '@/components/CoachMarks';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
+import { maxChatCharactersLimitFree } from '../../../../Limits';
 
 interface UserChat {
   id: string;
@@ -48,7 +49,7 @@ interface Particle {
   animationDuration: string;
 }
 
-const MAX_CHARACTERS = 25000;
+
 
 const DevPage = () => {
   const params = useParams();
@@ -133,6 +134,8 @@ const DevPage = () => {
 
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
+
+  const MAX_CHARACTERS = maxChatCharactersLimitFree;
 
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
@@ -628,7 +631,7 @@ const DevPage = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); 
     if (!inputMessage.trim() || isLoading) return;
 
     // Check character limit before processing

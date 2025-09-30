@@ -244,3 +244,60 @@ export async function getCurrentUserProfile() {
     return { error: 'Failed to fetch profile' } as const;
   }
 }
+
+export async function fetchUserInstallationIdProjectAndPlan(userId: string) {
+  try {
+    // Fetch user with GitHub App installation, projects, and subscription in one query
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      include: {
+        githubAppInstallation: true,
+        projects: {
+          select: {
+            id: true,
+            name: true,
+            repoId: true,
+            repoFullName: true,
+          },
+        },
+        subscription: true,
+      },
+    });
+
+    if (!user) {
+      return { error: 'User not found' } as const;
+    }
+
+    // Shape installation similar to /api/github/app/installations
+    const installation = user.githubAppInstallation
+      ? {
+          userPlan: user.subscriptionPlan,
+          id: user.githubAppInstallation.id,
+          installationId: user.githubAppInstallation.installationId
+            ? user.githubAppInstallation.installationId.toString()
+            : null,
+          accountLogin: user.githubAppInstallation.accountLogin,
+          accountId: user.githubAppInstallation.accountId
+            ? user.githubAppInstallation.accountId.toString()
+            : null,
+          accountType: user.githubAppInstallation.accountType,
+          repositorySelection: user.githubAppInstallation.repositorySelection,
+        }
+      : null;
+
+    // Use included relations for projects and subscription
+    const projects = (user as any).projects ?? [];
+    const subscription = (user as any).subscription ?? null;
+
+    return {
+      success: true as const,
+      user,
+      projects,
+      installation,
+      subscription,
+    };
+  } catch (error) {
+    console.error('Error fetching user, installation, projects, and subscription:', error);
+    return { error: 'Failed to fetch user data bundle' } as const;
+  }
+}

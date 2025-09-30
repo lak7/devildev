@@ -32,6 +32,7 @@ export async function GET(_req: NextRequest) {
     }
 
     const installation = {
+      userPlan: user.subscriptionPlan,
       id: user.githubAppInstallation.id,
       installationId: user.githubAppInstallation.installationId.toString(), // Convert BigInt to string
       accountLogin: user.githubAppInstallation.accountLogin,

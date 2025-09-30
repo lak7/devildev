@@ -21,6 +21,7 @@ import HomeNav from '@/components/core/HomeNav';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
+import { maxFreeChats } from '../../Limits';
 
 
 
@@ -56,8 +57,6 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-const MAX_CHATS = 3;
-
 
 export default function Page() {
   const [inputMessage, setInputMessage] = useState('');
@@ -80,6 +79,8 @@ export default function Page() {
   const rotatingTexts = ["Visualize your Codebase","10x your vibe coding"];
   const [currentRotateIndex, setCurrentRotateIndex] = useState(0);
   const [displayedRotateText, setDisplayedRotateText] = useState("");
+
+  const MAX_CHATS = maxFreeChats;
   
 
   const { isLoaded, isSignedIn, user } = useUser();
@@ -200,7 +201,7 @@ export default function Page() {
     if (isSignedIn) {
       if (userChats.length >= MAX_CHATS) {
         setShowMaxChatsDialog(true);
-        return;
+        return; 
       }
       setIsLoading(true); 
       try {
@@ -344,7 +345,7 @@ export default function Page() {
           </div>
         </div>
         {/* Spacer for mobile navbar height */}
-        <div className="lg:hidden h-16" />
+        <div className="lg:hidden h-16" /> 
 
       {/* GRID  */}
       <div className="">

@@ -7,8 +7,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import TempFooter from "@/components/core/TempFooter"
+import { useUser } from "@clerk/nextjs"
+import { fetchUserWithSubscription } from "../../../actions/subscription"
 
 export default function PricingPage() {
+    const { user } = useUser();
     const freeFeatures = [
         "Up to 3 Chats",
         "Only 1 Project",
@@ -23,6 +26,28 @@ export default function PricingPage() {
         "Extended token limit for each chat",
     ]
 
+    const handleSubscription = async () => {
+      if(!user){
+        alert("Authentication required");
+        return;
+      }
+      const userWithSubscription = await fetchUserWithSubscription(user.id);
+      if(userWithSubscription?.subscriptionPlan == "FREE" && userWithSubscription?.subscription?.status !== "ACTIVE"){
+        const redirectUrl = "https://rested-anchovy-mistakenly.ngrok-free.app";
+        const userEmail = userWithSubscription.email;
+        const url = `https://test.checkout.dodopayments.com/buy/pdt_WOJtkAzaBaXWSYEKRxIGa?quantity=1&redirect_url=${redirectUrl}&email=${userEmail}&showDiscounts=false&disableEmail=true`;
+
+        if(!url){
+          alert("Payment link not found");
+          return;
+        }
+        window.location.href = url;
+        return;
+      }else{ 
+        alert("You are rich man")
+      }
+    }
+
     return (
         <div className="min-h-screen bg-black">
             {/* Navigation */}
@@ -30,7 +55,7 @@ export default function PricingPage() {
                 <HomeNav />
             </div>
 
-            <div className="container mx-auto px-4 py-16 dark">
+            <div className="  container mx-auto px-4 py-16 dark">
       {/* Hero Section */}
       <div className="text-center mb-16">
       <h1 className="relative z-10 text-lg md:text-5xl  bg-clip-text text-transparent bg-gradient-to-b from-neutral-200 to-neutral-600  text-center font-sans font-bold">
@@ -93,7 +118,7 @@ export default function PricingPage() {
               ))}
             </CardContent>
             <CardFooter>
-              <Button className="w-full h-10 text-sm bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-[0_0_24px_rgba(220,38,38,0.35)] hover:shadow-[0_0_36px_rgba(220,38,38,0.5)]">
+              <Button onClick={() => handleSubscription()} className="w-full h-10 text-sm bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-[0_0_24px_rgba(220,38,38,0.35)] hover:shadow-[0_0_36px_rgba(220,38,38,0.5)]">
                 Upgrade to Pro
               </Button>
             </CardFooter>

@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { submitFeedback } from '../../../../actions/feedback';
+import { maxChatCharactersLimitFree, maxFreeChats, maxNumberOfProjectChatsFree } from '../../../../Limits';
 
 interface ProjectChat {
   id: bigint;
@@ -37,7 +38,6 @@ interface Project {
   ProjectChat: any[]; // Raw data from database
 }
 
-const MAX_CHARACTERS = 25000;
 
 const ProjectPage = () => {
     const params = useParams();
@@ -79,8 +79,6 @@ const ProjectPage = () => {
   const [isCharacterLimitReached, setIsCharacterLimitReached] = useState(false);
   const [isPromptLimitReached, setIsPromptLimitReached] = useState(false);
   const [showMaxChatsDialog, setShowMaxChatsDialog] = useState(false);
-  const MAX_CHATS = 3;
-  
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30);
   const [isResizing, setIsResizing] = useState(false);
@@ -114,7 +112,9 @@ const ProjectPage = () => {
       const [feedbackText, setFeedbackText] = useState('');
       const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
       const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
+      const MAX_CHATS = maxNumberOfProjectChatsFree;
+      const MAX_CHARACTERS = maxChatCharactersLimitFree;
+ 
       // Function to handle feedback submission
   const handleFeedbackSubmit = async () => {
     if (!feedbackText.trim() || isSubmittingFeedback) return;
@@ -551,14 +551,11 @@ const ProjectPage = () => {
   // Monitor character limit
   useEffect(() => {
     const totalCharacters = calculateTotalCharacters(messages);
-    setIsCharacterLimitReached(totalCharacters >= MAX_CHARACTERS);
-  }, [messages]);
-
-  // Monitor prompt generation limit (max 3 prompts)
-  useEffect(() => {
     const existingPromptCount = messages.filter(m => m.type === 'assistant' && (m as any).prompt).length;
+    setIsCharacterLimitReached(totalCharacters >= MAX_CHARACTERS);
     setIsPromptLimitReached(existingPromptCount >= 3);
   }, [messages]);
+
 
   // Handle mouse events for resizing
   useEffect(() => {

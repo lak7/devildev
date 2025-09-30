@@ -48,7 +48,6 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
-  const [githubConnected, setGithubConnected] = useState(false);
   const [installationId, setInstallationId] = useState<string | null>(null);
   const [importing, setImporting] = useState<number | null>(null);
   const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(true);
@@ -61,16 +60,15 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [pasteError, setPasteError] = useState<string | null>(null);
 
   useEffect(() => {
-    // checkGithubStatus();
     checkAppInstallation();
     fetchUserProjects();
   }, []);
 
   useEffect(() => {
-    if (githubConnected || installationId) {
+    if (installationId) {
       fetchRepos();
     }
-  }, [githubConnected, installationId]);
+  }, [installationId]);
 
   // Debounced search effect
   useEffect(() => {
@@ -80,23 +78,13 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
- 
-  const checkGithubStatus = async () => { 
-    setIsGithubStatusLoading(true);
-    try {
-      const response = await fetch('/api/github/status');
-      const data = await response.json();
-      setGithubConnected(data.isConnected); 
-      setIsGithubStatusLoading(false);
-    } catch (error) {
-      console.error('Error checking GitHub status:', error);
-    }
-  };
 
   const checkAppInstallation = async () => {
     try {
       const res = await fetch('/api/github/app/installations', { cache: 'no-store' });
       const data = await res.json();
+      alert("Check")
+      console.log("This is the data: ", data)
       const list = (data?.installations || []) as Array<{ installationId: bigint }>;
       if (list.length > 0) {
         setInstallationId(String(list[0].installationId));
@@ -131,12 +119,14 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   // TODO: Change this to 2
   const hasReachedProjectLimit = (): boolean => {
-    return userProjects.length >= maxNumberOfProjectsFree;
+    const maxNumberOfProjects =  maxNumberOfProjectsFree;
+    return userProjects.length >= maxNumberOfProjects;
   };
 
   const fetchRepos = async (search?: string) => {
+
     // Only fetch when the user is connected to GitHub or we have an installationId
-    if (!githubConnected && !installationId) {
+    if (!installationId) {
       return;
     }
     try {
