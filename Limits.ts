@@ -1,5 +1,5 @@
 // PROJECT FREE 
-export const maxNumberOfProjectsFree = 200;
+export const maxNumberOfProjectsFree = 2;
 export const maxProjectSizeFree = 25000;
 export const maxNumberOfProjectChatsFree = 3; 
 

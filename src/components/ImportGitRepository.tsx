@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { getUserProjects } from '../../actions/reverse-architecture';
 import { fetchUserInstallationIdProjectAndPlan } from '../../actions/user';
 import { useUser } from '@clerk/nextjs';
-import { maxNumberOfProjectsFree } from '../../Limits';
+import { maxNumberOfProjectsFree, maxNumberOfProjectsPro } from '../../Limits';
 // Removed card and glow imports for a minimalist view
 
 interface Repository { 
@@ -63,6 +63,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [pasteError, setPasteError] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<any | null>(null);
   const [userProfile, setUserProfile] = useState<any | null>(null);
+  const [isUserPro, setIsUserPro] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -90,8 +91,6 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
       setIsGithubStatusLoading(true);
       if (!user?.id) return;
       const result = await fetchUserInstallationIdProjectAndPlan(user.id);
-      alert("Check")
-      console.log("This is the result: ", result)
       if ((result as any)?.success) {
         const installation = (result as any).installation;
         if (installation?.installationId) {
@@ -104,6 +103,9 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
         }
         setSubscription((result as any).subscription ?? null);
         setUserProfile((result as any).user ?? null);
+        if(result.user?.subscriptionPlan == "PRO" && result.subscription?.status === "ACTIVE") {
+          setIsUserPro(true);
+        }
       } else {
         setInstallationId(null);
       }
@@ -138,8 +140,11 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   // TODO: Change this to 2
   const hasReachedProjectLimit = (): boolean => {
-    const maxNumberOfProjects =  maxNumberOfProjectsFree;
-    return userProjects.length >= maxNumberOfProjects;
+    if(isUserPro) {
+      return userProjects.length >= maxNumberOfProjectsPro;
+    }else{
+      return userProjects.length >= maxNumberOfProjectsFree;
+    }
   };
 
   const fetchRepos = async (search?: string) => {

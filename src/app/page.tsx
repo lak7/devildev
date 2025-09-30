@@ -21,7 +21,7 @@ import HomeNav from '@/components/core/HomeNav';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
-import { maxFreeChats } from '../../Limits';
+import { maxFreeChats, maxProChats } from '../../Limits';
 
 
 
@@ -79,8 +79,8 @@ export default function Page() {
   const rotatingTexts = ["Visualize your Codebase","10x your vibe coding"];
   const [currentRotateIndex, setCurrentRotateIndex] = useState(0);
   const [displayedRotateText, setDisplayedRotateText] = useState("");
+  const [isUserPro, setIsUserPro] = useState(false);
 
-  const MAX_CHATS = maxFreeChats;
   
 
   const { isLoaded, isSignedIn, user } = useUser();
@@ -93,10 +93,14 @@ export default function Page() {
     setChatsLoading(true);
     try {
       const result = await getUserChats(10); // Get last 10 chats
+      console.log("This is the result: ", result)
       if (result.success && result.chats) {
         setUserChats(result.chats);
       } else {
         console.error('Failed to fetch chats:', result.error);
+      }
+      if(result.user?.subscriptionPlan == "PRO" && result.subscription?.status === "ACTIVE") {
+        setIsUserPro(true);
       }
     } catch (error) {
       console.error('Error fetching user chats:', error);
@@ -104,11 +108,6 @@ export default function Page() {
       setChatsLoading(false);
     }
   };
-
-
-  useEffect(() => { 
-    setMounted(true);
-  }, []);
 
   // Typewriter effect for rotating heading
   useEffect(() => {
@@ -143,6 +142,7 @@ export default function Page() {
 
   // Detect when scrolling is active to reduce animation complexity
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       setIsScrolling(true);
       
@@ -191,6 +191,14 @@ export default function Page() {
   }, [isSignedIn, isLoaded]);
 
 
+  const returnMaxChats = () => {
+    if(isUserPro) {
+      return maxProChats;
+    }else{
+      return maxFreeChats;
+    }
+  }
+
 
 
   const handleFirstMessage = async (e: React.FormEvent) => {
@@ -199,7 +207,7 @@ export default function Page() {
     if (!inputMessage.trim()) return;
     
     if (isSignedIn) {
-      if (userChats.length >= MAX_CHATS) {
+      if (userChats.length >= returnMaxChats()) {
         setShowMaxChatsDialog(true);
         return; 
       }
@@ -650,7 +658,7 @@ export default function Page() {
           <DialogHeader>
             <DialogTitle className="text-white">Chat Limit Reached</DialogTitle>
             <DialogDescription className="text-gray-300">
-              You have reached the maximum number of chats ({MAX_CHATS}) and can't create more chats anymore. Please contact or mail to lakshay@devildev.com if you want to increase the limit.
+              You have reached the maximum number of chats ({returnMaxChats()}) and can't create more chats anymore. Please contact or mail to lakshay@devildev.com if you want to increase the limit.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="sm:justify-end">
