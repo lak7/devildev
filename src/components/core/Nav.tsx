@@ -30,7 +30,7 @@ export default function Nav({ setIsFeedbackOpen, isMCP = false, isProject = fals
           {/* Logo on left */}
           <button
                 onClick={() => router.push('/')}
-                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
+                className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity group"
                 title="Go to Home"
               >
                 <Image

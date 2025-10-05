@@ -9,8 +9,10 @@ import Link from "next/link"
 import TempFooter from "@/components/core/TempFooter"
 import { useUser } from "@clerk/nextjs"
 import { fetchUserWithSubscription } from "../../../actions/subscription"
+import useUserSubscription from "@/hooks/useSubscription"
 
 export default function PricingPage() {
+  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
     const { user } = useUser();
     const freeFeatures = [
         "Up to 3 Chats",

@@ -181,7 +181,6 @@ export async function getUserChats(limit: number = 15) {
     const user = await db.user.findUnique({
       where: { id: userId },
       include: {
-        subscription: true,
         chats: {
           orderBy: { updatedAt: 'desc' },
           take: limit,
@@ -195,7 +194,7 @@ export async function getUserChats(limit: number = 15) {
       },
     });
 
-    return { success: true, chats: user?.chats, user: user, subscription: user?.subscription };
+    return { success: true, chats: user?.chats, user: user };
   } catch (error) {
     console.error("Error getting user chats:", error);
     return { success: false, error: "Failed to get chats" };

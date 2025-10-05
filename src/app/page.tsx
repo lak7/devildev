@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
 import { maxFreeChats, maxProChats } from '../../Limits';
+import useUserSubscription from '@/hooks/useSubscription';
 
 
 
@@ -79,10 +80,10 @@ export default function Page() {
   const rotatingTexts = ["Visualize your Codebase","10x your vibe coding"];
   const [currentRotateIndex, setCurrentRotateIndex] = useState(0);
   const [displayedRotateText, setDisplayedRotateText] = useState("");
-  const [isUserPro, setIsUserPro] = useState(false);
 
+  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
   
-
+ 
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
 
@@ -98,9 +99,6 @@ export default function Page() {
         setUserChats(result.chats);
       } else {
         console.error('Failed to fetch chats:', result.error);
-      }
-      if(result.user?.subscriptionPlan == "PRO" && result.subscription?.status === "ACTIVE") {
-        setIsUserPro(true);
       }
     } catch (error) {
       console.error('Error fetching user chats:', error);
@@ -192,7 +190,7 @@ export default function Page() {
 
 
   const returnMaxChats = () => {
-    if(isUserPro) {
+    if(userSubscription) {
       return maxProChats;
     }else{
       return maxFreeChats;
@@ -252,11 +250,11 @@ export default function Page() {
   };
 
 
-  if(!isLoaded){
-    return <div className="flex justify-center items-center h-screen">
-      <Loader2 className="h-10 w-10 animate-spin" />
-    </div>
-  }
+  // if(!isLoaded){
+  //   return <div className="flex justify-center items-center h-screen">
+  //     <Loader2 className="h-10 w-10 animate-spin" />
+  //   </div>
+  // }
 
 
   return (

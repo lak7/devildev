@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Button } from '../ui/button';
+import useUserSubscription from '@/hooks/useSubscription';
 
 interface HomeNavProps {
   currentPage?: 'Home' | 'Community' | 'Pricing' | 'Contact';
@@ -15,6 +16,7 @@ interface HomeNavProps {
 
 export default function HomeNav({ currentPage }: HomeNavProps) {
   const router = useRouter();
+  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
   const { user } = useUser();
   return (
     <nav className=" max-w-6xl mx-auto top-4 left-0 right-0 z-40 bg-black/50 backdrop-blur-md flex items-center justify-between h-16  flex-shrink-0 relative  ">
@@ -23,17 +25,32 @@ export default function HomeNav({ currentPage }: HomeNavProps) {
               <div className="flex z-20 items-center">
                 <button
                   onClick={() => router.push('/')}
-                  className="flex items-center cursor-pointer hover:opacity-80 transition-opacity group"
+                  className="flex items-end justify-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity group"
                   title="Go to Home"
                 >
-                  <Image
-                  src="/bold01.png"
-                  alt="DevilDev Logo"
-                  width={15000}
-                  height={4000}
-                  className="h-full w-11 "
-                  priority
-                />
+                  {userSubscription ? (
+                   <Image
+                   src="/pro2.png"
+                   alt="DevilDev Logo"
+                   width={15000}
+                   height={4000}
+                   className="h-full w-16 "
+                   priority
+                 />
+
+                  ): (
+                
+                <Image
+                src="/bold01.png"
+                alt="DevilDev Logo"
+                width={15000}
+                height={4000}
+                className="h-full w-11 "
+                priority
+              />
+                  )}
+                  
+                
                 </button>
                 
               </div>
