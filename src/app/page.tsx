@@ -82,7 +82,7 @@ export default function Page() {
   const [displayedRotateText, setDisplayedRotateText] = useState("");
 
   const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
-  
+   
  
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();

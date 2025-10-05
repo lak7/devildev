@@ -8,9 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { getUserProjects } from '../../actions/reverse-architecture';
-import { fetchUserInstallationIdProjectAndPlan } from '../../actions/user';
+import { fetchUserInstallationIdAndProject } from '../../actions/user';
 import { useUser } from '@clerk/nextjs';
 import { maxNumberOfProjectsFree, maxNumberOfProjectsPro } from '../../Limits';
+import useUserSubscription from '@/hooks/useSubscription';
 // Removed card and glow imports for a minimalist view
 
 interface Repository { 
@@ -61,9 +62,8 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [pasteUrl, setPasteUrl] = useState('');
   const [pasteLoading, setPasteLoading] = useState(false);
   const [pasteError, setPasteError] = useState<string | null>(null);
-  const [subscription, setSubscription] = useState<any | null>(null);
   const [userProfile, setUserProfile] = useState<any | null>(null);
-  const [isUserPro, setIsUserPro] = useState(false);
+  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
 
   useEffect(() => {
     if (user?.id) {
@@ -90,7 +90,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     try {
       setIsGithubStatusLoading(true);
       if (!user?.id) return;
-      const result = await fetchUserInstallationIdProjectAndPlan(user.id);
+      const result = await fetchUserInstallationIdAndProject(user.id);
       if ((result as any)?.success) {
         const installation = (result as any).installation;
         if (installation?.installationId) {
@@ -101,11 +101,8 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
         if ((result as any).projects) {
           setUserProjects((result as any).projects);
         }
-        setSubscription((result as any).subscription ?? null);
         setUserProfile((result as any).user ?? null);
-        if(result.user?.subscriptionPlan == "PRO" && result.subscription?.status === "ACTIVE") {
-          setIsUserPro(true);
-        }
+
       } else {
         setInstallationId(null);
       }
@@ -140,7 +137,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   // TODO: Change this to 2
   const hasReachedProjectLimit = (): boolean => {
-    if(isUserPro) {
+    if(userSubscription) {
       return userProjects.length >= maxNumberOfProjectsPro;
     }else{
       return userProjects.length >= maxNumberOfProjectsFree;

@@ -65,7 +65,7 @@ async function handleSubscriptionEvent(payload: WebhookPayload) {
   console.log("DODO webhook 8");  
   try {
     console.log("DODO webhook 9");
-    switch (payload.data.status) {
+    switch (payload.data.status) { 
       case 'active':
         console.log(`Activating subscription ${subscription_id} for user ${userId}`);
         await SubscriptionService.upsertSubscription({

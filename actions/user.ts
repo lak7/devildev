@@ -245,9 +245,9 @@ export async function getCurrentUserProfile() {
   }
 }
 
-export async function fetchUserInstallationIdProjectAndPlan(userId: string) {
+export async function fetchUserInstallationIdAndProject(userId: string) {
   try {
-    // Fetch user with GitHub App installation, projects, and subscription in one query
+    // Fetch user with GitHub App installation and projects
     const user = await db.user.findUnique({
       where: { id: userId },
       include: {
@@ -259,8 +259,7 @@ export async function fetchUserInstallationIdProjectAndPlan(userId: string) {
             repoId: true,
             repoFullName: true,
           },
-        },
-        subscription: true,
+        }
       },
     });
 
@@ -285,19 +284,17 @@ export async function fetchUserInstallationIdProjectAndPlan(userId: string) {
         }
       : null;
 
-    // Use included relations for projects and subscription
+    // Use included relations for projects
     const projects = (user as any).projects ?? [];
-    const subscription = (user as any).subscription ?? null;
 
     return {
       success: true as const,
       user,
       projects,
       installation,
-      subscription,
     };
   } catch (error) {
-    console.error('Error fetching user, installation, projects, and subscription:', error);
+    console.error('Error fetching user, installation and projects:', error);
     return { error: 'Failed to fetch user data bundle' } as const;
   }
 }
