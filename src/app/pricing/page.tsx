@@ -10,10 +10,13 @@ import TempFooter from "@/components/core/TempFooter"
 import { useUser } from "@clerk/nextjs"
 import { fetchUserWithSubscription } from "../../../actions/subscription"
 import useUserSubscription from "@/hooks/useSubscription"
+import { useRouter } from "next/navigation";
 
 export default function PricingPage() {
   const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
     const { user } = useUser();
+   
+    const router = useRouter();
     const freeFeatures = [
         "Up to 3 Chats",
         "Only 1 Project",
@@ -30,7 +33,7 @@ export default function PricingPage() {
 
     const handleSubscription = async () => {
       if(!user){
-        alert("Authentication required");
+        router.push('/sign-in');
         return;
       }
       const userWithSubscription = await fetchUserWithSubscription(user.id);
@@ -90,12 +93,30 @@ export default function PricingPage() {
             ))}
           </CardContent>
           <CardFooter>
-            <Button
+            {userSubscription ? (
+              <Button
+              onClick={() => router.push('/settings')}
               variant="outline"
-              className="w-full h-10 text-sm border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors bg-transparent"
+              className="w-full h-10 text-sm border-border hover:bg-primary  hover:border-primary transition-colors bg-transparent"
+            >
+              Downgrade to Free
+            </Button>
+            ) : user ? (
+              <Button
+              variant="outline"
+              className="w-full h-10 text-sm border-border hover:bg-primary hover:border-primary transition-colors bg-transparent"
+            >
+              Already Free
+            </Button>
+            ) : (
+              <Button
+              onClick={() => router.push('/sign-in')}
+              variant="outline"
+              className="w-full cursor-pointer h-10 text-sm border-border hover:bg-primary hover:border-primary transition-colors bg-transparent"
             >
               Get Started Free
             </Button>
+            )}
           </CardFooter>
         </Card>
 
@@ -120,9 +141,16 @@ export default function PricingPage() {
               ))}
             </CardContent>
             <CardFooter>
-              <Button onClick={() => handleSubscription()} className="w-full h-10 text-sm bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-[0_0_24px_rgba(220,38,38,0.35)] hover:shadow-[0_0_36px_rgba(220,38,38,0.5)]">
-                Upgrade to Pro
+              {userSubscription ? (
+                <Button className="w-full h-10 text-sm bg-black border-2 border-green-500/50 hover:bg-black  text-green-400 font-semibold shadow-[0_0_16px_rgba(34,197,94,0.25)] transition-all">
+                Already Activated
               </Button>
+              ) : (
+                 <Button onClick={() => handleSubscription()} className="w-full h-10 text-sm bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-[0_0_24px_rgba(220,38,38,0.35)] hover:shadow-[0_0_36px_rgba(220,38,38,0.5)]">
+                 Upgrade to Pro
+               </Button>
+              )}
+             
             </CardFooter>
           </Card>
         </GlowDiv>
