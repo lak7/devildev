@@ -38,7 +38,7 @@ export default function PricingPage() {
       }
       const userWithSubscription = await fetchUserWithSubscription(user.id);
       if(userWithSubscription?.subscriptionPlan == "FREE" && userWithSubscription?.subscription?.status !== "ACTIVE"){
-        const redirectUrl = "https://rested-anchovy-mistakenly.ngrok-free.app";
+        const redirectUrl = "https://rested-anchovy-mistakenly.ngrok-free.app/success";
         const userEmail = userWithSubscription.email;
         const url = `https://test.checkout.dodopayments.com/buy/pdt_WOJtkAzaBaXWSYEKRxIGa?quantity=1&redirect_url=${redirectUrl}&email=${userEmail}&disableEmail=true`;
 

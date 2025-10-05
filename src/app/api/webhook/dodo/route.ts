@@ -21,6 +21,8 @@ export async function POST(request: Request) {
     const rawBody = await request.text();
     const webhook = getWebhook();
     console.log("DODO webhook 2");
+    console.log("RAW BODY: ", rawBody);
+
 
     const webhookHeaders = {
       "webhook-id": headersList.get("webhook-id") || "",

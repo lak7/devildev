@@ -12,18 +12,15 @@ const fetcher = async (url: string) => {
 
 export default function useUserSubscription() {
     // SWR will cache the response and cookies will provide additional server-side caching
-    const { data, error, isLoading } = useSWR(
+    const { data, error, isLoading } = useSWR( 
       `/api/user/subscription-status`, 
       fetcher,
-      {
-        revalidateOnFocus: false, // Don't refetch on window focus
-        revalidateOnReconnect: false, // Don't refetch on reconnect
-        dedupingInterval: 300000, // Dedupe requests within 5 minutes (same as cookie expiry)
-        refreshInterval: 300000, // Refresh every 5 minutes (same as cookie expiry)
-      }
     );
+   
     
     const isPro = data?.subscriptionPlan === "PRO" && data?.subscription?.status === "ACTIVE";
+
+    // alert(data?.subscriptionPlan)
    
     return {
       userSubscription: isPro,
