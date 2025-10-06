@@ -39,14 +39,17 @@ export default function PricingPage() {
       const userWithSubscription = await fetchUserWithSubscription(user.id);
       if(userWithSubscription?.subscriptionPlan == "FREE" && userWithSubscription?.subscription?.status !== "ACTIVE"){
         const redirectUrl = "https://rested-anchovy-mistakenly.ngrok-free.app/success";
+        const liveRedirectUrl = "https://devildev-test.vercel.app/success";
         const userEmail = userWithSubscription.email;
+        
         const url = `https://test.checkout.dodopayments.com/buy/pdt_WOJtkAzaBaXWSYEKRxIGa?quantity=1&redirect_url=${redirectUrl}&email=${userEmail}&disableEmail=true`;
+        const liveUrl = `https://checkout.dodopayments.com/buy/pdt_cI4VU7DR9rRQGlD0QHERi?quantity=1&redirect_url=${liveRedirectUrl}&email=${userEmail}&disableEmail=true`;
 
-        if(!url){
+        if(!liveUrl){
           alert("Payment link not found");
           return;
         }
-        window.location.href = url;
+        window.location.href = liveUrl;
         return;
       }else{ 
         alert("You are rich man")
