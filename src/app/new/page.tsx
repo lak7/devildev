@@ -17,6 +17,7 @@ import Nav from '@/components/core/Nav';
 import Link from 'next/link';
 import useUserSubscription from '@/hooks/useSubscription';
 import { maxProjectSizeFree, maxProjectSizePro } from '../../../Limits';
+import PricingDialog from '@/components/PricingDialog';
 
 interface Repository {
   id: number;
@@ -253,40 +254,12 @@ export default function NewPage() {
         </div>
       )}
 
-      {/* Too Big Dialog */}
-      {isTooBigDialogOpen && (
-        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-black border border-gray-600 rounded-lg p-6 w-full max-w-md mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-white">Project Too Large</h3>
-              <button
-                onClick={() => setIsTooBigDialogOpen(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="space-y-3 text-sm text-gray-300">
-              <p>This project is too big and can't be imported at the moment.</p>
-              <p>Please contact us or mail to <a href="mailto:lakshay@devildev.com" className="text-white hover:text-gray-200 underline">lakshay@devildev.com</a> for assistance with large repositories.</p>
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => window.open('/contact', '_blank', 'noopener,noreferrer')}
-                className="px-4 py-2 bg-zinc-950 text-white rounded-md hover:bg-gray-700 border border-zinc-50"
-              >
-                Contact Us
-              </button>
-              <button
-                onClick={() => setIsTooBigDialogOpen(false)}
-                className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Too Big Project - Pricing Dialog */}
+      <PricingDialog 
+        open={isTooBigDialogOpen} 
+        onOpenChange={setIsTooBigDialogOpen}
+        description="Your project exceeds the size limit for Free users. Upgrade to Pro to import larger repositories and unlock extended features."
+      />
 
       <GithubOAuthDeprecatedNotice />
     </div>

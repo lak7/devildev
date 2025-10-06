@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
 import { maxFreeChats, maxProChats } from '../../Limits';
 import useUserSubscription from '@/hooks/useSubscription';
+import PricingDialog from '@/components/PricingDialog';
 
 
 
@@ -650,28 +651,13 @@ export default function Page() {
 
       <div className="absolute bottom-0 z-10 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
 
-      {/* Max Chats Dialog */}
-      <Dialog open={showMaxChatsDialog} onOpenChange={setShowMaxChatsDialog}>
-        <DialogContent className="sm:max-w-md border border-zinc-500">
-          <DialogHeader>
-            <DialogTitle className="text-white">Chat Limit Reached</DialogTitle>
-            <DialogDescription className="text-gray-300">
-              You have reached the maximum number of chats ({returnMaxChats()}) and can't create more chats anymore. Please contact or mail to lakshay@devildev.com if you want to increase the limit.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-end">
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={() => setShowMaxChatsDialog(false)}
-              className="bg-transparent border-zinc-500 text-white hover:bg-white hover:text-black hover:border-red-500/50"
-            >
-              Got it
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
+      {/* Pricing Dialog for Max Chats */}
+      <PricingDialog 
+        open={showMaxChatsDialog} 
+        onOpenChange={setShowMaxChatsDialog}
+        description="You've reached your chat limit. Upgrade to Pro to unlock more chats and features."
+      />
+  
       {/* GitHub OAuth Deprecated Notice */}
       <GithubOAuthDeprecatedNotice />
 

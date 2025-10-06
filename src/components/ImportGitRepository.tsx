@@ -12,6 +12,7 @@ import { fetchUserInstallationIdAndProject } from '../../actions/user';
 import { useUser } from '@clerk/nextjs';
 import { maxNumberOfProjectsFree, maxNumberOfProjectsPro } from '../../Limits';
 import useUserSubscription from '@/hooks/useSubscription';
+import PricingDialog from './PricingDialog';
 // Removed card and glow imports for a minimalist view
 
 interface Repository { 
@@ -42,7 +43,7 @@ interface UserProject {
   repoFullName: string | null;
 }
   
-interface ImportGitRepositoryProps {
+interface ImportGitRepositoryProps { 
   onImport: (repo: Repository, installationId?: string | null) => void;
 } 
 
@@ -379,35 +380,11 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   // Check if user has reached project limit
   if (hasReachedProjectLimit()) {
     return (
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full h-full max-w-4xl">
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-full max-w-lg">
-              <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-10 shadow-xl">
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative">
-                    <div className="absolute -inset-6 rounded-2xl bg-yellow-500/20 blur-2xl" aria-hidden="true" />
-                    <div className="w-24 h-24 bg-yellow-500/20 rounded-xl flex items-center justify-center">
-                      <span className="text-4xl">⚠️</span>
-                    </div>
-                  </div>
-                  <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                    Project Limit Reached
-                  </h1>
-                  <p className="mt-2 text-sm text-gray-400 max-w-md">
-                    You have reached the maximum limit of 1 project. If you want to import more repositories, then please contact or mail to lakshay@devildev.com
-                  </p>
-                  <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                    <p className="text-sm text-yellow-200">
-                      <strong>Current projects:</strong> {userProjects.length}/{maxNumberOfProjectsFree}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PricingDialog 
+      open={true} 
+      onOpenChange={() => {}}
+      description={`You have reached the maximum limit of ${userSubscription ? maxNumberOfProjectsPro : maxNumberOfProjectsFree} project${userSubscription ? 's' : ''}. Upgrade to Pro to import up to ${maxNumberOfProjectsPro} projects and unlock premium features.`}
+    />
     );
   }
 
