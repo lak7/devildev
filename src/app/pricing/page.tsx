@@ -24,11 +24,11 @@ export default function PricingPage() {
     ]
 
     const proFeatures = [
-        "Up to 100 Chats",
-        "Up to 5 Projects",
-        "Better LLM models",
-        "Up to 100 chats per project",
-        "Extended token limit for each chat",
+      "Extended size limit for project architecture",
+      "Up to 100 chats per project",
+      "Up to 10 Projects",
+      "Extended token limit for each chat",
+      "Up to 100 Chats",
     ]
 
     const handleSubscription = async () => {
@@ -173,4 +173,4 @@ export default function PricingPage() {
     </div>
         </div>
     )
-}
+} 

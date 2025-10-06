@@ -29,11 +29,11 @@ export default function PricingDialog({ open, onOpenChange, description }: Prici
   ]
 
   const proFeatures = [
-    "Up to 100 Chats",
-    "Up to 5 Projects",
-    "Better LLM models",
+    "Extended size limit for project architecture",
     "Up to 100 chats per project",
+    "Up to 10 Projects",
     "Extended token limit for each chat",
+    "Up to 100 Chats",
   ]
 
   const handleSubscription = async () => {
@@ -68,7 +68,7 @@ export default function PricingDialog({ open, onOpenChange, description }: Prici
           <DialogTitle className="text-white text-2xl text-center">Please Upgrade to Continue</DialogTitle>
           <DialogDescription className="text-gray-300 text-center">
             {description}
-          </DialogDescription>
+          </DialogDescription> 
         </DialogHeader>
 
         <div className="dark mt-6">

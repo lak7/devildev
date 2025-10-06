@@ -612,7 +612,7 @@ export default function Page() {
                   rows={2}
                   style={{ height: textareaHeight }}
                   maxLength={69000}
-                  disabled={isLoading}
+                  disabled={isLoading || chatsLoading}
                 />
               </div>
               

@@ -14,4 +14,4 @@ export const maxChatCharactersLimitFree = 20000;
 
 // CHAT PRO 
 export const maxProChats = 100; 
-export const maxChatCharactersLimitPro = 100000;
+export const maxChatCharactersLimitPro = 100000; 
