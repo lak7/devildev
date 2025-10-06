@@ -7,8 +7,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import TempFooter from "@/components/core/TempFooter"
+import { useUser } from "@clerk/nextjs"
+import { fetchUserWithSubscription } from "../../../actions/subscription"
+import useUserSubscription from "@/hooks/useSubscription"
+import { useRouter } from "next/navigation";
 
 export default function PricingPage() {
+  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
+    const { user } = useUser();
+   
+    const router = useRouter();
     const freeFeatures = [
         "Up to 3 Chats",
         "Only 1 Project",
@@ -16,12 +24,37 @@ export default function PricingPage() {
     ]
 
     const proFeatures = [
-        "Up to 100 Chats",
-        "Up to 5 Projects",
-        "Better LLM models",
-        "Up to 100 chats per project",
-        "Extended token limit for each chat",
+      "Extended size limit for project architecture",
+      "Up to 100 chats per project",
+      "Up to 10 Projects",
+      "Extended token limit for each chat",
+      "Up to 100 Chats",
     ]
+
+    const handleSubscription = async () => {
+      if(!user){
+        router.push('/sign-in');
+        return;
+      }
+      const userWithSubscription = await fetchUserWithSubscription(user.id);
+      if(userWithSubscription?.subscriptionPlan == "FREE" && userWithSubscription?.subscription?.status !== "ACTIVE"){
+        const redirectUrl = "https://rested-anchovy-mistakenly.ngrok-free.app/success";
+        const liveRedirectUrl = "https://devildev.com/success";
+        const userEmail = userWithSubscription.email;
+        
+        const url = `https://test.checkout.dodopayments.com/buy/pdt_WOJtkAzaBaXWSYEKRxIGa?quantity=1&redirect_url=${redirectUrl}&email=${userEmail}&disableEmail=true`;
+        const liveUrl = `https://checkout.dodopayments.com/buy/pdt_cI4VU7DR9rRQGlD0QHERi?quantity=1&redirect_url=${liveRedirectUrl}&email=${userEmail}&disableEmail=true`;
+
+        if(!liveUrl){
+          alert("Payment link not found");
+          return;
+        }
+        window.location.href = liveUrl;
+        return;
+      }else{ 
+        alert("You are rich man")
+      }
+    }
 
     return (
         <div className="min-h-screen bg-black">
@@ -30,7 +63,7 @@ export default function PricingPage() {
                 <HomeNav />
             </div>
 
-            <div className="container mx-auto px-4 py-16 dark">
+            <div className="  container mx-auto px-4 py-16 dark">
       {/* Hero Section */}
       <div className="text-center mb-16">
       <h1 className="relative z-10 text-lg md:text-5xl  bg-clip-text text-transparent bg-gradient-to-b from-neutral-200 to-neutral-600  text-center font-sans font-bold">
@@ -63,12 +96,30 @@ export default function PricingPage() {
             ))}
           </CardContent>
           <CardFooter>
-            <Button
+            {userSubscription ? (
+              <Button
+              onClick={() => router.push('/settings?tab=billing')}
               variant="outline"
-              className="w-full h-10 text-sm border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors bg-transparent"
+              className="w-full h-10 text-sm border-border hover:bg-primary  hover:border-primary transition-colors bg-transparent"
             >
-              Get Started Free
+              Downgrade to Free
             </Button>
+            ) : user ? (
+              <Button
+              variant="outline"
+              className="w-full h-10 text-sm border-border hover:bg-primary hover:border-primary transition-colors bg-transparent"
+            >
+              Already Free
+            </Button>
+            ) : (
+              <Button
+              onClick={() => router.push('/sign-in')}
+              variant="outline"
+              className="w-full cursor-pointer h-10 text-sm border-border hover:bg-primary hover:border-primary transition-colors bg-transparent"
+            >
+              Get Started for Free
+            </Button>
+            )}
           </CardFooter>
         </Card>
 
@@ -93,9 +144,16 @@ export default function PricingPage() {
               ))}
             </CardContent>
             <CardFooter>
-              <Button className="w-full h-10 text-sm bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-[0_0_24px_rgba(220,38,38,0.35)] hover:shadow-[0_0_36px_rgba(220,38,38,0.5)]">
-                Upgrade to Pro
+              {userSubscription ? (
+                <Button className="w-full h-10 text-sm bg-black border-2 border-green-500/50 hover:bg-black  text-green-400 font-semibold shadow-[0_0_16px_rgba(34,197,94,0.25)] transition-all">
+                Already Activated
               </Button>
+              ) : (
+                 <Button onClick={() => handleSubscription()} className="w-full h-10 text-sm bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-[0_0_24px_rgba(220,38,38,0.35)] hover:shadow-[0_0_36px_rgba(220,38,38,0.5)]">
+                 Upgrade to Pro
+               </Button>
+              )}
+             
             </CardFooter>
           </Card>
         </GlowDiv>
@@ -115,4 +173,4 @@ export default function PricingPage() {
     </div>
         </div>
     )
-}
+} 

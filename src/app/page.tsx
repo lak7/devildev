@@ -21,6 +21,9 @@ import HomeNav from '@/components/core/HomeNav';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
+import { maxFreeChats, maxProChats } from '../../Limits';
+import useUserSubscription from '@/hooks/useSubscription';
+import PricingDialog from '@/components/PricingDialog';
 
 
 
@@ -56,8 +59,6 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-const MAX_CHATS = 3;
-
 
 export default function Page() {
   const [inputMessage, setInputMessage] = useState('');
@@ -80,8 +81,10 @@ export default function Page() {
   const rotatingTexts = ["Visualize your Codebase","10x your vibe coding"];
   const [currentRotateIndex, setCurrentRotateIndex] = useState(0);
   const [displayedRotateText, setDisplayedRotateText] = useState("");
-  
 
+  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
+   
+ 
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
 
@@ -92,6 +95,7 @@ export default function Page() {
     setChatsLoading(true);
     try {
       const result = await getUserChats(10); // Get last 10 chats
+      console.log("This is the result: ", result)
       if (result.success && result.chats) {
         setUserChats(result.chats);
       } else {
@@ -103,11 +107,6 @@ export default function Page() {
       setChatsLoading(false);
     }
   };
-
-
-  useEffect(() => { 
-    setMounted(true);
-  }, []);
 
   // Typewriter effect for rotating heading
   useEffect(() => {
@@ -142,6 +141,7 @@ export default function Page() {
 
   // Detect when scrolling is active to reduce animation complexity
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       setIsScrolling(true);
       
@@ -190,6 +190,14 @@ export default function Page() {
   }, [isSignedIn, isLoaded]);
 
 
+  const returnMaxChats = () => {
+    if(userSubscription) {
+      return maxProChats;
+    }else{
+      return maxFreeChats;
+    }
+  }
+
 
 
   const handleFirstMessage = async (e: React.FormEvent) => {
@@ -198,9 +206,9 @@ export default function Page() {
     if (!inputMessage.trim()) return;
     
     if (isSignedIn) {
-      if (userChats.length >= MAX_CHATS) {
+      if (userChats.length >= returnMaxChats()) {
         setShowMaxChatsDialog(true);
-        return;
+        return; 
       }
       setIsLoading(true); 
       try {
@@ -243,11 +251,11 @@ export default function Page() {
   };
 
 
-  if(!isLoaded){
-    return <div className="flex justify-center items-center h-screen">
-      <Loader2 className="h-10 w-10 animate-spin" />
-    </div>
-  }
+  // if(!isLoaded){
+  //   return <div className="flex justify-center items-center h-screen">
+  //     <Loader2 className="h-10 w-10 animate-spin" />
+  //   </div>
+  // }
 
 
   return (
@@ -344,7 +352,7 @@ export default function Page() {
           </div>
         </div>
         {/* Spacer for mobile navbar height */}
-        <div className="lg:hidden h-16" />
+        <div className="lg:hidden h-16" /> 
 
       {/* GRID  */}
       <div className="">
@@ -604,7 +612,7 @@ export default function Page() {
                   rows={2}
                   style={{ height: textareaHeight }}
                   maxLength={69000}
-                  disabled={isLoading}
+                  disabled={isLoading || chatsLoading}
                 />
               </div>
               
@@ -643,28 +651,13 @@ export default function Page() {
 
       <div className="absolute bottom-0 z-10 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent"/>
 
-      {/* Max Chats Dialog */}
-      <Dialog open={showMaxChatsDialog} onOpenChange={setShowMaxChatsDialog}>
-        <DialogContent className="sm:max-w-md border border-zinc-500">
-          <DialogHeader>
-            <DialogTitle className="text-white">Chat Limit Reached</DialogTitle>
-            <DialogDescription className="text-gray-300">
-              You have reached the maximum number of chats ({MAX_CHATS}) and can't create more chats anymore. Please contact or mail to lakshay@devildev.com if you want to increase the limit.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-end">
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={() => setShowMaxChatsDialog(false)}
-              className="bg-transparent border-zinc-500 text-white hover:bg-white hover:text-black hover:border-red-500/50"
-            >
-              Got it
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
+      {/* Pricing Dialog for Max Chats */}
+      <PricingDialog 
+        open={showMaxChatsDialog} 
+        onOpenChange={setShowMaxChatsDialog}
+        description="You've reached your chat limit. Upgrade to Pro to unlock more chats and features."
+      />
+  
       {/* GitHub OAuth Deprecated Notice */}
       <GithubOAuthDeprecatedNotice />
 

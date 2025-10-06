@@ -32,6 +32,9 @@ import { CoachMark } from '@/components/CoachMarks';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
+import { maxChatCharactersLimitFree, maxChatCharactersLimitPro } from '../../../../Limits';
+import useUserSubscription from '@/hooks/useSubscription';
+import PricingDialog from '@/components/PricingDialog';
 
 interface UserChat {
   id: string;
@@ -48,7 +51,7 @@ interface Particle {
   animationDuration: string;
 }
 
-const MAX_CHARACTERS = 25000;
+
 
 const DevPage = () => {
   const params = useParams();
@@ -115,12 +118,14 @@ const DevPage = () => {
 
   // Character limit state
   const [isCharacterLimitReached, setIsCharacterLimitReached] = useState(false);
+  const [showCharacterLimitDialog, setShowCharacterLimitDialog] = useState(false);
   
   
   // Coach mark state
   const [showDocsCoachMark, setShowDocsCoachMark] = useState(false);
   const [showDownloadCoachMark, setShowDownloadCoachMark] = useState(false);
   const [isArchitectureGeneratedOnce, setIsArchitectureGeneratedOnce] = useState(false);
+  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
   const docsButtonRef = useRef<HTMLButtonElement>(null);
   const downloadButtonRef = useRef<HTMLButtonElement>(null);
   
@@ -133,6 +138,8 @@ const DevPage = () => {
 
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
+
+  const [MAX_CHARACTERS, setMAX_CHARACTERS] = useState(0);
 
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
@@ -163,6 +170,10 @@ const DevPage = () => {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isResizing]);
+
+  useEffect(() => {
+    setMAX_CHARACTERS(userSubscription ? maxChatCharactersLimitPro : maxChatCharactersLimitFree);
+  }, [userSubscription]);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -628,13 +639,14 @@ const DevPage = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if(isLoadingUserSubscription) return;
+    e.preventDefault(); 
     if (!inputMessage.trim() || isLoading) return;
 
     // Check character limit before processing
     const currentTotalCharacters = calculateTotalCharacters(messages);
     if (currentTotalCharacters >= MAX_CHARACTERS) {
-      alert("You have reached the maximum number of tokens and can't continue anymore.");
+      setShowCharacterLimitDialog(true);
       return;
     }
 
@@ -1466,7 +1478,7 @@ const DevPage = () => {
                 <form onSubmit={handleSubmit} className="relative">
                   <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                     <textarea
-                      placeholder={isCharacterLimitReached ? "You have reached the maximum number of tokens and can't continue anymore." : "Continue the conversation..."}
+                      placeholder="Continue the conversation..."
                       value={inputMessage}
                       onChange={handleTextareaChange}
                       onKeyDown={(e) => {
@@ -1479,7 +1491,7 @@ const DevPage = () => {
                       rows={2}
                       style={{ height: textareaHeight }}
                       maxLength={5000}
-                      disabled={isLoading || isArchitectureLoading || isCharacterLimitReached}
+                      disabled={isLoading || isArchitectureLoading}
                     />
                   </div>
                   
@@ -1488,7 +1500,7 @@ const DevPage = () => {
                     <button 
                       type="submit" 
                       className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading || isCharacterLimitReached}
+                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading}
                     >
                       <SendHorizonal className="h-4 w-4" />
                     </button>
@@ -1807,7 +1819,7 @@ const DevPage = () => {
                 <form onSubmit={handleSubmit} className="relative">
                   <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                     <textarea
-                      placeholder={isCharacterLimitReached ? "You have reached the maximum number of tokens and can't continue anymore." : "Continue the conversation..."}
+                      placeholder="Continue the conversation..."
                       value={inputMessage}
                       onChange={handleTextareaChange}
                       onKeyDown={(e) => {
@@ -1820,7 +1832,7 @@ const DevPage = () => {
                       rows={2}
                       style={{ height: textareaHeight }}
                       maxLength={5000}
-                      disabled={isLoading || isArchitectureLoading || isCharacterLimitReached}
+                      disabled={isLoading || isArchitectureLoading}
                     />
                   </div>
                   
@@ -1829,7 +1841,7 @@ const DevPage = () => {
                     <button 
                       type="submit" 
                       className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading || isCharacterLimitReached}
+                      disabled={!inputMessage.trim() || isLoading || isArchitectureLoading}
                     >
                       <SendHorizonal className="h-4 w-4" />
                     </button>
@@ -2187,6 +2199,13 @@ const DevPage = () => {
         onClose={() => setShowDownloadCoachMark(false)}
         nextLabel="Got it"
         showSkip={false}
+      />
+
+      {/* Character Limit Pricing Dialog */}
+      <PricingDialog 
+        open={showCharacterLimitDialog} 
+        onOpenChange={setShowCharacterLimitDialog}
+        description="You've reached the maximum token limit for this chat. Upgrade to Pro to unlock extended token limits and continue your conversation."
       />
     </div>
   );

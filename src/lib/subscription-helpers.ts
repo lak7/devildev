@@ -32,13 +32,19 @@ export class SubscriptionService {
           userId: data.userId,
           subscriptionId: data.subscriptionId,
           status: data.status,
-          plan: SubscriptionPlan.PRO,
           productId: data.productId,
           quantity: 1,
           // Price is $10 as per product configuration
           currency: 'USD',
           currentPeriodEnd: data.currentPeriodEnd,
         },
+      });
+
+      // Update user's subscription plan based on status
+      const userPlan = data.status === SubscriptionStatus.ACTIVE ? SubscriptionPlan.PRO : SubscriptionPlan.FREE;
+      await db.user.update({
+        where: { id: data.userId },
+        data: { subscriptionPlan: userPlan },
       });
       
       console.log(`Subscription ${data.subscriptionId} upserted for user ${data.userId}`);
@@ -59,6 +65,15 @@ export class SubscriptionService {
           updatedAt: new Date(),
         },
       });
+
+      // Update user's subscription plan based on status
+      if (data.status) {
+        const userPlan = data.status === SubscriptionStatus.ACTIVE ? SubscriptionPlan.PRO : SubscriptionPlan.FREE;
+        await db.user.update({
+          where: { id: subscription.userId },
+          data: { subscriptionPlan: userPlan },
+        });
+      }
       
       console.log(`Subscription ${subscriptionId} updated`);
       return subscription;
@@ -99,16 +114,21 @@ export class SubscriptionService {
       const subscription = await db.subscription.upsert({
         where: { userId },
         update: {
-          status: SubscriptionStatus.FREE,
+          status: SubscriptionStatus.NONE,
           updatedAt: new Date(),
         },
         create: {
           userId,
-          status: SubscriptionStatus.FREE,
-          plan: SubscriptionPlan.PRO,
+          status: SubscriptionStatus.NONE,
           quantity: 1,
           currency: 'USD',
         },
+      });
+
+      // Update user's subscription plan to FREE
+      await db.user.update({
+        where: { id: userId },
+        data: { subscriptionPlan: SubscriptionPlan.FREE },
       });
       
       console.log(`Free subscription created for user ${userId}`);
@@ -130,6 +150,12 @@ export class SubscriptionService {
           updatedAt: new Date(),
         },
       });
+
+      // Update user's subscription plan to PRO
+      await db.user.update({
+        where: { id: subscription.userId },
+        data: { subscriptionPlan: SubscriptionPlan.PRO },
+      });
       
       console.log(`Subscription ${subscriptionId} activated`);
       return subscription;
@@ -150,6 +176,12 @@ export class SubscriptionService {
           updatedAt: new Date(),
         },
       });
+
+      // Update user's subscription plan to FREE
+      await db.user.update({
+        where: { id: subscription.userId },
+        data: { subscriptionPlan: SubscriptionPlan.FREE },
+      });
       
       console.log(`Subscription ${subscriptionId} cancelled`);
       return subscription;
@@ -168,6 +200,12 @@ export class SubscriptionService {
           status: SubscriptionStatus.ON_HOLD,
           updatedAt: new Date(),
         },
+      });
+
+      // Update user's subscription plan to FREE when on hold
+      await db.user.update({
+        where: { id: subscription.userId },
+        data: { subscriptionPlan: SubscriptionPlan.FREE },
       });
       
       console.log(`Subscription ${subscriptionId} put on hold`);

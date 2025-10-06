@@ -178,19 +178,23 @@ export async function getUserChats(limit: number = 15) {
       throw new Error("User not authenticated");
     }
 
-    const chats = await db.chat.findMany({
-      where: { userId: userId },
-      orderBy: { updatedAt: 'desc' },
-      take: limit,
-      select: {
-        id: true,
-        title: true,
-        updatedAt: true,
-        createdAt: true,
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      include: {
+        chats: {
+          orderBy: { updatedAt: 'desc' },
+          take: limit,
+          select: {
+            id: true,
+            title: true,
+            updatedAt: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
-    return { success: true, chats };
+    return { success: true, chats: user?.chats, user: user };
   } catch (error) {
     console.error("Error getting user chats:", error);
     return { success: false, error: "Failed to get chats" };

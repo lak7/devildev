@@ -17,6 +17,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { submitFeedback } from '../../../../actions/feedback';
+import { maxChatCharactersLimitFree, maxChatCharactersLimitPro, maxFreeChats, maxNumberOfProjectChatsFree, maxNumberOfProjectChatsPro } from '../../../../Limits';
+import useUserSubscription from '@/hooks/useSubscription';
+import PricingDialog from '@/components/PricingDialog';
 
 interface ProjectChat {
   id: bigint;
@@ -37,7 +40,6 @@ interface Project {
   ProjectChat: any[]; // Raw data from database
 }
 
-const MAX_CHARACTERS = 25000;
 
 const ProjectPage = () => {
     const params = useParams();
@@ -79,8 +81,7 @@ const ProjectPage = () => {
   const [isCharacterLimitReached, setIsCharacterLimitReached] = useState(false);
   const [isPromptLimitReached, setIsPromptLimitReached] = useState(false);
   const [showMaxChatsDialog, setShowMaxChatsDialog] = useState(false);
-  const MAX_CHATS = 3;
-  
+  const [showCharacterLimitDialog, setShowCharacterLimitDialog] = useState(false);
   // Panel resize state
   const [leftPanelWidth, setLeftPanelWidth] = useState(30);
   const [isResizing, setIsResizing] = useState(false);
@@ -114,7 +115,10 @@ const ProjectPage = () => {
       const [feedbackText, setFeedbackText] = useState('');
       const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
       const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
+      const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
+      const [MAX_CHATS, setMAX_CHATS] = useState(0);
+      const [MAX_CHARACTERS, setMAX_CHARACTERS] = useState(0);
+ 
       // Function to handle feedback submission
   const handleFeedbackSubmit = async () => {
     if (!feedbackText.trim() || isSubmittingFeedback) return;
@@ -184,6 +188,11 @@ const ProjectPage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    setMAX_CHATS(userSubscription ? maxNumberOfProjectChatsPro : maxNumberOfProjectChatsFree);
+    setMAX_CHARACTERS(userSubscription ? maxChatCharactersLimitPro : maxChatCharactersLimitFree);
+  }, [userSubscription]);
+
   // Copy prompt function
   const copyPrompt = async (messageId: string, prompt: string) => {
     try {
@@ -251,7 +260,7 @@ const ProjectPage = () => {
   // Handle creating new chat
   const handleCreateNewChat = async () => {
 
-    if(isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating || messages.length === 0) return;
+    if(isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating || messages.length === 0 || isLoadingUserSubscription) return;
     if (projectChats.length >= MAX_CHATS) {
       setShowMaxChatsDialog(true);
       return;
@@ -551,14 +560,11 @@ const ProjectPage = () => {
   // Monitor character limit
   useEffect(() => {
     const totalCharacters = calculateTotalCharacters(messages);
-    setIsCharacterLimitReached(totalCharacters >= MAX_CHARACTERS);
-  }, [messages]);
-
-  // Monitor prompt generation limit (max 3 prompts)
-  useEffect(() => {
     const existingPromptCount = messages.filter(m => m.type === 'assistant' && (m as any).prompt).length;
+    setIsCharacterLimitReached(totalCharacters >= MAX_CHARACTERS);
     setIsPromptLimitReached(existingPromptCount >= 3);
   }, [messages]);
+
 
   // Handle mouse events for resizing
   useEffect(() => {
@@ -615,6 +621,7 @@ const ProjectPage = () => {
     e.preventDefault();
     if (!inputMessage.trim() || isChatLoading || isCreatingChat || !activeChatId) return;
     if (isCharacterLimitReached || isPromptLimitReached) {
+      setShowCharacterLimitDialog(true);
       return;
     }
 
@@ -1255,13 +1262,7 @@ const ProjectPage = () => {
               <form onSubmit={handleSubmit} className="relative">
                 <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                   <textarea
-                    placeholder={
-                      isPromptLimitReached
-                        ? "Sorry You have reached the maximum number of prompts. Please start a new chat to continue."
-                        : isCharacterLimitReached
-                          ? "You have reached the maximum number of tokens and can't continue anymore."
-                          : "Ask about your project..."
-                    }
+                  placeholder="Ask about your project..."
                     value={inputMessage}
                     onChange={handleTextareaChange}
                     onKeyDown={(e) => {
@@ -1274,14 +1275,14 @@ const ProjectPage = () => {
                     rows={2}
                     style={{ height: textareaHeight }}
                     maxLength={5000}
-                    disabled={isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
+                    disabled={isChatLoading || isCreatingChat}
                   />
                 </div>
                 <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
                   <button 
                     type="submit" 
                     className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                    disabled={!inputMessage.trim() || isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
+                    disabled={!inputMessage.trim() || isChatLoading || isCreatingChat}
                   >
                     <Send className="h-4 w-4" />
                   </button>
@@ -1496,13 +1497,7 @@ const ProjectPage = () => {
             <form onSubmit={handleSubmit} className="relative">
               <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
                 <textarea
-                  placeholder={
-                    isPromptLimitReached
-                      ? "You have reached the maximum number of prompts. Please start a new chat to continue."
-                      : isCharacterLimitReached
-                        ? "You have reached the maximum number of tokens. Please start a new chat to continue."
-                        : "Ask about your project..."
-                  }
+                  placeholder="Ask about your project..."
                   value={inputMessage}
                   onChange={handleTextareaChange}
                   onKeyDown={(e) => {
@@ -1763,27 +1758,19 @@ const ProjectPage = () => {
         /* Disable text selection during resize */
         ${isResizing ? '*{user-select: none !important;}' : ''}
       `}</style>
-      {/* Max Chats Dialog */}
-      <Dialog open={showMaxChatsDialog} onOpenChange={setShowMaxChatsDialog}>
-        <DialogContent className="sm:max-w-md border border-zinc-500">
-          <DialogHeader>
-            <DialogTitle className="text-white">Chat Limit Reached</DialogTitle>
-            <DialogDescription className="text-gray-300">
-              You have reached the maximum number of chats ({MAX_CHATS}) and can't create more chats anymore. Please contact or mail to lakshay@devildev.com if you want to increase the limit.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-end">
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={() => setShowMaxChatsDialog(false)}
-              className="bg-transparent border-zinc-500 text-white hover:bg-white hover:text-black hover:border-red-500/50"
-            >
-              Got it
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Max Chats Pricing Dialog */}
+      <PricingDialog 
+        open={showMaxChatsDialog} 
+        onOpenChange={setShowMaxChatsDialog}
+        description={`You've reached the maximum limit of ${MAX_CHATS} chats for this project. Upgrade to Pro to create more chats and unlock advanced features.`}
+      />
+
+      {/* Character Limit Pricing Dialog */}
+      <PricingDialog 
+        open={showCharacterLimitDialog} 
+        onOpenChange={setShowCharacterLimitDialog}
+        description="You've reached the maximum token limit for this chat. Upgrade to Pro to unlock extended token limits and continue your conversation."
+      />
     </div>
   );
 };

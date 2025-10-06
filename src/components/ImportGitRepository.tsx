@@ -8,7 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { getUserProjects } from '../../actions/reverse-architecture';
-import { maxNumberOfProjectsFree } from '../../Limits';
+import { fetchUserInstallationIdAndProject } from '../../actions/user';
+import { useUser } from '@clerk/nextjs';
+import { maxNumberOfProjectsFree, maxNumberOfProjectsPro } from '../../Limits';
+import useUserSubscription from '@/hooks/useSubscription';
+import PricingDialog from './PricingDialog';
 // Removed card and glow imports for a minimalist view
 
 interface Repository { 
@@ -39,16 +43,16 @@ interface UserProject {
   repoFullName: string | null;
 }
   
-interface ImportGitRepositoryProps {
+interface ImportGitRepositoryProps { 
   onImport: (repo: Repository, installationId?: string | null) => void;
 } 
 
 export default function ImportGitRepository({ onImport }: ImportGitRepositoryProps) {
+  const { user } = useUser();
   const [repos, setRepos] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
-  const [githubConnected, setGithubConnected] = useState(false);
   const [installationId, setInstallationId] = useState<string | null>(null);
   const [importing, setImporting] = useState<number | null>(null);
   const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(true);
@@ -59,18 +63,20 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [pasteUrl, setPasteUrl] = useState('');
   const [pasteLoading, setPasteLoading] = useState(false);
   const [pasteError, setPasteError] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<any | null>(null);
+  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
 
   useEffect(() => {
-    // checkGithubStatus();
-    checkAppInstallation();
-    fetchUserProjects();
-  }, []);
+    if (user?.id) {
+      fetchEmAll();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
-    if (githubConnected || installationId) {
+    if (installationId) {
       fetchRepos();
     }
-  }, [githubConnected, installationId]);
+  }, [installationId]);
 
   // Debounced search effect
   useEffect(() => {
@@ -80,31 +86,32 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
- 
-  const checkGithubStatus = async () => { 
-    setIsGithubStatusLoading(true);
-    try {
-      const response = await fetch('/api/github/status');
-      const data = await response.json();
-      setGithubConnected(data.isConnected); 
-      setIsGithubStatusLoading(false);
-    } catch (error) {
-      console.error('Error checking GitHub status:', error);
-    }
-  };
 
-  const checkAppInstallation = async () => {
+  const fetchEmAll = async () => {
     try {
-      const res = await fetch('/api/github/app/installations', { cache: 'no-store' });
-      const data = await res.json();
-      const list = (data?.installations || []) as Array<{ installationId: bigint }>;
-      if (list.length > 0) {
-        setInstallationId(String(list[0].installationId));
+      setIsGithubStatusLoading(true);
+      if (!user?.id) return;
+      const result = await fetchUserInstallationIdAndProject(user.id);
+      if ((result as any)?.success) {
+        const installation = (result as any).installation;
+        if (installation?.installationId) {
+          setInstallationId(String(installation.installationId));
+        } else {
+          setInstallationId(null);
+        }
+        if ((result as any).projects) {
+          setUserProjects((result as any).projects);
+        }
+        setUserProfile((result as any).user ?? null);
+
+      } else {
+        setInstallationId(null);
       }
     } catch (e) {
       // ignore
-    }finally{
+    } finally {
       setIsGithubStatusLoading(false);
+      setProjectsLoading(false);
     }
   };
 
@@ -131,12 +138,17 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
 
   // TODO: Change this to 2
   const hasReachedProjectLimit = (): boolean => {
-    return userProjects.length >= maxNumberOfProjectsFree;
+    if(userSubscription) {
+      return userProjects.length >= maxNumberOfProjectsPro;
+    }else{
+      return userProjects.length >= maxNumberOfProjectsFree;
+    }
   };
 
   const fetchRepos = async (search?: string) => {
+
     // Only fetch when the user is connected to GitHub or we have an installationId
-    if (!githubConnected && !installationId) {
+    if (!installationId) {
       return;
     }
     try {
@@ -368,35 +380,11 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   // Check if user has reached project limit
   if (hasReachedProjectLimit()) {
     return (
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full h-full max-w-4xl">
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-full max-w-lg">
-              <div className="bg-neutral-950/80 border border-white/10 rounded-2xl p-10 shadow-xl">
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative">
-                    <div className="absolute -inset-6 rounded-2xl bg-yellow-500/20 blur-2xl" aria-hidden="true" />
-                    <div className="w-24 h-24 bg-yellow-500/20 rounded-xl flex items-center justify-center">
-                      <span className="text-4xl">⚠️</span>
-                    </div>
-                  </div>
-                  <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                    Project Limit Reached
-                  </h1>
-                  <p className="mt-2 text-sm text-gray-400 max-w-md">
-                    You have reached the maximum limit of 1 project. If you want to import more repositories, then please contact or mail to lakshay@devildev.com
-                  </p>
-                  <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                    <p className="text-sm text-yellow-200">
-                      <strong>Current projects:</strong> {userProjects.length}/{maxNumberOfProjectsFree}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PricingDialog 
+      open={true} 
+      onOpenChange={() => {}}
+      description={`You have reached the maximum limit of ${userSubscription ? maxNumberOfProjectsPro : maxNumberOfProjectsFree} project${userSubscription ? 's' : ''}. Upgrade to Pro to import up to ${maxNumberOfProjectsPro} projects and unlock premium features.`}
+    />
     );
   }
 

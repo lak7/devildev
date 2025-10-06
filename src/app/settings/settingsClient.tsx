@@ -17,10 +17,11 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { Edit, Trash2, Moon, Sun, SlidersHorizontal, User as UserIcon, Loader2, Github } from "lucide-react";
+import { Edit, Trash2, Moon, Sun, SlidersHorizontal, User as UserIcon, Loader2, Github, CreditCard } from "lucide-react";
 // import { saveUserProfile, getCurrentUserProfile } from "@/actions/user";
 import { saveUserProfile, getCurrentUserProfile } from "../../../actions/user";
 import { disconnectGitHubOAuth } from "../../../actions/github";
+import { fetchUserWithSubscription } from "../../../actions/subscription";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,6 +29,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 const menuItems = [
   { id: "profile", title: "Profile", icon: UserIcon },
   { id: "integrations", title: "Integrations", icon: SlidersHorizontal },
+  { id: "billing", title: "Billing", icon: CreditCard },
 ];
 
 interface Props {
@@ -61,6 +63,8 @@ export default function SettingsClient({ userId }: Props) {
   const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = useState(false);
   const [showDisconnectHighlight, setShowDisconnectHighlight] = useState(true);
   const [installationId, setInstallationId] = useState<string | null>(null);
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [isSubscriptionLoading, setIsSubscriptionLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,12 +112,13 @@ export default function SettingsClient({ userId }: Props) {
   useEffect(() => {
     checkGithubOAuthStatus();
     checkAppInstallation();
+    fetchSubscriptionData();
   }, []);
 
-  // Initialize active tab from query param (?tab=integrations|profile)
+  // Initialize active tab from query param (?tab=integrations|profile|billing)
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab === "integrations" || tab === "profile") {
+    if (tab === "integrations" || tab === "profile" || tab === "billing") {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -171,7 +176,7 @@ export default function SettingsClient({ userId }: Props) {
         setInstallationId(String(list[0].installationId));
         setGithubAppConnected(true);
       }
-    } catch (e) {
+    } catch (e) { 
       // ignore
     }finally{
       setIsAppInstallationLoading(false);
@@ -188,6 +193,19 @@ export default function SettingsClient({ userId }: Props) {
       console.error('Error checking GitHub status:', error);
     } finally {
       setIsOAuthStatusLoading(false);
+    }
+  };
+
+  const fetchSubscriptionData = async () => {
+    if (!userId) return;
+    setIsSubscriptionLoading(true);
+    try {
+      const data = await fetchUserWithSubscription(userId);
+      setSubscriptionData(data);
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    } finally {
+      setIsSubscriptionLoading(false);
     }
   };
 
@@ -400,6 +418,164 @@ export default function SettingsClient({ userId }: Props) {
                   </form>
                 </div>
               </div>
+              )}
+            </div>
+          </main>
+        ) : activeTab === "billing" ? (
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-6xl mx-auto p-8">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-white mb-2">Billing</h1>
+                <p className="text-zinc-400">Manage your subscription and billing information</p>
+              </div>
+
+              {isSubscriptionLoading ? (
+                <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-12 flex items-center justify-center">
+                  <div className="flex items-center gap-3 text-zinc-300">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading billing information...</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Current Plan Card */}
+                  <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                      <div>
+                        <h2 className="text-xl font-semibold text-white mb-2">Current Plan</h2>
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="text-3xl font-bold text-white">
+                            {subscriptionData?.subscriptionPlan || "FREE"}
+                          </span>
+                          <Badge className={subscriptionData?.subscriptionPlan === "PRO" ? "bg-red-600" : "bg-zinc-700"}>
+                            {subscriptionData?.subscriptionPlan || "FREE"}
+                          </Badge>
+                        </div>
+                        <p className="text-zinc-400">
+                          {subscriptionData?.subscriptionPlan === "PRO" 
+                            ? "You have access to all premium features" 
+                            : "Upgrade to Pro for more features"}
+                        </p>
+                      </div>
+                      <div>
+                        <Button
+                          onClick={() => router.push('/pricing')}
+                          className={subscriptionData?.subscriptionPlan === "PRO" 
+                            ? "bg-zinc-800 hover:bg-zinc-700 text-white" 
+                            : "bg-red-600 hover:bg-red-700"}
+                        >
+                          {subscriptionData?.subscriptionPlan === "PRO" ? "Manage Plan" : "Upgrade to Pro"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subscription Details Card */}
+                  {subscriptionData?.subscription && (
+                    <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8">
+                      <h2 className="text-xl font-semibold text-white mb-6">Subscription Details</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label className="text-zinc-400 text-sm">Status</Label>
+                          <div className="mt-2">
+                            <Badge className={
+                              subscriptionData.subscription.status === "ACTIVE" 
+                                ? "bg-green-600" 
+                                : subscriptionData.subscription.status === "CANCELLED" 
+                                ? "bg-red-600" 
+                                : "bg-yellow-600"
+                            }>
+                              {subscriptionData.subscription.status}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-zinc-400 text-sm">Currency</Label>
+                          <p className="mt-2 text-white">
+                            {subscriptionData.subscription.currency || "USD"}
+                          </p>
+                        </div>
+
+                        {subscriptionData.subscription.currentPeriodEnd && (
+                          <div>
+                            <Label className="text-zinc-400 text-sm">Next Billing Date</Label>
+                            <p className="mt-2 text-white">
+                              {new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        )}
+
+                        {subscriptionData.subscription.canceledAt && subscriptionData.subscription.status === "CANCELLED" && (
+                          <div>
+                            <Label className="text-zinc-400 text-sm">Canceled At</Label>
+                            <p className="mt-2 text-white">
+                              {new Date(subscriptionData.subscription.canceledAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        )}
+
+                        <div>
+                          <Label className="text-zinc-400 text-sm">Member Since</Label>
+                          <p className="mt-2 text-white">
+                            {new Date(subscriptionData.subscription.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+
+                        <div>
+                          <Label className="text-zinc-400 text-sm">Last Updated</Label>
+                          <p className="mt-2 text-white">
+                            {new Date(subscriptionData.subscription.updatedAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cancel Subscription Button */}
+                  {subscriptionData?.subscriptionPlan === "PRO" && subscriptionData?.subscription?.status === "ACTIVE" && (
+                    <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6 md:p-8">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                          <h2 className="text-xl font-semibold text-white mb-2">Cancel Subscription</h2>
+                          <p className="text-zinc-400 text-sm">
+                            You can cancel your subscription at any time. You'll continue to have access until the end of your billing period.
+                          </p>
+                        </div>
+                        <div>
+                          <Button
+                            onClick={() => {
+                              const cancelLink = process.env.NEXT_PUBLIC_DODO_PAYMENT_CANCEL_LINK;
+                              if (cancelLink) {
+                                window.open(cancelLink, '_blank');
+                              }
+                            }}
+                            variant="outline"
+                            className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                          >
+                            Cancel Subscription
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </main>

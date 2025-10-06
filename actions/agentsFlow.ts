@@ -8,6 +8,14 @@ const llm = new ChatOpenAI({
   openAIApiKey: openaiKey,
   model: "gpt-5-nano-2025-08-07" // You can change this to any OpenAI model like "gpt-3.5-turbo", "gpt-4-turbo", etc.
 })
+const llm2 = new ChatOpenAI({
+  openAIApiKey: openaiKey,
+  model: "gpt-4o-2024-08-06"
+})
+
+const tool = {"type": "web_search_preview"}
+
+const llmWithWeb = llm2.bindTools([tool])
 
 export async function startOrNot(userInput: string, conversationHistory: any[] = [], architectureData: any) { 
     
@@ -283,6 +291,7 @@ You are DevilDev Assistant, an expert AI software architect and development cons
 } 
 
 export async function chatbot(userInput: string, conversationHistory: any[] = []) {
+    console.log("chatbot");
 
     const template = chatbotPrompt;
 
@@ -292,7 +301,7 @@ export async function chatbot(userInput: string, conversationHistory: any[] = []
     ).join('\n');
 
     const prompt = PromptTemplate.fromTemplate(template);
-    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const chain = prompt.pipe(llmWithWeb).pipe(new StringOutputParser());
     const result = await chain.invoke({
         userInput: userInput,
         conversationHistory: formattedHistory
