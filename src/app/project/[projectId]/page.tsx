@@ -17,7 +17,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { submitFeedback } from '../../../../actions/feedback';
-import { maxChatCharactersLimitFree, maxFreeChats, maxNumberOfProjectChatsFree } from '../../../../Limits';
+import { maxChatCharactersLimitFree, maxChatCharactersLimitPro, maxFreeChats, maxNumberOfProjectChatsFree, maxNumberOfProjectChatsPro } from '../../../../Limits';
+import useUserSubscription from '@/hooks/useSubscription';
 
 interface ProjectChat {
   id: bigint;
@@ -112,8 +113,9 @@ const ProjectPage = () => {
       const [feedbackText, setFeedbackText] = useState('');
       const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
       const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-      const MAX_CHATS = maxNumberOfProjectChatsFree;
-      const MAX_CHARACTERS = maxChatCharactersLimitFree;
+      const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
+      const [MAX_CHATS, setMAX_CHATS] = useState(0);
+      const [MAX_CHARACTERS, setMAX_CHARACTERS] = useState(0);
  
       // Function to handle feedback submission
   const handleFeedbackSubmit = async () => {
@@ -184,6 +186,11 @@ const ProjectPage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    setMAX_CHATS(userSubscription ? maxNumberOfProjectChatsPro : maxNumberOfProjectChatsFree);
+    setMAX_CHARACTERS(userSubscription ? maxChatCharactersLimitPro : maxChatCharactersLimitFree);
+  }, [userSubscription]);
+
   // Copy prompt function
   const copyPrompt = async (messageId: string, prompt: string) => {
     try {
@@ -251,7 +258,7 @@ const ProjectPage = () => {
   // Handle creating new chat
   const handleCreateNewChat = async () => {
 
-    if(isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating || messages.length === 0) return;
+    if(isChatLoading || isPromptGenerating || isDocsGenerating || isArchitectureGenerating || messages.length === 0 || isLoadingUserSubscription) return;
     if (projectChats.length >= MAX_CHATS) {
       setShowMaxChatsDialog(true);
       return;

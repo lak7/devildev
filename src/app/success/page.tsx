@@ -7,30 +7,43 @@ import { Check, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import useUserSubscription from "@/hooks/useSubscription";
+import { fetchUserWithSubscription } from "../../../actions/subscription";
+import { useUser } from "@clerk/nextjs";
 
 export default function SuccessPage() {
   const router = useRouter();
+  const { user } = useUser();
   const [mounted, setMounted] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [countdown, setCountdown] = useState(25);
+  const [isLoadingUserSubscription, setIsLoadingUserSubscription] = useState(true);
+  const [isUserPro, setIsUserPro] = useState(false);
+
   
   // Clear subscription cookies and fetch fresh data on mount
   useEffect(() => {
-    // Delete subscription-related cookies to bypass cache
-    document.cookie = 'subscription_status=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    document.cookie = 'subscription_signature=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    document.cookie = 'subscription_user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    
-    // Force a fresh fetch by adding a cache-busting parameter
-    fetch(`/api/user/subscription-status?refresh=${Date.now()}`, {
-      credentials: 'include',
-    }).catch(err => console.error('Failed to refresh subscription:', err));
-  }, []);
+    const getUserSubscription = async () => {
+      if(!user) return;
+      setIsLoadingUserSubscription(true);
+      
+      // Delete subscription-related cookies to bypass cache
+      try {
+        await fetch('/api/user/remove-subscription-cookies', { method: 'POST' });
+      } catch (error) {
+        console.error('Failed to clear subscription cookies:', error);
+      }
+      
+      const userSubscription = await fetchUserWithSubscription(user.id);
+      setIsUserPro(userSubscription?.subscriptionPlan === "PRO" && userSubscription?.subscription?.status === "ACTIVE");
+      setIsLoadingUserSubscription(false);
+    }
+    getUserSubscription();
 
-  // Fetch fresh subscription status (will get fresh data after cookies are cleared)
-  const { userSubscription, isLoadingUserSubscription } = useUserSubscription();
+  }, [user]);
+
 
   useEffect(() => {
+    
     setMounted(true);
     const timer = setTimeout(() => setShowContent(true), 100);
     return () => clearTimeout(timer);
@@ -84,7 +97,7 @@ export default function SuccessPage() {
     );
   }
 
-  if(userSubscription) {
+  if(isUserPro) {
     return (
         <div className="h-screen bg-black text-white relative overflow-hidden flex items-center justify-center">
           {/* Animated background gradient */}
@@ -181,10 +194,10 @@ export default function SuccessPage() {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                 <Button
-                  onClick={() => router.push("/project")}
+                  onClick={() => router.push("/")}
                   className="w-full cursor-pointer sm:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-semibold shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.5)] transition-all duration-300"
                 >
-                  Go to Projects
+                  Go to Home
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
                 <Button

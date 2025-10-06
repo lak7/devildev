@@ -8,7 +8,7 @@ import crypto from 'crypto';
 function generateSignature(data: string, secret: string): string {
     return crypto.createHmac('sha256', secret).update(data).digest('hex');
 }
-
+ 
 function verifySignature(data: string, signature: string, secret: string): boolean {
     const expectedSignature = generateSignature(data, secret);
     return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax' as const,
         maxAge: 60 * 60, // 1 hour
-    };
+    }; 
 
     response.cookies.set('subscription_status', userData, cookieOptions);
     response.cookies.set('subscription_signature', signature, cookieOptions);

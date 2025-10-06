@@ -9,7 +9,6 @@ import { getFileContentTool, getRepoTreeTool, searchCodeTool } from './github/gi
 import { getInstallationToken } from './githubAppAuth';
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
-import { maxProjectSizeFree } from '../Limits';
 
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
@@ -80,7 +79,7 @@ export async function checkInfo(repositoryId: string, repoFullName: string){
 }
 
  
-export async function checkPackageAndFramework(repositoryId: string, repoFullName: string, installationId?: string){
+export async function checkPackageAndFramework(repositoryId: string, repoFullName: string, maxProjectSize: number, installationId?: string){
     console.log("Step 0")
     const { userId } = await auth();
     let repoContent = null;
@@ -138,7 +137,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
           return { error: 'Failed to fetch repository information' };
         }
         const repoInfo = await repoInfoResponse.json();
-        if(repoInfo.size > maxProjectSizeFree){
+        if(repoInfo.size > maxProjectSize){
           return {status: "tooBig", error: 'Repository size is too large' };
         }
         console.log("Step 3.1.1: ", repoInfo)

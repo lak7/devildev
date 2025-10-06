@@ -32,7 +32,8 @@ import { CoachMark } from '@/components/CoachMarks';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
-import { maxChatCharactersLimitFree } from '../../../../Limits';
+import { maxChatCharactersLimitFree, maxChatCharactersLimitPro } from '../../../../Limits';
+import useUserSubscription from '@/hooks/useSubscription';
 
 interface UserChat {
   id: string;
@@ -122,6 +123,7 @@ const DevPage = () => {
   const [showDocsCoachMark, setShowDocsCoachMark] = useState(false);
   const [showDownloadCoachMark, setShowDownloadCoachMark] = useState(false);
   const [isArchitectureGeneratedOnce, setIsArchitectureGeneratedOnce] = useState(false);
+  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
   const docsButtonRef = useRef<HTMLButtonElement>(null);
   const downloadButtonRef = useRef<HTMLButtonElement>(null);
   
@@ -135,7 +137,7 @@ const DevPage = () => {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
 
-  const MAX_CHARACTERS = maxChatCharactersLimitFree;
+  const [MAX_CHARACTERS, setMAX_CHARACTERS] = useState(0);
 
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
@@ -166,6 +168,10 @@ const DevPage = () => {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isResizing]);
+
+  useEffect(() => {
+    setMAX_CHARACTERS(userSubscription ? maxChatCharactersLimitPro : maxChatCharactersLimitFree);
+  }, [userSubscription]);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -631,6 +637,7 @@ const DevPage = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    if(isLoadingUserSubscription) return;
     e.preventDefault(); 
     if (!inputMessage.trim() || isLoading) return;
 

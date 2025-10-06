@@ -95,7 +95,7 @@ export default function PricingPage() {
           <CardFooter>
             {userSubscription ? (
               <Button
-              onClick={() => router.push('/settings')}
+              onClick={() => router.push('/settings?tab=billing')}
               variant="outline"
               className="w-full h-10 text-sm border-border hover:bg-primary  hover:border-primary transition-colors bg-transparent"
             >
@@ -114,7 +114,7 @@ export default function PricingPage() {
               variant="outline"
               className="w-full cursor-pointer h-10 text-sm border-border hover:bg-primary hover:border-primary transition-colors bg-transparent"
             >
-              Get Started Free
+              Get Started for Free
             </Button>
             )}
           </CardFooter>

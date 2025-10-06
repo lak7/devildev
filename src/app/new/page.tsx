@@ -15,6 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@clerk/nextjs';
 import Nav from '@/components/core/Nav';
 import Link from 'next/link';
+import useUserSubscription from '@/hooks/useSubscription';
+import { maxProjectSizeFree, maxProjectSizePro } from '../../../Limits';
 
 interface Repository {
   id: number;
@@ -48,11 +50,15 @@ export default function NewPage() {
     const [feedbackText, setFeedbackText] = useState('');
     const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
 
   const handleImport = async (repo: Repository, installationId?: string | null) => {
     setImporting(true); 
     try { 
-      const res = await checkPackageAndFramework(repo.id.toString(), repo.fullName, installationId || undefined);
+      if(isLoadingUserSubscription){
+        return;
+      } 
+      const res = await checkPackageAndFramework(repo.id.toString(), repo.fullName, userSubscription ? maxProjectSizePro : maxProjectSizeFree, installationId || undefined);
       const {result: response, project: project} = res;
       // const {repoInfo: response, defaultBranch: project} = await checkInfo(repo.id.toString(), repo.fullName);
       let cleanedResult = response;
