@@ -109,7 +109,66 @@ export async function saveArchitecture(input: ArchitectureInput) {
     console.error("Error saving architecture:", error);
     return { success: false, error: "Failed to save architecture" };
   }
-}
+} 
+
+export async function saveArchitectureWithUserId(input: ArchitectureInput, userId: string) {
+  try {
+    // Verify chat ownership
+    const chat = await db.chat.findFirst({
+      where: {
+        id: input.chatId,
+        userId: userId,
+      },
+    });
+
+    if (!chat) {
+      throw new Error("Chat not found or access denied");
+    }
+
+    // Extract component positions from architecture data if not provided separately
+    const componentPositions = input.componentPositions || 
+      input.architectureData.components.reduce((acc, component) => {
+        acc[component.id] = component.position;
+        return acc;
+      }, {} as Record<string, ComponentPosition>);
+
+    // Upsert architecture
+    const architecture = await db.architecture.upsert({
+      where: {
+        chatId: input.chatId,
+      },
+      update: {
+        domain: input.architectureData.domain,
+        complexity: input.architectureData.complexity,
+        architectureRationale: input.architectureData.architectureRationale,
+        components: input.architectureData.components as any,
+        connectionLabels: input.architectureData.connectionLabels as any,
+        componentPositions: componentPositions as any,
+        requirement: input.requirement,
+        lastPositionUpdate: new Date(),
+        updatedAt: new Date(),
+      },
+      create: {
+        chatId: input.chatId,
+        domain: input.architectureData.domain,
+        complexity: input.architectureData.complexity,
+        architectureRationale: input.architectureData.architectureRationale,
+        components: input.architectureData.components as any,
+        connectionLabels: input.architectureData.connectionLabels as any,
+        componentPositions: componentPositions as any,
+        requirement: input.requirement,
+        generatedAt: new Date(),
+        lastPositionUpdate: new Date(),
+      },
+    });
+
+    revalidatePath(`/dev/${input.chatId}`);
+    return { success: true, architecture };
+  } catch (error) {
+    console.error("Error saving architecture:", error);
+    return { success: false, error: "Failed to save architecture" };
+  }
+} 
 
 // Get architecture for a chat
 export async function getArchitecture(chatId: string) {

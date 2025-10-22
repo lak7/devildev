@@ -11,7 +11,7 @@ import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot, chatbot, architectureModificationBot } from '../../../../actions/agentsFlow';
 import { submitFeedback } from '../../../../actions/feedback';
-import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../../actions/architecture'; 
+import { generateArchitectureWithToolCalling } from '../../../../actions/architecture'; 
 import { getChat, addMessageToChat, updateChatMessages, createChatWithId, ChatMessage as ChatMessageType, getUserChats } from '../../../../actions/chat';
 import { 
   saveArchitecture, 
@@ -35,6 +35,7 @@ import { useParams } from 'next/navigation';
 import { maxChatCharactersLimitFree, maxChatCharactersLimitPro } from '../../../../Limits';
 import useUserSubscription from '@/hooks/useSubscription';
 import PricingDialog from '@/components/PricingDialog';
+import { inngest } from '@/inngest/client';
 
 interface UserChat {
   id: string;
@@ -138,6 +139,7 @@ const DevPage = () => {
 
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
+
 
   const [MAX_CHARACTERS, setMAX_CHARACTERS] = useState(0);
 
@@ -528,41 +530,21 @@ const DevPage = () => {
     }
     
     try {
-      const architectureResult = await generateArchitectureWithToolCalling(requirement, conversationHistory, architectureData);
-  
-      // Clean the result to remove markdown code blocks if present
-      let cleanedResult = architectureResult;
-      if (typeof architectureResult === 'string') {
-        // Remove markdown code blocks (```json...``` or ```...```)
-        cleanedResult = architectureResult
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '')
-          .replace(/\s*```\s*$/, '')
-          .trim();
-      }
-      
-      // Parse the JSON result
-      const parsedArchitecture = typeof cleanedResult === 'string' 
-        ? JSON.parse(cleanedResult) 
-        : cleanedResult; 
-      
-      setArchitectureData(parsedArchitecture);
-      setArchitectureGenerated(true);
-      setIsArchitectureLoading(false);
-      
-      // Save architecture to database
-      if (chatId && parsedArchitecture) {
-        const saveResult = await saveArchitecture({
-          chatId,
-          architectureData: parsedArchitecture,
+      if(user?.id){
+      await inngest.send({
+        name: "architecture/generate",
+        data: {
           requirement,
-          componentPositions: componentPositions,
-        });
-        
-        if (!saveResult.success) {
-          console.error('Failed to save architecture:', saveResult.error);
+          conversationHistory,
+          architectureData,
+          chatId,
+          componentPositions,
+          userId: user.id,
         }
-      }
+      });
+    }
+      setIsArchitectureLoading(false);
+
     } catch (error) {
       console.error('Error generating architecture:', error);
     } finally {
