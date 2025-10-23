@@ -17,6 +17,7 @@ import {
   saveArchitecture, 
   getArchitecture, 
   updateComponentPositionsDebounced,
+  checkArchitectureById,
   ArchitectureData,
   ComponentPosition 
 } from '../../../../actions/architecturePersistence';
@@ -528,28 +529,80 @@ const DevPage = () => {
     if(isMobile){
       setIsMobilePanelOpen(true);
     }
-    
+
     try {
       if(user?.id){
-      await inngest.send({
-        name: "architecture/generate",
-        data: {
-          requirement,
-          conversationHistory,
-          architectureData,
-          chatId,
-          componentPositions,
-          userId: user.id,
-        }
-      });
-    }
-      setIsArchitectureLoading(false);
+        const generationId = crypto.randomUUID();
+        
+        const response = await inngest.send({
+          name: "architecture/generate",
+          data: {
+            generationId,
+            requirement,
+            conversationHistory,
+            architectureData,
+            chatId,
+            componentPositions,
+            userId: user.id,
+          }
+        });
 
+        // Start polling for the architecture
+        pollForArchitecture(generationId);
+      }
     } catch (error) {
       console.error('Error generating architecture:', error);
-    } finally {
       setIsArchitectureLoading(false);
     }
+  };
+
+  // Function to poll for architecture completion
+  const pollForArchitecture = async (generationId: string) => {
+    const maxAttempts = 120; // Poll for up to 10 minutes total
+    let attempts = 0;
+    const initialPhaseDuration = 4 * 60 * 1000; // 4 minutes in milliseconds
+    const initialPollInterval = 15 * 1000; // 15 seconds for first 4 minutes
+    const finalPollInterval = 5 * 1000; // 5 seconds after 4 minutes
+    const startTime = Date.now();
+
+    const poll = async () => {
+      try {
+        attempts++;
+        const elapsedTime = Date.now() - startTime;
+        const isInitialPhase = elapsedTime < initialPhaseDuration;
+        const currentInterval = isInitialPhase ? initialPollInterval : finalPollInterval;
+        
+        console.log(`Polling attempt ${attempts}/${maxAttempts} for architecture ${generationId} (${isInitialPhase ? 'initial' : 'final'} phase)`);
+        
+        const result = await checkArchitectureById(generationId);
+        
+        if (result.success && result.exists && result.architecture) {
+          // Architecture found! Update the state
+          console.log("Architecture generated successfully:", result);
+          setArchitectureData(result.architecture);
+          setComponentPositions(result.componentPositions || {});
+          setArchitectureGenerated(true);
+          setIsArchitectureLoading(false);
+          return;
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.error("Polling timeout: Architecture not found after maximum attempts");
+          setIsArchitectureLoading(false);
+          return;
+        }
+        
+        // Continue polling with appropriate interval
+        setTimeout(poll, currentInterval);
+        
+      } catch (error) {
+        console.error("Error polling for architecture:", error);
+        setIsArchitectureLoading(false);
+      }
+    };
+
+    // Start polling
+    poll();
   };
 
   // Process the initial message when loading a chat

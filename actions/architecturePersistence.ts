@@ -74,22 +74,8 @@ export async function saveArchitecture(input: ArchitectureInput) {
       }, {} as Record<string, ComponentPosition>);
 
     // Upsert architecture
-    const architecture = await db.architecture.upsert({
-      where: {
-        chatId: input.chatId,
-      },
-      update: {
-        domain: input.architectureData.domain,
-        complexity: input.architectureData.complexity,
-        architectureRationale: input.architectureData.architectureRationale,
-        components: input.architectureData.components as any,
-        connectionLabels: input.architectureData.connectionLabels as any,
-        componentPositions: componentPositions as any,
-        requirement: input.requirement,
-        lastPositionUpdate: new Date(),
-        updatedAt: new Date(),
-      },
-      create: {
+    const architecture = await db.architecture.create({
+      data: {
         chatId: input.chatId,
         domain: input.architectureData.domain,
         complexity: input.architectureData.complexity,
@@ -111,7 +97,7 @@ export async function saveArchitecture(input: ArchitectureInput) {
   }
 } 
 
-export async function saveArchitectureWithUserId(input: ArchitectureInput, userId: string) {
+export async function saveArchitectureWithUserId(architectureId: string, input: ArchitectureInput, userId: string) {
   try {
     // Verify chat ownership
     const chat = await db.chat.findFirst({
@@ -133,22 +119,9 @@ export async function saveArchitectureWithUserId(input: ArchitectureInput, userI
       }, {} as Record<string, ComponentPosition>);
 
     // Upsert architecture
-    const architecture = await db.architecture.upsert({
-      where: {
-        chatId: input.chatId,
-      },
-      update: {
-        domain: input.architectureData.domain,
-        complexity: input.architectureData.complexity,
-        architectureRationale: input.architectureData.architectureRationale,
-        components: input.architectureData.components as any,
-        connectionLabels: input.architectureData.connectionLabels as any,
-        componentPositions: componentPositions as any,
-        requirement: input.requirement,
-        lastPositionUpdate: new Date(),
-        updatedAt: new Date(),
-      },
-      create: {
+    const architecture = await db.architecture.create({
+      data: {
+        id: architectureId,
         chatId: input.chatId,
         domain: input.architectureData.domain,
         complexity: input.architectureData.complexity,
@@ -172,6 +145,8 @@ export async function saveArchitectureWithUserId(input: ArchitectureInput, userI
 
 // Get architecture for a chat
 export async function getArchitecture(chatId: string) {
+
+  console.log("In getArchitecture Step 0");
   try {
     const { userId } = await auth();
     
@@ -198,7 +173,10 @@ export async function getArchitecture(chatId: string) {
       return { success: true, architecture: null };
     }
 
-    const architecture = chatWithArchitecture.architecture;
+    console.log("The architecture length is: ", chatWithArchitecture.architecture.length);
+    console.log("The architecture is: ", chatWithArchitecture.architecture);
+
+    const architecture = chatWithArchitecture.architecture as any;
     
     // Parse the JSON data and reconstruct the architecture object
     const architectureData: ArchitectureData = { 
@@ -254,10 +232,20 @@ export async function updateComponentPositions(
       throw new Error("Chat not found or access denied");
     }
 
-    // Update only positions
-    const architecture = await db.architecture.update({
+    // Update only positions - find the architecture first
+    const existingArchitecture = await db.architecture.findFirst({
       where: {
         chatId: chatId,
+      },
+    });
+
+    if (!existingArchitecture) {
+      throw new Error("Architecture not found");
+    }
+
+    const architecture = await db.architecture.update({
+      where: {
+        id: existingArchitecture.id,
       },
       data: {
         componentPositions: positions as any,
@@ -275,40 +263,40 @@ export async function updateComponentPositions(
 }
 
 // Delete architecture (if needed)
-export async function deleteArchitecture(chatId: string) {
-  try {
-    const { userId } = await auth();
+// export async function deleteArchitecture(chatId: string) {
+//   try {
+//     const { userId } = await auth();
     
-    if (!userId) {
-      throw new Error("User not authenticated");
-    }
+//     if (!userId) {
+//       throw new Error("User not authenticated");
+//     }
 
-    // Verify chat ownership
-    const chat = await db.chat.findFirst({
-      where: {
-        id: chatId,
-        userId: userId,
-      },
-    });
+//     // Verify chat ownership
+//     const chat = await db.chat.findFirst({
+//       where: {
+//         id: chatId,
+//         userId: userId,
+//       },
+//     });
 
-    if (!chat) {
-      throw new Error("Chat not found or access denied");
-    }
+//     if (!chat) {
+//       throw new Error("Chat not found or access denied");
+//     }
 
-    // Delete architecture
-    await db.architecture.delete({
-      where: {
-        chatId: chatId,
-      },
-    });
+//     // Delete architecture
+//     await db.architecture.delete({
+//       where: {
+//         chatId: chatId,
+//       },
+//     });
 
-    revalidatePath(`/dev/${chatId}`);
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting architecture:", error);
-    return { success: false, error: "Failed to delete architecture" };
-  }
-}
+//     revalidatePath(`/dev/${chatId}`);
+//     return { success: true };
+//   } catch (error) {
+//     console.error("Error deleting architecture:", error);
+//     return { success: false, error: "Failed to delete architecture" };
+//   }
+// }
 
 // Batch update positions with debouncing (for smooth UI)
 let positionUpdateTimeouts: Record<string, NodeJS.Timeout> = {};
@@ -330,4 +318,61 @@ export async function updateComponentPositionsDebounced(
   }, delay);
 
   return { success: true, message: "Update scheduled" };
+}
+
+// Check if architecture with specific ID exists (for polling)
+export async function checkArchitectureById(architectureId: string) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+
+    // Find architecture by ID and verify user ownership through chat
+    const architecture = await db.architecture.findFirst({
+      where: {
+        id: architectureId,
+        chat: {
+          userId: userId,
+        },
+      },
+      include: {
+        chat: true,
+      },
+    });
+
+    if (!architecture) {
+      return { success: true, exists: false };
+    }
+
+    // Parse the JSON data and reconstruct the architecture object
+    const architectureData: ArchitectureData = { 
+      components: architecture.components as unknown as ComponentData[],
+      connectionLabels: architecture.connectionLabels as Record<string, string> || {},
+      architectureRationale: architecture.architectureRationale || undefined,
+      domain: architecture.domain || undefined,
+      complexity: architecture.complexity || undefined,
+    };
+
+    const componentPositions = architecture.componentPositions as unknown as Record<string, ComponentPosition> || {};
+
+    return { 
+      success: true, 
+      exists: true,
+      architecture: architectureData,
+      componentPositions,
+      metadata: {
+        id: architecture.id,
+        requirement: architecture.requirement,
+        generatedAt: architecture.generatedAt,
+        lastPositionUpdate: architecture.lastPositionUpdate,
+        createdAt: architecture.createdAt,
+        updatedAt: architecture.updatedAt,
+      }
+    };
+  } catch (error) {
+    console.error("Error checking architecture by ID:", error);
+    return { success: false, error: "Failed to check architecture" };
+  }
 }

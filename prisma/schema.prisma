@@ -71,14 +71,14 @@ model Chat {
   title          String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
-  architecture   Architecture?
+  architecture   Architecture[]
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   contextualDocs ContextualDocs?
 }
 
 model Architecture {
   id                    String   @id @default(uuid())
-  chatId                String   @unique
+  chatId                String   
   domain                String?
   complexity            String?
   architectureRationale String?

@@ -17,7 +17,7 @@ export const generateArchitectureFunction = inngest.createFunction(
   },
   { event: "architecture/generate" },
   async ({ event, step }) => {
-    const { requirement, conversationHistory, architectureData, chatId, componentPositions, userId } = event.data;
+    const {generationId, requirement, conversationHistory, architectureData, chatId, componentPositions, userId } = event.data;
 
     try {
       // Step 1: Generate architecture (the expensive 5-10 min operation)
@@ -48,7 +48,7 @@ export const generateArchitectureFunction = inngest.createFunction(
       // Step 3: Save architecture to database
       if (chatId && parsedArchitecture) {
         await step.run("save-architecture", async () => {
-          const saveResult = await saveArchitectureWithUserId({
+          const saveResult = await saveArchitectureWithUserId(generationId, {
             chatId,
             architectureData: parsedArchitecture,
             requirement,
@@ -65,7 +65,8 @@ export const generateArchitectureFunction = inngest.createFunction(
 
       return { 
         success: true, 
-        architecture: parsedArchitecture 
+        architectureId: generationId,
+        architecture: parsedArchitecture,
       };
 
     } catch (error) {
