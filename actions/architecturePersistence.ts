@@ -143,7 +143,7 @@ export async function saveArchitectureWithUserId(architectureId: string, input: 
   }
 } 
 
-// Get architecture for a chat
+// Get all architectures for a chat
 export async function getArchitecture(chatId: string) {
 
   console.log("In getArchitecture Step 0");
@@ -154,14 +154,18 @@ export async function getArchitecture(chatId: string) {
       throw new Error("User not authenticated");
     }
 
-    // Verify chat ownership and get architecture
+    // Verify chat ownership and get all architectures
     const chatWithArchitecture = await db.chat.findFirst({
       where: {
         id: chatId,
         userId: userId,
       },
       include: {
-        architecture: true,
+        architecture: {
+          orderBy: {
+            createdAt: 'asc', // Order by creation time, oldest first
+          },
+        },
       },
     });
 
@@ -169,38 +173,48 @@ export async function getArchitecture(chatId: string) {
       return { success: false, error: "Chat not found or access denied" };
     }
 
-    if (!chatWithArchitecture.architecture) {
-      return { success: true, architecture: null };
+    if (!chatWithArchitecture.architecture || chatWithArchitecture.architecture.length === 0) {
+      return { success: true, architectures: [], count: 0, architecture: null };
     }
 
-    console.log("The architecture length is: ", chatWithArchitecture.architecture.length);
-    console.log("The architecture is: ", chatWithArchitecture.architecture);
+    console.log("The architecture count is: ", chatWithArchitecture.architecture.length);
 
-    const architecture = chatWithArchitecture.architecture[0] as any;
-    
-    // Parse the JSON data and reconstruct the architecture object
-    const architectureData: ArchitectureData = { 
-      components: architecture.components as unknown as ComponentData[],
-      connectionLabels: architecture.connectionLabels as Record<string, string> || {},
-      architectureRationale: architecture.architectureRationale || undefined,
-      domain: architecture.domain || undefined,
-      complexity: architecture.complexity || undefined,
-    };
+    // Parse all architectures
+    const architectures = chatWithArchitecture.architecture.map((arch: any) => {
+      const architectureData: ArchitectureData = { 
+        components: arch.components as unknown as ComponentData[],
+        connectionLabels: arch.connectionLabels as Record<string, string> || {},
+        architectureRationale: arch.architectureRationale || undefined,
+        domain: arch.domain || undefined,
+        complexity: arch.complexity || undefined,
+      };
 
-    const componentPositions = architecture.componentPositions as unknown as Record<string, ComponentPosition> || {};
+      const componentPositions = arch.componentPositions as unknown as Record<string, ComponentPosition> || {};
+
+      return {
+        architecture: architectureData,
+        componentPositions,
+        metadata: {
+          id: arch.id,
+          requirement: arch.requirement,
+          generatedAt: arch.generatedAt,
+          lastPositionUpdate: arch.lastPositionUpdate,
+          createdAt: arch.createdAt,
+          updatedAt: arch.updatedAt,
+        }
+      };
+    });
+
+    // Return all architectures with the latest one for backward compatibility
+    const latestArchitecture = architectures[architectures.length - 1];
 
     return { 
-      success: true, 
-      architecture: architectureData,
-      componentPositions,
-      metadata: {
-        id: architecture.id,
-        requirement: architecture.requirement,
-        generatedAt: architecture.generatedAt,
-        lastPositionUpdate: architecture.lastPositionUpdate,
-        createdAt: architecture.createdAt,
-        updatedAt: architecture.updatedAt,
-      }
+      success: true,
+      architectures, // All architectures
+      count: architectures.length, // Total count
+      architecture: latestArchitecture.architecture, // Latest architecture for backward compatibility
+      componentPositions: latestArchitecture.componentPositions,
+      metadata: latestArchitecture.metadata,
     };
   } catch (error) {
     console.error("Error getting architecture:", error);
