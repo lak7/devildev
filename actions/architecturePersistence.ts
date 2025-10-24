@@ -176,7 +176,7 @@ export async function getArchitecture(chatId: string) {
     console.log("The architecture length is: ", chatWithArchitecture.architecture.length);
     console.log("The architecture is: ", chatWithArchitecture.architecture);
 
-    const architecture = chatWithArchitecture.architecture as any;
+    const architecture = chatWithArchitecture.architecture[0] as any;
     
     // Parse the JSON data and reconstruct the architecture object
     const architectureData: ArchitectureData = { 

@@ -346,7 +346,7 @@ const DevPage = () => {
             setMessages(chatMessages);
             setIsChatMode(true); 
             // alert(0)
-            // Load architecture data if it exists
+            // Load architecture data if it exists 
             const archResult = await getArchitecture(chatId);
             if (archResult.success && archResult.architecture) {
               setArchitectureData(archResult.architecture);
