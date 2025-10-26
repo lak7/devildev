@@ -9,6 +9,7 @@ import { getFileContentTool, getRepoTreeTool, searchCodeTool } from './github/gi
 import { getInstallationToken } from './githubAppAuth';
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
+const { inngest } = await import('../src/inngest/client');
 
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
@@ -248,13 +249,10 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
  
 export async function generateArchitecture(projectId: string){
     console.log("Gen Step 0") 
-    const { userId } = await auth();
-    if (!userId) {
-        return { error: 'Unauthorized' };
-    }
+
 
     const project = await db.project.findUnique({
-        where: { id: projectId, userId: userId },
+        where: { id: projectId},
         select: {
             name: true,
             framework: true,
@@ -603,3 +601,84 @@ export async function getUserProjects() {
     return { error: 'Failed to fetch user projects' };
   }
 }
+
+// Trigger Inngest background job for reverse architecture generation
+export async function triggerReverseArchitectureGeneration(data: {
+  projectId: string;
+  activeChatId: string | null;
+  userId: string;
+}) {
+  try {
+    
+    
+    const response = await inngest.send({
+      name: "reverse-architecture/generate",
+      data: data
+    });
+    
+    return { success: true, response };
+  } catch (error) {
+    console.error('Error triggering reverse architecture generation:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+// Check if project architecture exists (for polling)
+export async function checkProjectArchitectureById(projectId: string) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Verify project belongs to user
+    const project = await db.project.findUnique({
+      where: { 
+        id: projectId, 
+        userId: userId 
+      },
+      select: {
+        id: true,
+        ProjectArchitecture: true
+      }
+    });
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Check if ProjectArchitecture exists for this project
+    if (!project.ProjectArchitecture || project.ProjectArchitecture.length === 0) {
+      return { success: true, exists: false };
+    }
+
+    const architecture = project.ProjectArchitecture[0];
+
+    // Parse the architecture data
+    const architectureData = {
+      components: architecture.components,
+      connectionLabels: architecture.connectionLabels,
+      componentPositions: architecture.componentPositions,
+      architectureRationale: architecture.architectureRationale,
+    };
+
+    return {
+      success: true,
+      exists: true,
+      architecture: architectureData,
+      componentPositions: architecture.componentPositions || {},
+      metadata: {
+        id: architecture.id,
+        createdAt: architecture.createdAt,
+        updatedAt: architecture.updatedAt,
+      }
+    };
+  } catch (error) {
+    console.error("Error checking project architecture by generation ID:", error);
+    return { success: false, error: "Failed to check project architecture" };
+  }
+}
+
+// Legacy alias for backward compatibility
+export const checkProjectArchitectureByGenerationId = checkProjectArchitectureById;

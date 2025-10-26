@@ -7,7 +7,7 @@ import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, U
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
 import { SignOutButton, useUser } from '@clerk/nextjs';
-import { generateArchitecture } from '../../../../actions/reverse-architecture';
+import { generateArchitecture, triggerReverseArchitectureGeneration, checkProjectArchitectureByGenerationId } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 import ProjectContextDocs from '@/components/core/ProjectContextDocs';
@@ -177,6 +177,55 @@ const ProjectPage = () => {
         }
       }
     }, 500);
+  };
+
+  // Function to poll for project architecture completion
+  const pollForProjectArchitecture = async () => {
+    const maxAttempts = 120; // Poll for up to 10 minutes total
+    let attempts = 0;
+    const initialPhaseDuration = 4 * 60 * 1000; // 4 minutes in milliseconds
+    const initialPollInterval = 15 * 1000; // 15 seconds for first 4 minutes
+    const finalPollInterval = 5 * 1000; // 5 seconds after 4 minutes
+    const startTime = Date.now();
+
+    const poll = async () => {
+      try {
+        attempts++;
+        const elapsedTime = Date.now() - startTime;
+        const isInitialPhase = elapsedTime < initialPhaseDuration;
+        const currentInterval = isInitialPhase ? initialPollInterval : finalPollInterval;
+        
+        console.log(`Polling attempt ${attempts}/${maxAttempts} for project architecture (${isInitialPhase ? 'initial' : 'final'} phase)`);
+        
+        const result = await checkProjectArchitectureByGenerationId(projectId);
+        
+        if (result.success && result.exists && result.architecture) {
+          // Architecture found! Reload the page to show it
+          console.log("Project architecture generated successfully:", result);
+          
+          // Reload the page to show the generated architecture
+          window.location.reload();
+          return;
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.error("Polling timeout: Architecture not found after maximum attempts");
+          setIsArchitectureGenerating(false);
+          alert("Architecture generation took longer than expected. Please refresh the page.");
+          return;
+        }
+        
+        // Continue polling with appropriate interval
+        setTimeout(poll, currentInterval);
+        
+      } catch (error) {
+        console.error("Error polling for project architecture:", error);
+        setIsArchitectureGenerating(false);
+      }
+    };
+
+    // Start polling
+    poll();
   };
 
   // Cleanup debounce timer on unmount
@@ -473,65 +522,29 @@ const ProjectPage = () => {
               }else{
                 //alert("Step 5") 
                 setIsArchitectureGenerating(true);
-                setIsThisFirstGeneration(true); 
-                  const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
-     
-                  // Clean the result to remove markdown code blocks if present
-                  let cleanedResult = architectureResult; 
-                  if (typeof architectureResult === 'string') {
-                      // Remove markdown code blocks (```json...``` or ```...```)
-                      cleanedResult = architectureResult
-                      .replace(/^```json\s*/i, '')
-                      .replace(/^```\s*/, '')
-                      .replace(/\s*```\s*$/, '')
-                      .trim();
+                setIsThisFirstGeneration(true);
+                
+                // Trigger Inngest background job for architecture generation
+                if (user?.id) {
+                  const result = await triggerReverseArchitectureGeneration({
+                    projectId,
+                    activeChatId: activeChatId,
+                    userId: user.id,
+                  });
+
+                  if (result.success) {
+                    // Start polling for the architecture
+                    pollForProjectArchitecture();
+                  } else {
+                    console.error('Failed to trigger architecture generation:', result.error);
+                    setIsArchitectureGenerating(false);
+                    alert("Failed to start architecture generation. Please refresh and try again.");
                   }
-                  //alert("Step 7")                  
-                  // Parse the JSON result
-                  const parsedArchitecture = typeof cleanedResult === 'string' 
-                      ? JSON.parse(cleanedResult) 
-                      : cleanedResult;  
-                  parsedArchitecture.detailedAnalysis = detailedAnalysis;
-                  setArchitectureData(parsedArchitecture);
-
-                  const architectureRationaleParagraphs = parsedArchitecture.architectureRationale.split(/\n\s*\n/);
-                  // Get first and last paragraphs
-                  const firstParagraph = architectureRationaleParagraphs[0].trim();
-                  const lastParagraph = architectureRationaleParagraphs[architectureRationaleParagraphs.length - 1].trim();
-
-                  const initialMessage = firstParagraph + "\n\n" + lastParagraph;
-
-                   
-                  // Save the architecture to the database
-                  if (parsedArchitecture && parsedArchitecture.components && parsedArchitecture.architectureRationale) {
-                      const saveResult = await saveProjectArchitecture(
-                          projectId,
-                          parsedArchitecture.architectureRationale,
-                          parsedArchitecture.components,
-                          parsedArchitecture.connectionLabels || {},
-                          parsedArchitecture.componentPositions || {},
-                          initialMessage
-                      ); 
-                      
-                      if (saveResult.error) {
-                          console.error("Failed to save architecture:", saveResult.error);
-                      } else {
-                          
-                          // Add the initial message to local state
-                          const assistantMessage: ProjectMessage = {
-                              id: generateMessageId(),
-                              type: 'assistant',
-                              content: initialMessage,
-                              timestamp: new Date().toISOString()
-                          };
-                          setMessages([assistantMessage]);
-                      }
-                  }
-                  
-                  // Initialize custom positions for newly generated architecture
-                  setCustomPositions(parsedArchitecture.componentPositions || {});
-                  
+                } else {
+                  console.error('User ID not available');
                   setIsArchitectureGenerating(false);
+                  alert("User authentication error. Please sign in again.");
+                }
               }
           }
 
@@ -865,7 +878,7 @@ const ProjectPage = () => {
                   <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
                   <span className="text-sm text-zinc-300">Please Note: It may take up to 5-7 minutes</span>
                 </div>
-                <p className="text-xs text-zinc-400">Please don't close this tab during generation</p>
+                <p className="text-xs text-zinc-400">You can close this tab if you want to, generation will continue in the background</p>
               </div>
             </div>
           </div>

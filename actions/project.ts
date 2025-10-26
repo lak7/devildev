@@ -90,17 +90,14 @@ export async function saveProjectArchitecture(
     initialMessage?: string
 ) {
     console.log("In saveProjectArchitecture Step 0");
-    const { userId } = await auth();
-    if (!userId) {
-        return { error: 'Unauthorized' };
-    }
+
 
     console.log("In saveProjectArchitecture Step 1");
 
     try {
         // First verify the project belongs to the user
         const project = await db.project.findUnique({
-            where: { id: projectId, userId: userId },
+            where: { id: projectId },
             select: { id: true }
         });
         console.log("In saveProjectArchitecture Step 2");

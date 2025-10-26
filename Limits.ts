@@ -4,7 +4,7 @@ export const maxProjectSizeFree = 25000;
 export const maxNumberOfProjectChatsFree = 3; 
 
 // PROJECT PRO 
-export const maxNumberOfProjectsPro = 10;
+export const maxNumberOfProjectsPro = 15;
 export const maxProjectSizePro = 100000;
 export const maxNumberOfProjectChatsPro = 100;
 
