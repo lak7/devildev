@@ -11,7 +11,7 @@ import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot, chatbot, architectureModificationBot } from '../../../../actions/agentsFlow';
 import { submitFeedback } from '../../../../actions/feedback';
-import { generateArchitectureWithToolCalling } from '../../../../actions/architecture'; 
+import { generateArchitectureWithToolCalling, triggerArchitectureGeneration } from '../../../../actions/architecture'; 
 import { getChat, addMessageToChat, updateChatMessages, createChatWithId, ChatMessage as ChatMessageType, getUserChats } from '../../../../actions/chat';
 import { 
   saveArchitecture, 
@@ -36,7 +36,6 @@ import { useParams } from 'next/navigation';
 import { maxChatCharactersLimitFree, maxChatCharactersLimitPro } from '../../../../Limits';
 import useUserSubscription from '@/hooks/useSubscription';
 import PricingDialog from '@/components/PricingDialog';
-import { inngest } from '@/inngest/client';
 
 interface UserChat {
   id: string;
@@ -593,21 +592,23 @@ const DevPage = () => {
       if(user?.id){
         const generationId = crypto.randomUUID();
         
-        const response = await inngest.send({
-          name: "architecture/generate",
-          data: {
-            generationId,
-            requirement,
-            conversationHistory,
-            architectureData,
-            chatId,
-            componentPositions,
-            userId: user.id,
-          }
+        const result = await triggerArchitectureGeneration({
+          generationId,
+          requirement,
+          conversationHistory,
+          architectureData,
+          chatId,
+          componentPositions,
+          userId: user.id,
         });
 
-        // Start polling for the architecture
-        pollForArchitecture(generationId);
+        if (result.success) {
+          // Start polling for the architecture
+          pollForArchitecture(generationId);
+        } else {
+          console.error('Failed to trigger architecture generation:', result.error);
+          setIsArchitectureLoading(false);
+        }
       }
     } catch (error) {
       console.error('Error generating architecture:', error);

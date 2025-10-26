@@ -17,6 +17,7 @@ import { notificationComponentsTool } from "./architecture/notificationComponent
 import { paymentComponentsTool } from "./architecture/paymentComponents";
 import { realtimeComponentsTool } from "./architecture/realtimeComponents";
 import { basicWebComponentsTool } from "./architecture/webComponents";
+const { inngest } = await import('../src/inngest/client');
 
 
 
@@ -385,6 +386,32 @@ Generate ONLY this JSON:
     const chain3 = prompt3.pipe(llm).pipe(new StringOutputParser());
     const result = await chain3.invoke({componentPlan: JSON.stringify(componentPlan), techStack: JSON.stringify(techStack), requirement: requirement, conversation_history: formattedHistory, architectureData: JSON.stringify(architectureData)});
     return result;
+}
+
+export async function triggerArchitectureGeneration(data: {
+  generationId: string;
+  requirement: string;
+  conversationHistory: any[];
+  architectureData: any;
+  chatId: string;
+  componentPositions: any;
+  userId: string;
+}) {
+  
+  try {
+    // Import inngest dynamically to avoid client-side bundling
+    
+    
+    const response = await inngest.send({
+      name: "architecture/generate",
+      data: data
+    });
+    
+    return { success: true, response };
+  } catch (error) {
+    console.error('Error triggering architecture generation:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 }
 
 export async function generateArchitectureWithToolCalling(requirement: string, conversationHistory: any[] = [], architectureData: any){
