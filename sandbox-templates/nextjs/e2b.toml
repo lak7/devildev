@@ -1,0 +1,17 @@
+# This is a config for E2B sandbox template.
+# You can use template ID (261f355l6tv1xpmpg8o7) or template name (devil-nextjs-test) to create a sandbox:
+
+# Python SDK
+# from e2b import Sandbox, AsyncSandbox
+# sandbox = Sandbox.create("devil-nextjs-test") # Sync sandbox
+# sandbox = await AsyncSandbox.create("devil-nextjs-test") # Async sandbox
+
+# JS SDK
+# import { Sandbox } from 'e2b'
+# const sandbox = await Sandbox.create('devil-nextjs-test')
+
+team_id = "8eee3ff6-421e-46c7-96b7-67dafc873561"
+start_cmd = "/compile_page.sh"
+dockerfile = "e2b.Dockerfile"
+template_name = "devil-nextjs-test"
+template_id = "261f355l6tv1xpmpg8o7"

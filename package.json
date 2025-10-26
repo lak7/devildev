@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.28.0",
+    "@e2b/code-interpreter": "^2.1.0",
     "@langchain/community": "^0.3.48",
     "@langchain/core": "^0.3.62",
     "@langchain/openai": "^0.5.18",
@@ -38,7 +39,10 @@
     "cobe": "^0.6.4",
     "color-bits": "^1.1.1",
     "dodopayments": "^2.0.1",
+    "dotenv": "^17.2.3",
+    "fs": "^0.0.1-security",
     "gpt-tokenizer": "^3.0.1",
+    "inngest": "^3.44.3",
     "jszip": "^3.10.1",
     "langchain": "^0.3.29",
     "lucide-react": "^0.511.0",

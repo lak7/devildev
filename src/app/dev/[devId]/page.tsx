@@ -6,17 +6,18 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send, BrainCircuit } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send, BrainCircuit, ChevronDown } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot, chatbot, architectureModificationBot } from '../../../../actions/agentsFlow';
 import { submitFeedback } from '../../../../actions/feedback';
-import { generateArchitecture, generateArchitectureWithToolCalling } from '../../../../actions/architecture'; 
+import { generateArchitectureWithToolCalling, triggerArchitectureGeneration } from '../../../../actions/architecture'; 
 import { getChat, addMessageToChat, updateChatMessages, createChatWithId, ChatMessage as ChatMessageType, getUserChats } from '../../../../actions/chat';
 import { 
   saveArchitecture, 
   getArchitecture, 
   updateComponentPositionsDebounced,
+  checkArchitectureById,
   ArchitectureData,
   ComponentPosition 
 } from '../../../../actions/architecturePersistence';
@@ -51,7 +52,46 @@ interface Particle {
   animationDuration: string;
 }
 
+interface ArchitectureVersion {
+  architecture: ArchitectureData;
+  componentPositions: Record<string, ComponentPosition>;
+  metadata: {
+    id: string;
+    requirement: string | null;
+    generatedAt: Date;
+    lastPositionUpdate: Date;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}
 
+// Helper function to convert number to Roman numerals
+const toRomanNumeral = (num: number): string => {
+  const romanNumerals: [number, string][] = [
+    [1000, 'M'],
+    [900, 'CM'],
+    [500, 'D'],
+    [400, 'CD'],
+    [100, 'C'],
+    [90, 'XC'],
+    [50, 'L'],
+    [40, 'XL'],
+    [10, 'X'],
+    [9, 'IX'],
+    [5, 'V'],
+    [4, 'IV'],
+    [1, 'I']
+  ];
+  
+  let result = '';
+  for (const [value, numeral] of romanNumerals) {
+    while (num >= value) {
+      result += numeral;
+      num -= value;
+    }
+  }
+  return result;
+};
 
 const DevPage = () => {
   const params = useParams();
@@ -73,6 +113,10 @@ const DevPage = () => {
   const [architectureGenerated, setArchitectureGenerated] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isNewChat, setIsNewChat] = useState(false);
+  // Architecture versions state
+  const [allArchitectures, setAllArchitectures] = useState<ArchitectureVersion[]>([]);
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState<number>(0);
+  const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
   // Contextual docs state
   const [contextualDocs, setContextualDocs] = useState<ContextualDocsData>({});
   const [docsGenerated, setDocsGenerated] = useState(false);
@@ -138,6 +182,7 @@ const DevPage = () => {
 
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
+
 
   const [MAX_CHARACTERS, setMAX_CHARACTERS] = useState(0);
 
@@ -281,6 +326,16 @@ const DevPage = () => {
     }, 0);
   };
 
+  // Handle version change
+  const handleVersionChange = (versionIndex: number) => {
+    if (versionIndex >= 0 && versionIndex < allArchitectures.length) {
+      setSelectedVersionIndex(versionIndex);
+      setArchitectureData(allArchitectures[versionIndex].architecture);
+      setComponentPositions(allArchitectures[versionIndex].componentPositions || {});
+      setIsVersionDropdownOpen(false);
+    }
+  };
+
   // Load chat data and architecture when component mounts
   useEffect(() => {
     const loadChatAndArchitecture = async () => {
@@ -343,11 +398,17 @@ const DevPage = () => {
             setMessages(chatMessages);
             setIsChatMode(true); 
             // alert(0)
-            // Load architecture data if it exists
+            // Load architecture data if it exists 
             const archResult = await getArchitecture(chatId);
-            if (archResult.success && archResult.architecture) {
-              setArchitectureData(archResult.architecture);
-              setComponentPositions(archResult.componentPositions || {});
+            if (archResult.success && archResult.architectures && archResult.architectures.length > 0) {
+              // Set all architectures
+              setAllArchitectures(archResult.architectures);
+              
+              // Set the latest architecture as default
+              const latestIndex = archResult.architectures.length - 1;
+              setSelectedVersionIndex(latestIndex);
+              setArchitectureData(archResult.architectures[latestIndex].architecture);
+              setComponentPositions(archResult.architectures[latestIndex].componentPositions || {});
               setArchitectureGenerated(true);
             }
             // alert(1)
@@ -501,7 +562,7 @@ const DevPage = () => {
     } else {
       setShowDocsCoachMark(false);
     }
-  }, [isLoading, isArchitectureLoading, isGeneratingDocs, architectureData, docsGenerated]);
+  }, [isLoading, isArchitectureLoading, isGeneratingDocs, docsGenerated]);
 
   // Show coach mark for Download button when docs are generated
   useEffect(() => {
@@ -526,48 +587,97 @@ const DevPage = () => {
     if(isMobile){
       setIsMobilePanelOpen(true);
     }
-    
+
     try {
-      const architectureResult = await generateArchitectureWithToolCalling(requirement, conversationHistory, architectureData);
-  
-      // Clean the result to remove markdown code blocks if present
-      let cleanedResult = architectureResult;
-      if (typeof architectureResult === 'string') {
-        // Remove markdown code blocks (```json...``` or ```...```)
-        cleanedResult = architectureResult
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '')
-          .replace(/\s*```\s*$/, '')
-          .trim();
-      }
-      
-      // Parse the JSON result
-      const parsedArchitecture = typeof cleanedResult === 'string' 
-        ? JSON.parse(cleanedResult) 
-        : cleanedResult; 
-      
-      setArchitectureData(parsedArchitecture);
-      setArchitectureGenerated(true);
-      setIsArchitectureLoading(false);
-      
-      // Save architecture to database
-      if (chatId && parsedArchitecture) {
-        const saveResult = await saveArchitecture({
-          chatId,
-          architectureData: parsedArchitecture,
-          requirement,
-          componentPositions: componentPositions,
-        });
+      if(user?.id){
+        const generationId = crypto.randomUUID();
         
-        if (!saveResult.success) {
-          console.error('Failed to save architecture:', saveResult.error);
+        const result = await triggerArchitectureGeneration({
+          generationId,
+          requirement,
+          conversationHistory,
+          architectureData,
+          chatId,
+          componentPositions,
+          userId: user.id,
+        });
+
+        if (result.success) {
+          // Start polling for the architecture
+          pollForArchitecture(generationId);
+        } else {
+          console.error('Failed to trigger architecture generation:', result.error);
+          setIsArchitectureLoading(false);
         }
       }
     } catch (error) {
       console.error('Error generating architecture:', error);
-    } finally {
       setIsArchitectureLoading(false);
     }
+  };
+
+  // Function to poll for architecture completion
+  const pollForArchitecture = async (generationId: string) => {
+    const maxAttempts = 120; // Poll for up to 10 minutes total
+    let attempts = 0;
+    const initialPhaseDuration = 4 * 60 * 1000; // 4 minutes in milliseconds
+    const initialPollInterval = 15 * 1000; // 15 seconds for first 4 minutes
+    const finalPollInterval = 5 * 1000; // 5 seconds after 4 minutes
+    const startTime = Date.now();
+
+    const poll = async () => {
+      try {
+        attempts++;
+        const elapsedTime = Date.now() - startTime;
+        const isInitialPhase = elapsedTime < initialPhaseDuration;
+        const currentInterval = isInitialPhase ? initialPollInterval : finalPollInterval;
+        
+        console.log(`Polling attempt ${attempts}/${maxAttempts} for architecture ${generationId} (${isInitialPhase ? 'initial' : 'final'} phase)`);
+        
+        const result = await checkArchitectureById(generationId);
+        
+        if (result.success && result.exists && result.architecture) {
+          // Architecture found! Update the state
+          console.log("Architecture generated successfully:", result);
+          
+          // Reload all architectures to get the updated list
+          const archResult = await getArchitecture(chatId);
+          if (archResult.success && archResult.architectures && archResult.architectures.length > 0) {
+            setAllArchitectures(archResult.architectures);
+            
+            // Set the latest architecture as the selected one
+            const latestIndex = archResult.architectures.length - 1;
+            setSelectedVersionIndex(latestIndex);
+            setArchitectureData(archResult.architectures[latestIndex].architecture);
+            setComponentPositions(archResult.architectures[latestIndex].componentPositions || {});
+          } else {
+            // Fallback to the result architecture if reload fails
+            setArchitectureData(result.architecture);
+            setComponentPositions(result.componentPositions || {});
+          }
+          
+          setArchitectureGenerated(true);
+          setIsArchitectureLoading(false);
+          return;
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.error("Polling timeout: Architecture not found after maximum attempts");
+          setIsArchitectureLoading(false);
+          return;
+        }
+        
+        // Continue polling with appropriate interval
+        setTimeout(poll, currentInterval);
+        
+      } catch (error) {
+        console.error("Error polling for architecture:", error);
+        setIsArchitectureLoading(false);
+      }
+    };
+
+    // Start polling
+    poll();
   };
 
   // Process the initial message when loading a chat
@@ -1007,8 +1117,8 @@ const DevPage = () => {
 
   if(isLoadingChat){
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+      <div className="flex items-center justify-center h-screen bg-black">
+        <Loader2 className="h-8 w-8 animate-spin text-red-500 " />
       </div>
     );
   }
@@ -1018,14 +1128,63 @@ const DevPage = () => {
   if (isFullscreen) {
     return (
       <div className="fixed inset-0 bg-black text-white z-50 flex flex-col">
-        {/* Close button in top left */}
-        <div className="absolute top-4 left-4 z-60">
+        {/* Header with Close button and Version dropdown */}
+        <div className="absolute top-4 left-4 right-4 z-60 flex items-center justify-between">
           <button
             onClick={() => setIsFullscreen(false)}
             className="p-2 bg-gray-800/80 hover:bg-gray-700/80 border border-gray-600/40 rounded-lg transition-colors group"
           >
             <X className="h-5 w-5 text-gray-300 group-hover:text-white" />
           </button>
+          
+          {/* Version Dropdown in fullscreen */}
+          {allArchitectures.length > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-800/80 hover:bg-gray-700/80 rounded-lg transition-all duration-200 border border-gray-600/40"
+                title="Select Architecture Version"
+              >
+                <span className="font-medium">Version {toRomanNumeral(selectedVersionIndex + 1)}</span>
+                <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {/* Dropdown Menu */}
+              {isVersionDropdownOpen && (
+                <>
+                  {/* Backdrop to close dropdown */}
+                  <div 
+                    className="fixed inset-0 z-30" 
+                    onClick={() => setIsVersionDropdownOpen(false)}
+                  />
+                  
+                  {/* Dropdown content */}
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                    <div className="py-1 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                      {allArchitectures.map((arch, index) => (
+                        <button
+                          key={arch.metadata.id}
+                          onClick={() => handleVersionChange(index)}
+                          className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                            index === selectedVersionIndex
+                              ? 'bg-red-500/20 text-white border-l-2 border-red-500'
+                              : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">Version {toRomanNumeral(index + 1)}</span>
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {new Date(arch.metadata.createdAt).toLocaleDateString()} at {new Date(arch.metadata.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Fullscreen Architecture */}
@@ -1557,20 +1716,72 @@ const DevPage = () => {
                   </button>
                 </div>
                 
-                {/* Fullscreen button - only show for architecture tab */}
+                {/* Version dropdown and Fullscreen button - only show for architecture tab */}
                 {activeTab === 'architecture' && (
-                  <button
-                    onClick={() => setIsFullscreen(true)}
-                    className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
-                    title="Fullscreen Architecture"
-                  >
-                    <Maximize className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    {/* Version Dropdown */}
+                    {allArchitectures.length > 0 && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                          className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-md transition-all duration-200 border border-gray-700/50"
+                          title="Select Architecture Version"
+                        >
+                          <span className="font-medium">Version {toRomanNumeral(selectedVersionIndex + 1)}</span>
+                          <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {isVersionDropdownOpen && (
+                          <>
+                            {/* Backdrop to close dropdown */}
+                            <div 
+                              className="fixed inset-0 z-30" 
+                              onClick={() => setIsVersionDropdownOpen(false)}
+                            />
+                            
+                            {/* Dropdown content */}
+                            <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                              <div className="py-1 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                                {allArchitectures.map((arch, index) => (
+                                  <button
+                                    key={arch.metadata.id}
+                                    onClick={() => handleVersionChange(index)}
+                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                      index === selectedVersionIndex
+                                        ? 'bg-red-500/20 text-white border-l-2 border-red-500'
+                                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium">Version {toRomanNumeral(index + 1)}</span>
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {new Date(arch.metadata.createdAt).toLocaleDateString()} at {new Date(arch.metadata.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Fullscreen button */}
+                    <button
+                      onClick={() => setIsFullscreen(true)}
+                      className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
+                      title="Fullscreen Architecture"
+                    >
+                      <Maximize className="h-4 w-4" />
+                    </button>
+                  </div>
                 )}
               </div>
 
               {/* Tab Content */}
-              <div className="flex-1 overflow-y-auto min-h-0 p-4">
+              <div className="flex-1 overflow-hidden min-h-0 p-4">
                 <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
                   <Architecture 
                     architectureData={architectureData || undefined} 
@@ -1937,13 +2148,64 @@ const DevPage = () => {
                   </button>
                 </div>
                 
-                {/* Close button */}
-                <button
-                  onClick={() => setIsMobilePanelOpen(false)}
-                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <div className="flex items-center space-x-2">
+                  {/* Version Dropdown for mobile */}
+                  {activeTab === 'architecture' && allArchitectures.length > 0 && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                        className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-md transition-all duration-200 border border-gray-700/50"
+                        title="Select Architecture Version"
+                      >
+                        <span className="font-medium">V{toRomanNumeral(selectedVersionIndex + 1)}</span>
+                        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {/* Dropdown Menu */}
+                      {isVersionDropdownOpen && (
+                        <>
+                          {/* Backdrop to close dropdown */}
+                          <div 
+                            className="fixed inset-0 z-30" 
+                            onClick={() => setIsVersionDropdownOpen(false)}
+                          />
+                          
+                          {/* Dropdown content */}
+                          <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                            <div className="py-1 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                              {allArchitectures.map((arch, index) => (
+                                <button
+                                  key={arch.metadata.id}
+                                  onClick={() => handleVersionChange(index)}
+                                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                    index === selectedVersionIndex
+                                      ? 'bg-red-500/20 text-white border-l-2 border-red-500'
+                                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-medium">Version {toRomanNumeral(index + 1)}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {new Date(arch.metadata.createdAt).toLocaleDateString()} at {new Date(arch.metadata.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Close button */}
+                  <button
+                    onClick={() => setIsMobilePanelOpen(false)}
+                    className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Content */}

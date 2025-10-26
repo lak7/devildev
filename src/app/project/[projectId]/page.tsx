@@ -471,9 +471,9 @@ const ProjectPage = () => {
                   setIsArchitectureGenerating(false);
             
               }else{
-                //alert("Step 5")
+                //alert("Step 5") 
                 setIsArchitectureGenerating(true);
-                setIsThisFirstGeneration(true);
+                setIsThisFirstGeneration(true); 
                   const {architecture: architectureResult, detailedAnalysis: detailedAnalysis} = await generateArchitecture(projectId);
      
                   // Clean the result to remove markdown code blocks if present
@@ -892,11 +892,6 @@ const ProjectPage = () => {
       </div>
     );
   }
-
-  
-
-
-  
 
   return (
     <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
