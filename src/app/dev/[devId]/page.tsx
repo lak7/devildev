@@ -1116,8 +1116,8 @@ const DevPage = () => {
 
   if(isLoadingChat){
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+      <div className="flex items-center justify-center h-screen bg-black">
+        <Loader2 className="h-8 w-8 animate-spin text-red-500 " />
       </div>
     );
   }
@@ -1780,7 +1780,7 @@ const DevPage = () => {
               </div>
 
               {/* Tab Content */}
-              <div className="flex-1 overflow-y-auto min-h-0 p-4">
+              <div className="flex-1 overflow-hidden min-h-0 p-4">
                 <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
                   <Architecture 
                     architectureData={architectureData || undefined} 
