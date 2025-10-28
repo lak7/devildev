@@ -631,14 +631,11 @@ const DevPage = () => {
         const elapsedTime = Date.now() - startTime;
         const isInitialPhase = elapsedTime < initialPhaseDuration;
         const currentInterval = isInitialPhase ? initialPollInterval : finalPollInterval;
-        
-        console.log(`Polling attempt ${attempts}/${maxAttempts} for architecture ${generationId} (${isInitialPhase ? 'initial' : 'final'} phase)`);
-        
+
         const result = await checkArchitectureById(generationId);
         
         if (result.success && result.exists && result.architecture) {
           // Architecture found! Update the state
-          console.log("Architecture generated successfully:", result);
           
           // Reload all architectures to get the updated list
           const archResult = await getArchitecture(chatId);

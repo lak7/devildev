@@ -1,11 +1,18 @@
 import { generateArchitectureWithToolCalling } from "../../actions/architecture";
 import { saveArchitectureWithUserId } from "../../actions/architecturePersistence";
 import { inngest } from "./client";
+import { generateArchitecture } from "../../actions/reverse-architecture";
+import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
 
 export const helloWorld = inngest.createFunction(
   { id: "hello-world" },
   { event: "test/hello.world" },
   async ({ event, step }) => {
+    await step.run("fn", () => {
+      console.log("something else") // this will always be run once
+      return "something else"
+    })
+  
     await step.sleep("wait-a-moment", "1s");
     return { message: `Hello ${event.data.email}!` };
   },
@@ -71,6 +78,103 @@ export const generateArchitectureFunction = inngest.createFunction(
 
     } catch (error) {
       console.error('Error generating architecture:', error);
+      throw error; // Let Inngest handle retries
+    }
+  }
+);
+
+export const generateReverseArchitectureFunction = inngest.createFunction(
+  {
+    id: "generate-reverse-architecture",
+  },
+  { event: "reverse-architecture/generate" },
+  async ({ event, step }) => {
+    const { projectId, activeChatId, userId } = event.data;
+
+    try {
+      // Step 1: Generate architecture from GitHub repo analysis (expensive 5-7 min operation)
+      const architectureResult = await step.run("generate-reverse-architecture", async () => {
+        return await generateArchitecture(projectId);
+      });
+
+      // Check for errors in architecture generation
+      if ('error' in architectureResult) {
+        throw new Error(`Architecture generation failed: ${architectureResult.error}`);
+      }
+
+      const { architecture: architectureJSON, detailedAnalysis } = architectureResult;
+  
+      // Step 2: Clean and parse the architecture result
+      const parsedArchitecture = await step.run("parse-architecture", async () => {
+        let cleanedResult = architectureJSON;
+        if (typeof architectureJSON === 'string') {
+          cleanedResult = architectureJSON
+            .replace(/^```json\s*/i, '')
+            .replace(/^```\s*/, '')
+            .replace(/\s*```\s*$/, '')
+            .trim();
+        }
+        
+        const parsed = typeof cleanedResult === 'string' 
+          ? JSON.parse(cleanedResult) 
+          : cleanedResult;
+
+        // Add detailed analysis to the parsed architecture
+        parsed.detailedAnalysis = detailedAnalysis;
+        
+        return parsed
+      });
+
+      // Step 3: Generate initial message from architecture rationale
+      const initialMessage = await step.run("generate-initial-message", async () => {
+        const architectureRationaleParagraphs = parsedArchitecture.architectureRationale.split(/\n\s*\n/);
+        const firstParagraph = architectureRationaleParagraphs[0].trim();
+        const lastParagraph = architectureRationaleParagraphs[architectureRationaleParagraphs.length - 1].trim();
+        return firstParagraph + "\n\n" + lastParagraph;
+      });
+
+      // Step 4: Save architecture to database
+      if (parsedArchitecture && parsedArchitecture.components && parsedArchitecture.architectureRationale) {
+        await step.run("save-project-architecture", async () => {
+          
+          const saveResult = await saveProjectArchitecture(
+            projectId,
+            parsedArchitecture.architectureRationale,
+            parsedArchitecture.components,
+            parsedArchitecture.connectionLabels || {},
+            parsedArchitecture.componentPositions || {}
+          );
+          
+          if (saveResult.error || !saveResult.success) {
+            throw new Error(`Failed to save architecture: ${saveResult.error}`);
+          }
+          
+          return saveResult;
+        });
+
+        // Step 5: Ensure initial message is saved to chat in background-safe way
+        if (initialMessage) {
+          await step.run("save-initial-message", async () => {
+            const res = await saveInitialMessageForInngestRevArchitecture(projectId, initialMessage, activeChatId);
+            if ((res as any).error) {
+              throw new Error(`Failed to save initial message: ${(res as any).error}`);
+            }
+            return res;
+          });
+        }
+      } else {
+        throw new Error('Invalid architecture structure - missing required fields');
+      }
+
+      return { 
+        success: true, 
+        projectId,
+        architecture: parsedArchitecture,
+        initialMessage,
+      };
+
+    } catch (error) {
+      console.error('Error generating reverse architecture:', error);
       throw error; // Let Inngest handle retries
     }
   }

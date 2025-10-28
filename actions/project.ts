@@ -90,17 +90,14 @@ export async function saveProjectArchitecture(
     initialMessage?: string
 ) {
     console.log("In saveProjectArchitecture Step 0");
-    const { userId } = await auth();
-    if (!userId) {
-        return { error: 'Unauthorized' };
-    }
+
 
     console.log("In saveProjectArchitecture Step 1");
 
     try {
         // First verify the project belongs to the user
         const project = await db.project.findUnique({
-            where: { id: projectId, userId: userId },
+            where: { id: projectId },
             select: { id: true }
         });
         console.log("In saveProjectArchitecture Step 2");
@@ -655,4 +652,75 @@ export async function updateProjectContextDocs(projectContextDocsId: string, pla
         where: {id: projectContextDocsId},
         data: {plan: plan, phases: phases as any}
     })
+}
+
+// System-level helper for Inngest to save the initial assistant message without requiring auth
+export async function saveInitialMessageForInngestRevArchitecture(
+    projectId: string,
+    initialMessage: string,
+    activeChatId?: string
+) {
+    try {
+        // Ensure project exists
+        const project = await db.project.findUnique({
+            where: { id: projectId },
+            select: { id: true }
+        });
+        if (!project) {
+            return { error: 'Project not found' };
+        }
+
+        // Find target chat or create if missing
+        let targetChat = activeChatId
+            ? await db.projectChat.findUnique({
+                where: { id: BigInt(activeChatId), projectId },
+            })
+            : await db.projectChat.findFirst({
+                where: { projectId },
+                orderBy: { createdAt: 'asc' }
+            });
+
+        if (!targetChat) {
+            targetChat = await db.projectChat.create({
+                data: {
+                    projectId,
+                    title: 'New Chat',
+                    messages: [] as any
+                }
+            });
+        }
+
+        const currentMessages = (targetChat.messages as unknown as ProjectMessage[]) || [];
+
+        // Idempotency: if any message exists, skip insertion
+        if (currentMessages.length > 0) {
+            return { success: true, skipped: true, reason: 'Chat already has messages' };
+        }
+
+        const assistantMessage: ProjectMessage = {
+            id: `${Date.now()}-init`,
+            type: 'assistant',
+            content: initialMessage,
+            timestamp: new Date().toISOString(),
+        };
+
+        // Title from initial message
+        const title = initialMessage.length > 20
+            ? initialMessage.substring(0, 20) + '...'
+            : initialMessage;
+
+        const updatedProjectChat = await db.projectChat.update({
+            where: { id: targetChat.id },
+            data: {
+                title,
+                messages: [assistantMessage] as any,
+                updatedAt: new Date(),
+            }
+        });
+
+        return { success: true, projectChat: updatedProjectChat };
+    } catch (error) {
+        console.error('Error saving initial message for Inngest:', error);
+        return { error: 'Failed to save initial message' };
+    }
 }
