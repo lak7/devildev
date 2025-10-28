@@ -1,11 +1,11 @@
-import { generateArchitectureWithToolCalling } from "../../actions/architecture";
+import { generateArchitectureWithToolCalling, triggerArchitectureGeneration } from "../../actions/architecture";
 import { saveArchitectureWithUserId } from "../../actions/architecturePersistence";
 import { inngest } from "./client";
 import { generateArchitecture } from "../../actions/reverse-architecture";
 import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
 
 export const helloWorld = inngest.createFunction(
-  { id: "hello-world" },
+  { id: "hello-world", },
   { event: "test/hello.world" },
   async ({ event, step }) => {
     await step.run("fn", () => {
@@ -86,6 +86,7 @@ export const generateArchitectureFunction = inngest.createFunction(
 export const generateReverseArchitectureFunction = inngest.createFunction(
   {
     id: "generate-reverse-architecture",
+    idempotency: 'event.data.projectId'
   },
   { event: "reverse-architecture/generate" },
   async ({ event, step }) => {
