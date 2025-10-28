@@ -93,8 +93,7 @@ export default function Page() {
     
     setChatsLoading(true);
     try {
-      const result = await getUserChats(10); // Get last 10 chats
-      console.log("This is the result: ", result)
+      const result = await getUserChats(10); 
       if (result.success && result.chats) {
         setUserChats(result.chats);
       } else {

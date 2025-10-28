@@ -194,14 +194,10 @@ const ProjectPage = () => {
         const elapsedTime = Date.now() - startTime;
         const isInitialPhase = elapsedTime < initialPhaseDuration;
         const currentInterval = isInitialPhase ? initialPollInterval : finalPollInterval;
-        
-        console.log(`Polling attempt ${attempts}/${maxAttempts} for project architecture (${isInitialPhase ? 'initial' : 'final'} phase)`);
-        
+         
         const result = await checkProjectArchitectureByGenerationId(projectId);
         
         if (result.success && result.exists && result.architecture) {
-          // Architecture found! Reload the page to show it
-          console.log("Project architecture generated successfully:", result);
           
           // Reload the page to show the generated architecture
           window.location.reload();
@@ -256,7 +252,7 @@ const ProjectPage = () => {
       console.error('Failed to copy prompt:', error);
     }
   };
-
+ 
   // Helper function to calculate total characters in messages
   const calculateTotalCharacters = (messagesArray: ProjectMessage[]) => {
     if (!messagesArray || !Array.isArray(messagesArray)) {
@@ -878,7 +874,7 @@ const ProjectPage = () => {
                   <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
                   <span className="text-sm text-zinc-300">Please Note: It may take up to 5-7 minutes</span>
                 </div>
-                <p className="text-xs text-zinc-400">You can close this tab if you want to, generation will continue in the background</p>
+                <p className="text-xs text-zinc-400">You can close this tab, generation will continue in the background</p>
               </div>
             </div>
           </div>

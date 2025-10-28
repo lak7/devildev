@@ -241,10 +241,6 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
             });
       }
         return {result: result, project: project};
-      
-      
-     
-
 }
  
 export async function generateArchitecture(projectId: string){

@@ -2,12 +2,17 @@ import { generateArchitectureWithToolCalling } from "../../actions/architecture"
 import { saveArchitectureWithUserId } from "../../actions/architecturePersistence";
 import { inngest } from "./client";
 import { generateArchitecture } from "../../actions/reverse-architecture";
-import { saveProjectArchitecture } from "../../actions/project";
+import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
 
 export const helloWorld = inngest.createFunction(
   { id: "hello-world" },
   { event: "test/hello.world" },
   async ({ event, step }) => {
+    await step.run("fn", () => {
+      console.log("something else") // this will always be run once
+      return "something else"
+    })
+  
     await step.sleep("wait-a-moment", "1s");
     return { message: `Hello ${event.data.email}!` };
   },
@@ -98,7 +103,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
       }
 
       const { architecture: architectureJSON, detailedAnalysis } = architectureResult;
-
+  
       // Step 2: Clean and parse the architecture result
       const parsedArchitecture = await step.run("parse-architecture", async () => {
         let cleanedResult = architectureJSON;
@@ -117,7 +122,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
         // Add detailed analysis to the parsed architecture
         parsed.detailedAnalysis = detailedAnalysis;
         
-        return parsed;
+        return parsed
       });
 
       // Step 3: Generate initial message from architecture rationale
@@ -137,8 +142,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
             parsedArchitecture.architectureRationale,
             parsedArchitecture.components,
             parsedArchitecture.connectionLabels || {},
-            parsedArchitecture.componentPositions || {},
-            initialMessage
+            parsedArchitecture.componentPositions || {}
           );
           
           if (saveResult.error || !saveResult.success) {
@@ -147,6 +151,17 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
           
           return saveResult;
         });
+
+        // Step 5: Ensure initial message is saved to chat in background-safe way
+        if (initialMessage) {
+          await step.run("save-initial-message", async () => {
+            const res = await saveInitialMessageForInngestRevArchitecture(projectId, initialMessage, activeChatId);
+            if ((res as any).error) {
+              throw new Error(`Failed to save initial message: ${(res as any).error}`);
+            }
+            return res;
+          });
+        }
       } else {
         throw new Error('Invalid architecture structure - missing required fields');
       }
