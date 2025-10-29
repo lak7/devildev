@@ -12,6 +12,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.28.0",
     "@e2b/code-interpreter": "^2.1.0",
+    "@inngest/agent-kit": "^0.13.1",
     "@langchain/community": "^0.3.48",
     "@langchain/core": "^0.3.62",
     "@langchain/openai": "^0.5.18",
