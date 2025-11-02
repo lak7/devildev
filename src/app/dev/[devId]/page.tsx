@@ -6,8 +6,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send, BrainCircuit, ChevronDown } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send, BrainCircuit, ChevronDown, Rocket } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
+import SandboxViewer from '@/components/core/SandboxViewer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { startOrNot, firstBot, chatbot, architectureModificationBot } from '../../../../actions/agentsFlow';
 import { submitFeedback } from '../../../../actions/feedback';
@@ -27,6 +28,11 @@ import {
   batchUpdateDocs,
   ContextualDocsData
 } from '../../../../actions/contextualDocsPersistence';
+import {
+  triggerSandboxDeployment,
+  checkSandboxDeploymentById,
+  getLatestSandboxDeployment
+} from '../../../../actions/sandboxDeployment';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
 import { CoachMark } from '@/components/CoachMarks';
@@ -106,7 +112,7 @@ const DevPage = () => {
   const [isGeneratingDocs, setIsGeneratingDocs] = useState(false);
   const [currentStartOrNot, setCurrentStartOrNot] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'architecture' | 'context'>('architecture');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'context' | 'sandbox'>('architecture');
   const [particles, setParticles] = useState<Particle[]>([]);
   const [architectureData, setArchitectureData] = useState<ArchitectureData | null>(null);
   const [isArchitectureLoading, setIsArchitectureLoading] = useState(false);
@@ -133,6 +139,11 @@ const DevPage = () => {
   // New streaming state
   const [streamingUpdates, setStreamingUpdates] = useState<Array<{fileName: string, content: string, isComplete: boolean}>>([]);
   const [isStreamingDocs, setIsStreamingDocs] = useState(false);
+  
+  // Sandbox state
+  const [sandboxData, setSandboxData] = useState<{ sandboxId: string; sandboxUrl: string; filesList: Array<{name: string; type: "file" | "dir"; path: string; size?: number}> } | null>(null);
+  const [isSandboxDeploying, setIsSandboxDeploying] = useState(false);
+  const [sandboxDeployed, setSandboxDeployed] = useState(false);
   
   // Component position persistence
   const [componentPositions, setComponentPositions] = useState<Record<string, ComponentPosition>>({});
@@ -444,6 +455,32 @@ const DevPage = () => {
 
     loadChatAndArchitecture();
   }, [chatId, isSignedIn, router]);
+
+  // Restore sandbox state on page load
+  useEffect(() => {
+    const restoreSandboxState = async () => {
+      if (!chatId) return;
+
+      try {
+        const result = await getLatestSandboxDeployment(chatId);
+        
+        if (result.success && result.exists && result.status === "completed") {
+          const filesList = (result.filesList || []) as Array<{name: string; type: "dir" | "file"; path: string; size?: number}>;
+          setSandboxData({
+            sandboxId: result.sandboxId || '',
+            sandboxUrl: result.sandboxUrl || '',
+            filesList: filesList
+          });
+          setSandboxDeployed(true);
+        }
+      } catch (error) {
+        console.error("Error restoring sandbox state:", error);
+        // Silently fail - this is optional enhancement
+      }
+    };
+
+    restoreSandboxState();
+  }, [chatId]);
 
   // Generate particles only on client side to avoid hydration mismatch
   useEffect(() => {
@@ -1094,6 +1131,119 @@ const DevPage = () => {
     }
   }
 
+  const handleDeployToSandbox = async () => {
+    try {
+      // Step 1: Validation and Setup
+      if (!contextualDocs || (!contextualDocs.prd && !contextualDocs.plan && (!contextualDocs.phases || contextualDocs.phases.length === 0))) {
+        console.error("Please generate documentation first");
+        alert("Please generate documentation first");
+        return;
+      }
+
+      // Generate unique deploymentId
+      const deploymentId = crypto.randomUUID();
+      
+      // Set loading state
+      setIsSandboxDeploying(true);
+      setSandboxDeployed(false);
+      
+      // Switch to sandbox tab
+      setActiveTab('sandbox');
+      
+      // On mobile, open panel
+      if (isMobile) {
+        setIsMobilePanelOpen(true);
+      }
+
+      // Step 2: Prepare Docs Data
+      const docsData: ContextualDocsData = {
+        projectRules: contextualDocs.projectRules,
+        plan: contextualDocs.plan,
+        prd: contextualDocs.prd,
+        projectStructure: contextualDocs.projectStructure,
+        uiUX: contextualDocs.uiUX,
+        bugTracking: contextualDocs.bugTracking,
+        phases: contextualDocs.phases,
+        phaseCount: contextualDocs.phaseCount,
+      };
+
+      // Step 3: Trigger Inngest Event
+      const result = await triggerSandboxDeployment({
+        deploymentId,
+        chatId,
+        docsData,
+      });
+
+      if (result.success && result.deploymentId) {
+        // Start polling for completion
+        pollForSandboxDeployment(deploymentId);
+      } else {
+        console.error('Failed to trigger sandbox deployment:', result.error);
+        alert(result.error || 'Failed to trigger sandbox deployment');
+        setIsSandboxDeploying(false);
+      }
+    } catch (error) {
+      console.error('Error in handleDeployToSandbox:', error);
+      alert('An error occurred while deploying to sandbox. Please try again.');
+      setIsSandboxDeploying(false);
+    }
+  }
+
+  // Function to poll for sandbox deployment completion
+  const pollForSandboxDeployment = async (deploymentId: string) => {
+    const maxAttempts = 60; // Poll for up to 5 minutes total
+    let attempts = 0;
+    const pollInterval = 5000; // 5 seconds between checks
+
+    const poll = async () => {
+      try {
+        attempts++;
+        
+        const result = await checkSandboxDeploymentById(deploymentId);
+        
+        if (result.success && result.completed) {
+          if (result.status === "completed") {
+            // Deployment successful
+            const filesList = (result.filesList || []) as Array<{name: string; type: "dir" | "file"; path: string; size?: number}>;
+            setSandboxData({
+              sandboxId: result.sandboxId || '',
+              sandboxUrl: result.sandboxUrl || '',
+              filesList: filesList
+            });
+            setSandboxDeployed(true);
+            setIsSandboxDeploying(false);
+            return; // Stop polling
+          } else if (result.status === "failed") {
+            // Deployment failed
+            console.error('Sandbox deployment failed:', result.error);
+            alert(result.error || 'Sandbox deployment failed. Please try again.');
+            setIsSandboxDeploying(false);
+            return; // Stop polling
+          }
+        }
+        
+        if (attempts >= maxAttempts) {
+          // Timeout
+          console.error("Polling timeout: Sandbox deployment not found after maximum attempts");
+          alert("Deployment is taking longer than expected. Please check back later.");
+          setIsSandboxDeploying(false);
+          return; // Stop polling
+        }
+        
+        // Continue polling
+        setTimeout(poll, pollInterval);
+        
+      } catch (error) {
+        console.error("Error polling for sandbox deployment:", error);
+        alert('An error occurred while checking deployment status. Please try again.');
+        setIsSandboxDeploying(false);
+      }
+    };
+
+    // Start polling immediately
+    poll();
+  }
+
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
      
@@ -1622,6 +1772,18 @@ const DevPage = () => {
                  </div> 
                 )}
                  
+                {!isLoading && !isArchitectureLoading && !isGeneratingDocs && docsGenerated && !sandboxDeployed && !isSandboxDeploying && (
+                 <div className={`flex h-12 ml-10 relative ${!docsGenerated && !isMobile && "z-[115]"} `}>
+                   <button 
+                     onClick={handleDeployToSandbox} 
+                     className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative ${!docsGenerated && !isMobile && "z-[115]"} hover:bg-transparent border-white hover:text-white bg-white text-black flex items-center gap-2`}
+                     disabled={isSandboxDeploying}
+                   >
+                     <Rocket className="h-4 w-4" />
+                     Deploy to Sandbox →
+                   </button>
+                 </div> 
+                )}
                 
                 {/* Auto-scroll target */}
                 <div ref={messagesEndRef} />
@@ -1710,6 +1872,18 @@ const DevPage = () => {
                     disabled={!docsGenerated && !isStreamingDocs && !isGeneratingDocs}
                   >
                     Contextual Docs
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveTab('sandbox')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                      activeTab === 'sandbox'
+                        ? 'text-white bg-gray-700/50'
+                        : 'text-gray-400 hover:text-white'
+                    } ${(!sandboxDeployed && !isSandboxDeploying) ? 'opacity-50 disabled:hover:cursor-not-allowed' : ''}`}
+                    disabled={!sandboxDeployed && !isSandboxDeploying}
+                  >
+                    Sandbox
                   </button>
                 </div>
                 
@@ -1801,6 +1975,10 @@ const DevPage = () => {
                     isGenerating={isStreamingDocs}
                     downloadButtonRef={downloadButtonRef}
                   /> 
+                </div>
+                
+                <div className={`h-full ${activeTab === 'sandbox' ? 'block' : 'hidden'}`}>
+                  <SandboxViewer sandboxData={sandboxData} isDeploying={isSandboxDeploying} />
                 </div>
               </div>
             </div>
@@ -2015,6 +2193,18 @@ const DevPage = () => {
                  </div> 
                 )}
                  
+                {!isLoading && !isArchitectureLoading && !isGeneratingDocs && docsGenerated && !sandboxDeployed && !isSandboxDeploying && (
+                 <div className={`flex h-12 ml-10 relative ${!docsGenerated && !isMobile && "z-[115]"} `}>
+                   <button 
+                     onClick={handleDeployToSandbox} 
+                     className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative ${!docsGenerated && !isMobile && "z-[115]"} hover:bg-transparent border-white hover:text-white bg-white text-black flex items-center gap-2`}
+                     disabled={isSandboxDeploying}
+                   >
+                     <Rocket className="h-4 w-4" />
+                     Deploy to Sandbox →
+                   </button>
+                 </div> 
+                )}
                 
                 {/* Auto-scroll target */}
                 <div ref={messagesEndRef} />
@@ -2095,6 +2285,21 @@ const DevPage = () => {
                   >
                     Docs
                   </button>
+                  
+                  <button
+                    onClick={() => {
+                      setActiveTab('sandbox');
+                      setIsMobilePanelOpen(true);
+                    }}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                      activeTab === 'sandbox'
+                        ? 'text-white bg-gray-700/50'
+                        : 'text-gray-400'
+                    } ${(!sandboxDeployed && !isSandboxDeploying) ? 'opacity-50' : ''}`}
+                    disabled={!sandboxDeployed && !isSandboxDeploying}
+                  >
+                    Sandbox
+                  </button>
                 </div>
                 
                 {/* Expand button */}
@@ -2142,6 +2347,18 @@ const DevPage = () => {
                     disabled={!docsGenerated && !isStreamingDocs && !isGeneratingDocs}
                   >
                     Contextual Docs
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveTab('sandbox')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                      activeTab === 'sandbox'
+                        ? 'text-white bg-gray-700/50'
+                        : 'text-gray-400'
+                    } ${(!sandboxDeployed && !isSandboxDeploying) ? 'opacity-50' : ''}`}
+                    disabled={!sandboxDeployed && !isSandboxDeploying}
+                  >
+                    Sandbox
                   </button>
                 </div>
                 
@@ -2229,6 +2446,10 @@ const DevPage = () => {
                     isGenerating={isStreamingDocs}
                     downloadButtonRef={downloadButtonRef}
                   /> 
+                </div>
+                
+                <div className={`h-full ${activeTab === 'sandbox' ? 'block' : 'hidden'}`}>
+                  <SandboxViewer sandboxData={sandboxData} isDeploying={isSandboxDeploying} />
                 </div>
               </div>
             </div>

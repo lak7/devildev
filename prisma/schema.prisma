@@ -74,6 +74,7 @@ model Chat {
   architecture   Architecture[]
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   contextualDocs ContextualDocs?
+  sandboxDeployments SandboxDeployment[]
 }
 
 model Architecture {
@@ -258,5 +259,21 @@ model PendingGitHubInstallation {
   userId    String
   createdAt DateTime @default(now())
   expiresAt DateTime
+}
+
+model SandboxDeployment {
+  id         String   @id @default(uuid())
+  chatId     String
+  sandboxId  String?
+  sandboxUrl String?
+  filesList  Json?
+  status     String   @default("pending")
+  error      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  chat       Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([id, status])
 }
  
