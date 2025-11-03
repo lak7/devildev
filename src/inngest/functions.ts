@@ -15,6 +15,7 @@ import { generateArchitecture } from "../../actions/reverse-architecture";
 import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
 import { getSandbox, lastAssistantTextMessageContent } from "./utils";
 import { ContextualDocsData } from "../../actions/contextualDocsPersistence";
+import { tempPrompt } from "../../prompts/CodingAgent";
 
 export const helloWorld = inngest.createFunction(
   { id: "hello-world", },
@@ -214,7 +215,7 @@ export const codeAgentFunction = inngest.createFunction(
     const codeAgent = createAgent<AgentState>({
       name: "code-agent",
       description: "An expert coding agent",
-      system: "Random prompt for now, but later we will use a system prompt that is specific to the project",
+      system: tempPrompt,
       model: openai({
         model: "gpt-4.1",
         defaultParameters: {
