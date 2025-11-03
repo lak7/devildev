@@ -423,7 +423,26 @@ export const deploySandboxWithDocs = inngest.createFunction(
         return sandbox.sandboxId;
       });
 
-      // Step 3: Create Directory Structure
+      // Step 3: Delete nextjs-app folder if it exists
+      await step.run("delete-nextjs-app", async () => {
+        try {
+          const sandbox = await getSandbox(sandboxId);
+          // Check if the directory exists before attempting to delete
+          try {
+            await sandbox.files.remove("/home/user/nextjs-app");
+            return { deleted: true };
+          } catch (e) {
+            // Directory doesn't exist or couldn't be deleted, that's fine
+            return { deleted: false, reason: "Directory not found or already deleted" };
+          }
+        } catch (error) {
+          console.error("Error deleting nextjs-app folder:", error);
+          // Don't throw - we want to continue even if this fails
+          return { deleted: false, error };
+        }
+      });
+
+      // Step 4: Create Directory Structure
       await step.run("create-directories", async () => {
         try {
           const sandbox = await getSandbox(sandboxId);
@@ -437,7 +456,7 @@ export const deploySandboxWithDocs = inngest.createFunction(
         }
       });
 
-      // Step 4: Write Documentation Files
+      // Step 5: Write Documentation Files
       const filesWritten = await step.run("write-docs-files", async () => {
         const sandbox = await getSandbox(sandboxId);
         let count = 0;
@@ -482,7 +501,7 @@ export const deploySandboxWithDocs = inngest.createFunction(
         return { count };
       });
 
-      // Step 5: List All Sandbox Files
+      // Step 6: List All Sandbox Files
       const filesList = await step.run("list-sandbox-files", async () => {
         const sandbox = await getSandbox(sandboxId);
         const entries = await sandbox.files.list("/home/user", { depth: 3 });
@@ -507,14 +526,14 @@ export const deploySandboxWithDocs = inngest.createFunction(
         return simplifiedList;
       });
 
-      // Step 6: Get Deployed URL
+      // Step 7: Get Deployed URL
       const sandboxUrl = await step.run("get-deployed-url", async () => {
         const sandbox = await getSandbox(sandboxId);
         const host = sandbox.getHost(3000);
         return `https://${host}`;
       });
 
-      // Step 7: Save results to database
+      // Step 8: Save results to database
       await step.run("save-to-database", async () => {
         await db.sandboxDeployment.update({
           where: { id: deploymentId },
