@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send, BrainCircuit, ChevronDown, Rocket, Play, CheckCircle, XCircle } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send, BrainCircuit, ChevronDown, Rocket, Play, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import SandboxViewer from '@/components/core/SandboxViewer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -1277,7 +1277,7 @@ const DevPage = () => {
   }
 
   // Function to start the agent
-  const handleStartAgent = async () => {
+  const handleStartAgent = async (phaseNumber: number = 1) => {
     try {
       // Validate sandbox is deployed
       if (!sandboxDeployed || !sandboxData) {
@@ -1297,9 +1297,16 @@ const DevPage = () => {
         return;
       }
 
+      // Validate that the requested phase exists
+      if (phaseNumber > phaseCount) {
+        alert(`Phase ${phaseNumber} does not exist. Only ${phaseCount} phases are available.`);
+        return;
+      }
+
       // Set agent running state
       setIsAgentRunning(true);
       setAgentStatus("in-progress");
+      setCurrentPhase(phaseNumber);
       
       // Switch to sandbox tab
       setActiveTab('sandbox');
@@ -1312,7 +1319,8 @@ const DevPage = () => {
       // Trigger the agent
       const result = await triggerCodeAgent({
         deploymentId: sandboxDeploymentId,
-        sandboxId: sandboxData.sandboxId
+        sandboxId: sandboxData.sandboxId,
+        phaseNumber: phaseNumber
       });
 
       if (result.success) {
@@ -1330,6 +1338,29 @@ const DevPage = () => {
       alert('An error occurred while starting the agent. Please try again.');
       setIsAgentRunning(false);
       setAgentStatus("failed");
+    }
+  }
+
+  // Function to start the next phase
+  const handleStartNextPhase = async () => {
+    try {
+      // Calculate next phase
+      const nextPhase = (currentPhase || 0) + 1;
+
+      // Validate that next phase exists
+      if (nextPhase > phaseCount) {
+        alert("All phases have been completed!");
+        return;
+      }
+
+      // Reset agent status to prepare for new phase
+      setAgentStatus("not_started");
+      
+      // Call handleStartAgent with the next phase number
+      await handleStartAgent(nextPhase);
+    } catch (error) {
+      console.error('Error in handleStartNextPhase:', error);
+      alert('An error occurred while starting the next phase. Please try again.');
     }
   }
 
@@ -1935,7 +1966,7 @@ const DevPage = () => {
                 {!isLoading && !isArchitectureLoading && !isGeneratingDocs && sandboxDeployed && agentStatus !== "completed" && (
                  <div className={`flex h-12 ml-10 relative`}>
                    <button 
-                     onClick={handleStartAgent} 
+                     onClick={() => handleStartAgent()} 
                      className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative hover:bg-transparent border-white hover:text-white bg-white text-black flex items-center gap-2 ${
                        isAgentRunning || isSandboxDeploying ? 'opacity-50 cursor-not-allowed' : ''
                      }`}
@@ -1972,6 +2003,33 @@ const DevPage = () => {
                     <div className="text-green-400 text-sm flex items-center gap-2">
                       <CheckCircle className="h-4 w-4" />
                       <span>Phase {currentPhase} completed successfully!</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Start Next Phase Button */}
+                {agentStatus === "completed" && currentPhase && currentPhase < phaseCount && sandboxDeployed && (
+                  <div className={`flex h-12 ml-10 mt-2 relative`}>
+                    <button 
+                      onClick={handleStartNextPhase} 
+                      className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative hover:bg-transparent border-green-500 hover:text-green-500 bg-green-500 text-black flex items-center gap-2 ${
+                        isAgentRunning ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                      disabled={isAgentRunning}
+                      title={`Start building Phase ${currentPhase + 1} requirements`}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                      Start Phase {currentPhase + 1} →
+                    </button>
+                  </div>
+                )}
+
+                {/* All Phases Completed Message */}
+                {agentStatus === "completed" && currentPhase && currentPhase >= phaseCount && (
+                  <div className="flex justify-start items-center space-x-3 ml-10 mt-2">
+                    <div className="text-purple-400 text-sm flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>🎉 All Phases Completed! Your application is ready.</span>
                     </div>
                   </div>
                 )}
@@ -2416,7 +2474,7 @@ const DevPage = () => {
                 {!isLoading && !isArchitectureLoading && !isGeneratingDocs && sandboxDeployed && agentStatus !== "completed" && (
                  <div className={`flex h-12 ml-10 relative`}>
                    <button 
-                     onClick={handleStartAgent} 
+                     onClick={() => handleStartAgent()} 
                      className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative hover:bg-transparent border-white hover:text-white bg-white text-black flex items-center gap-2 ${
                        isAgentRunning || isSandboxDeploying ? 'opacity-50 cursor-not-allowed' : ''
                      }`}
@@ -2453,6 +2511,33 @@ const DevPage = () => {
                     <div className="text-green-400 text-sm flex items-center gap-2">
                       <CheckCircle className="h-4 w-4" />
                       <span>Phase {currentPhase} completed successfully!</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Start Next Phase Button */}
+                {agentStatus === "completed" && currentPhase && currentPhase < phaseCount && sandboxDeployed && (
+                  <div className={`flex h-12 ml-10 mt-2 relative`}>
+                    <button 
+                      onClick={handleStartNextPhase} 
+                      className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative hover:bg-transparent border-green-500 hover:text-green-500 bg-green-500 text-black flex items-center gap-2 ${
+                        isAgentRunning ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                      disabled={isAgentRunning}
+                      title={`Start building Phase ${currentPhase + 1} requirements`}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                      Start Phase {currentPhase + 1} →
+                    </button>
+                  </div>
+                )}
+
+                {/* All Phases Completed Message */}
+                {agentStatus === "completed" && currentPhase && currentPhase >= phaseCount && (
+                  <div className="flex justify-start items-center space-x-3 ml-10 mt-2">
+                    <div className="text-purple-400 text-sm flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>🎉 All Phases Completed! Your application is ready.</span>
                     </div>
                   </div>
                 )}

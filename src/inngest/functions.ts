@@ -203,7 +203,7 @@ export const codeAgentFunction = inngest.createFunction(
   { id: "code-agent" },
   { event: "code-agent/run" },
   async ({ event, step }) => {
-    const { deploymentId, sandboxId } = event.data as { deploymentId: string; sandboxId: string };
+    const { deploymentId, sandboxId, phaseNumber = 1 } = event.data as { deploymentId: string; sandboxId: string; phaseNumber?: number };
 
     // Step 1: Update agent status to in-progress
     await step.run("update-agent-status-in-progress", async () => {
@@ -212,7 +212,7 @@ export const codeAgentFunction = inngest.createFunction(
         data: { 
           agentStatus: "in-progress", 
           agentStartedAt: new Date(), 
-          currentPhase: 1 
+          currentPhase: phaseNumber 
         },
       });
       return { success: true };
@@ -225,7 +225,7 @@ export const codeAgentFunction = inngest.createFunction(
         projectRules: "",
         prd: "",
         plan: "",
-        phase1: "",
+        currentPhase: "",
       };
 
       try {
@@ -247,9 +247,9 @@ export const codeAgentFunction = inngest.createFunction(
       }
 
       try {
-        docs.phase1 = await sandbox.files.read("/home/user/.devildev/Phases/Phase_1.md");
+        docs.currentPhase = await sandbox.files.read(`/home/user/.devildev/Phases/Phase_${phaseNumber}.md`);
       } catch (e) {
-        console.log("Phase_1.md not found");
+        console.log(`Phase_${phaseNumber}.md not found`);
       }
 
       return docs;
@@ -257,7 +257,7 @@ export const codeAgentFunction = inngest.createFunction(
 
     // Step 3: Construct enhanced agent prompt
     const agentPrompt = await step.run("construct-agent-prompt", async () => {
-      let prompt = "Read the Phase 1 requirements from .devildev/Phases/Phase_1.md and implement them. Also review PROJECT_RULES.md, PRD.md, and PLAN.md for context.\n\n";
+      let prompt = `Read the Phase ${phaseNumber} requirements from .devildev/Phases/Phase_${phaseNumber}.md and implement them. Also review PROJECT_RULES.md, PRD.md, and PLAN.md for context.\n\n`;
 
       if (docsContent.projectRules) {
         prompt += "## PROJECT_RULES\n" + docsContent.projectRules + "\n\n";
@@ -271,11 +271,11 @@ export const codeAgentFunction = inngest.createFunction(
         prompt += "## PLAN\n" + docsContent.plan + "\n\n";
       }
 
-      if (docsContent.phase1) {
-        prompt += "## PHASE 1 REQUIREMENTS\n" + docsContent.phase1 + "\n\n";
+      if (docsContent.currentPhase) {
+        prompt += `## PHASE ${phaseNumber} REQUIREMENTS\n` + docsContent.currentPhase + "\n\n";
       }
 
-      prompt += "Implement Phase 1 requirements in /home/user directory. Do not modify anything in .devildev folder.";
+      prompt += `Implement Phase ${phaseNumber} requirements in /home/user directory. Do not modify anything in .devildev folder.`;
 
       return prompt;
     });

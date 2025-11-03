@@ -20,6 +20,7 @@ export interface SandboxDeploymentResult {
   agentError?: string;
   agentStartedAt?: Date;
   agentCompletedAt?: Date;
+  summary?: string;
 }
 
 export async function triggerSandboxDeployment({
@@ -217,9 +218,11 @@ export async function getLatestSandboxDeployment(
 export async function triggerCodeAgent({
   deploymentId,
   sandboxId,
+  phaseNumber = 1,
 }: {
   deploymentId: string;
   sandboxId: string;
+  phaseNumber?: number;
 }): Promise<SandboxDeploymentResult> {
   try {
     const { userId } = await auth();
@@ -250,7 +253,7 @@ export async function triggerCodeAgent({
       data: {
         agentStatus: "in-progress",
         agentStartedAt: new Date(),
-        currentPhase: 1,
+        currentPhase: phaseNumber,
       },
     });
 
@@ -260,6 +263,7 @@ export async function triggerCodeAgent({
       data: {
         deploymentId,
         sandboxId,
+        phaseNumber,
       },
     });
 
