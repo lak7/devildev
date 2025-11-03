@@ -427,9 +427,9 @@ export const deploySandboxWithDocs = inngest.createFunction(
       await step.run("create-directories", async () => {
         try {
           const sandbox = await getSandbox(sandboxId);
-          await sandbox.files.makeDir(".devildev");
-          await sandbox.files.makeDir(".devildev/Docs");
-          await sandbox.files.makeDir(".devildev/Phases");
+          await sandbox.files.makeDir("/home/user/.devildev");
+          await sandbox.files.makeDir("/home/user/.devildev/Docs");
+          await sandbox.files.makeDir("/home/user/.devildev/Phases");
           return { success: true };
         } catch (error) {
           console.error("Error creating directories:", error);
@@ -443,38 +443,38 @@ export const deploySandboxWithDocs = inngest.createFunction(
         let count = 0;
 
         if (docsData.projectRules) {
-          await sandbox.files.write(".devildev/PROJECT_RULES.md", docsData.projectRules);
+          await sandbox.files.write("/home/user/.devildev/PROJECT_RULES.md", docsData.projectRules);
           count++;
         }
 
         if (docsData.plan) {
-          await sandbox.files.write(".devildev/PLAN.md", docsData.plan);
+          await sandbox.files.write("/home/user/.devildev/PLAN.md", docsData.plan);
           count++;
         }
 
         if (docsData.prd) {
-          await sandbox.files.write(".devildev/PRD.md", docsData.prd);
+          await sandbox.files.write("/home/user/.devildev/PRD.md", docsData.prd);
           count++;
         }
 
         if (docsData.projectStructure) {
-          await sandbox.files.write(".devildev/Docs/PROJECT_STRUCTURE.md", docsData.projectStructure);
+          await sandbox.files.write("/home/user/.devildev/Docs/PROJECT_STRUCTURE.md", docsData.projectStructure);
           count++;
         }
 
         if (docsData.uiUX) {
-          await sandbox.files.write(".devildev/Docs/UI_UX.md", docsData.uiUX);
+          await sandbox.files.write("/home/user/.devildev/Docs/UI_UX.md", docsData.uiUX);
           count++;
         }
 
         if (docsData.bugTracking) {
-          await sandbox.files.write(".devildev/Docs/BUG_TRACKING.md", docsData.bugTracking);
+          await sandbox.files.write("/home/user/.devildev/Docs/BUG_TRACKING.md", docsData.bugTracking);
           count++;
         }
 
         if (docsData.phases && Array.isArray(docsData.phases)) {
           for (let i = 0; i < docsData.phases.length; i++) {
-            await sandbox.files.write(`.devildev/Phases/Phase_${i + 1}.md`, docsData.phases[i]);
+            await sandbox.files.write(`/home/user/.devildev/Phases/Phase_${i + 1}.md`, docsData.phases[i]);
             count++;
           }
         }
@@ -485,14 +485,24 @@ export const deploySandboxWithDocs = inngest.createFunction(
       // Step 5: List All Sandbox Files
       const filesList = await step.run("list-sandbox-files", async () => {
         const sandbox = await getSandbox(sandboxId);
-        const entries = await sandbox.files.list("/", { depth: 3 });
+        const entries = await sandbox.files.list("/home/user", { depth: 3 });
         
-        const simplifiedList = entries.map((entry: any) => ({
-          name: entry.name,
-          type: (entry.type === "directory" || entry.isDir) ? "dir" : "file",
-          path: entry.path,
-          size: entry.size,
-        }));
+        const simplifiedList = entries
+          .filter((entry: any) => {
+            // Exclude .next and node_modules directories
+            const pathParts = entry.path.split('/');
+            return !pathParts.includes('.next') && !pathParts.includes('node_modules');
+          })
+          .map((entry: any) => {
+            // Remove /home/user prefix from path
+            const relativePath = entry.path.replace(/^\/home\/user\/?/, '');
+            return {
+              name: entry.name,
+              type: (entry.type === "directory" || entry.isDir) ? "dir" : "file",
+              path: relativePath || '/', // Use '/' for root if path becomes empty
+              size: entry.size,
+            };
+          });
 
         return simplifiedList;
       });
