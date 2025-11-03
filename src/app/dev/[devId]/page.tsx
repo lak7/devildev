@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send, BrainCircuit, ChevronDown, Rocket } from 'lucide-react';
+import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, BarChart3, SendHorizonal, Maximize, X, Menu, ChevronLeft, MessageCircle, Users, Phone, Info, Plus, Loader2, MessageSquare, Send, BrainCircuit, ChevronDown, Rocket, Play, CheckCircle, XCircle } from 'lucide-react';
 import Architecture from '@/components/core/architecture';
 import SandboxViewer from '@/components/core/SandboxViewer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -31,7 +31,9 @@ import {
 import {
   triggerSandboxDeployment,
   checkSandboxDeploymentById,
-  getLatestSandboxDeployment
+  getLatestSandboxDeployment,
+  triggerCodeAgent,
+  checkCodeAgentStatus
 } from '../../../../actions/sandboxDeployment';
 import FileExplorer from '@/components/core/ContextDocs';
 import Noise from '@/components/Noise/Noise';
@@ -144,6 +146,14 @@ const DevPage = () => {
   const [sandboxData, setSandboxData] = useState<{ sandboxId: string; sandboxUrl: string; filesList: Array<{name: string; type: "file" | "dir"; path: string; size?: number}> } | null>(null);
   const [isSandboxDeploying, setIsSandboxDeploying] = useState(false);
   const [sandboxDeployed, setSandboxDeployed] = useState(false);
+  const [sandboxDeploymentId, setSandboxDeploymentId] = useState<string | null>(null);
+  
+  // Agent state
+  const [isAgentRunning, setIsAgentRunning] = useState(false);
+  const [agentStatus, setAgentStatus] = useState<string>("not_started");
+  const [currentPhase, setCurrentPhase] = useState<number | null>(null);
+  const [agentSummary, setAgentSummary] = useState("");
+  const [agentDeploymentId, setAgentDeploymentId] = useState<string | null>(null);
   
   // Component position persistence
   const [componentPositions, setComponentPositions] = useState<Record<string, ComponentPosition>>({});
@@ -472,6 +482,27 @@ const DevPage = () => {
             filesList: filesList
           });
           setSandboxDeployed(true);
+          
+          // Store the deployment ID for agent use
+          if (result.deploymentId) {
+            setSandboxDeploymentId(result.deploymentId);
+            
+            // Restore agent state
+            if (result.agentStatus) {
+              setAgentStatus(result.agentStatus);
+              setCurrentPhase(result.currentPhase || null);
+              setAgentDeploymentId(result.deploymentId);
+              
+              if (result.agentStatus === "in-progress") {
+                // Agent was running, resume polling
+                setIsAgentRunning(true);
+                pollForAgentStatus(result.deploymentId);
+              } else if (result.agentStatus === "completed" || result.agentStatus === "failed") {
+                // Agent completed or failed, just restore final state
+                setIsAgentRunning(false);
+              }
+            }
+          }
         }
       } catch (error) {
         console.error("Error restoring sandbox state:", error);
@@ -1146,6 +1177,7 @@ const DevPage = () => {
       // Set loading state
       setIsSandboxDeploying(true);
       setSandboxDeployed(false);
+      setSandboxDeploymentId(deploymentId);
       
       // Switch to sandbox tab
       setActiveTab('sandbox');
@@ -1237,6 +1269,120 @@ const DevPage = () => {
         console.error("Error polling for sandbox deployment:", error);
         alert('An error occurred while checking deployment status. Please try again.');
         setIsSandboxDeploying(false);
+      }
+    };
+
+    // Start polling immediately
+    poll();
+  }
+
+  // Function to start the agent
+  const handleStartAgent = async () => {
+    try {
+      // Validate sandbox is deployed
+      if (!sandboxDeployed || !sandboxData) {
+        alert("Please deploy to sandbox first");
+        return;
+      }
+
+      // Validate agent is not already running
+      if (isAgentRunning) {
+        alert("Agent is already running");
+        return;
+      }
+
+      // Validate we have a deployment ID
+      if (!sandboxDeploymentId) {
+        alert("No sandbox deployment found. Please deploy to sandbox first.");
+        return;
+      }
+
+      // Set agent running state
+      setIsAgentRunning(true);
+      setAgentStatus("in-progress");
+      
+      // Switch to sandbox tab
+      setActiveTab('sandbox');
+      
+      // On mobile, open panel
+      if (isMobile) {
+        setIsMobilePanelOpen(true);
+      }
+
+      // Trigger the agent
+      const result = await triggerCodeAgent({
+        deploymentId: sandboxDeploymentId,
+        sandboxId: sandboxData.sandboxId
+      });
+
+      if (result.success) {
+        setAgentDeploymentId(sandboxDeploymentId);
+        // Start polling for agent status
+        pollForAgentStatus(sandboxDeploymentId);
+      } else {
+        console.error('Failed to trigger agent:', result.error);
+        alert(result.error || 'Failed to start agent');
+        setIsAgentRunning(false);
+        setAgentStatus("failed");
+      }
+    } catch (error) {
+      console.error('Error in handleStartAgent:', error);
+      alert('An error occurred while starting the agent. Please try again.');
+      setIsAgentRunning(false);
+      setAgentStatus("failed");
+    }
+  }
+
+  // Function to poll for agent status
+  const pollForAgentStatus = async (deploymentId: string) => {
+    const maxAttempts = 120; // Poll for up to 10 minutes total (120 * 5 seconds)
+    let attempts = 0;
+    const pollInterval = 5000; // 5 seconds between checks
+
+    const poll = async () => {
+      try {
+        attempts++;
+        
+        const result = await checkCodeAgentStatus(deploymentId);
+        
+        if (result.success && result.agentStatus) {
+          if (result.agentStatus === "completed") {
+            // Agent completed successfully
+            setIsAgentRunning(false);
+            setAgentStatus("completed");
+            setCurrentPhase(result.currentPhase || null);
+            if (result.summary) {
+              setAgentSummary(result.summary);
+            }
+            return; // Stop polling
+          } else if (result.agentStatus === "failed") {
+            // Agent failed
+            setIsAgentRunning(false);
+            setAgentStatus("failed");
+            alert(result.error || 'Agent execution failed. Please try again.');
+            return; // Stop polling
+          } else if (result.agentStatus === "in-progress") {
+            // Agent still running
+            setCurrentPhase(result.currentPhase || null);
+            // Continue polling
+          }
+        }
+        
+        if (attempts >= maxAttempts) {
+          // Timeout
+          console.error("Polling timeout: Agent execution not completed after maximum attempts");
+          alert("Agent is taking longer than expected. Please check back later.");
+          setIsAgentRunning(false);
+          return; // Stop polling
+        }
+        
+        // Continue polling
+        setTimeout(poll, pollInterval);
+        
+      } catch (error) {
+        console.error("Error polling for agent status:", error);
+        alert('An error occurred while checking agent status. Please try again.');
+        setIsAgentRunning(false);
       }
     };
 
@@ -1785,6 +1931,60 @@ const DevPage = () => {
                  </div> 
                 )}
                 
+                {/* Start Building Button */}
+                {!isLoading && !isArchitectureLoading && !isGeneratingDocs && sandboxDeployed && agentStatus !== "completed" && (
+                 <div className={`flex h-12 ml-10 relative`}>
+                   <button 
+                     onClick={handleStartAgent} 
+                     className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative hover:bg-transparent border-white hover:text-white bg-white text-black flex items-center gap-2 ${
+                       isAgentRunning || isSandboxDeploying ? 'opacity-50 cursor-not-allowed' : ''
+                     }`}
+                     disabled={!sandboxDeployed || isAgentRunning || isSandboxDeploying || agentStatus === "completed"}
+                     title="Start building the application based on Phase 1 requirements"
+                   >
+                     {isAgentRunning ? (
+                       <>
+                         <Loader2 className="h-4 w-4 animate-spin" />
+                         Building...
+                       </>
+                     ) : (
+                       <>
+                         <Play className="h-4 w-4" />
+                         Start Building →
+                       </>
+                     )}
+                   </button>
+                 </div> 
+                )}
+                
+                {/* Agent Status Messages */}
+                {isAgentRunning && currentPhase && (
+                  <div className="flex justify-start items-center space-x-3 ml-10 mt-2">
+                    <div className="text-blue-400 text-sm flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="animate-pulse">Agent is implementing Phase {currentPhase}...</span>
+                    </div>
+                  </div>
+                )}
+                
+                {agentStatus === "completed" && currentPhase && (
+                  <div className="flex justify-start items-center space-x-3 ml-10 mt-2">
+                    <div className="text-green-400 text-sm flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Phase {currentPhase} completed successfully!</span>
+                    </div>
+                  </div>
+                )}
+                
+                {agentStatus === "failed" && (
+                  <div className="flex justify-start items-center space-x-3 ml-10 mt-2">
+                    <div className="text-red-400 text-sm flex items-center gap-2">
+                      <XCircle className="h-4 w-4" />
+                      <span>Agent execution failed. Please try again.</span>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Auto-scroll target */}
                 <div ref={messagesEndRef} />
               </div>
@@ -1978,7 +2178,13 @@ const DevPage = () => {
                 </div>
                 
                 <div className={`h-full ${activeTab === 'sandbox' ? 'block' : 'hidden'}`}>
-                  <SandboxViewer sandboxData={sandboxData} isDeploying={isSandboxDeploying} />
+                  <SandboxViewer 
+                    sandboxData={sandboxData} 
+                    isDeploying={isSandboxDeploying}
+                    agentStatus={agentStatus}
+                    currentPhase={currentPhase}
+                    isAgentRunning={isAgentRunning}
+                  />
                 </div>
               </div>
             </div>
@@ -2204,6 +2410,60 @@ const DevPage = () => {
                      Deploy to Sandbox →
                    </button>
                  </div> 
+                )}
+                
+                {/* Start Building Button */}
+                {!isLoading && !isArchitectureLoading && !isGeneratingDocs && sandboxDeployed && agentStatus !== "completed" && (
+                 <div className={`flex h-12 ml-10 relative`}>
+                   <button 
+                     onClick={handleStartAgent} 
+                     className={`px-6 py-2 border rounded-lg font-bold cursor-pointer transition-colors duration-200 relative hover:bg-transparent border-white hover:text-white bg-white text-black flex items-center gap-2 ${
+                       isAgentRunning || isSandboxDeploying ? 'opacity-50 cursor-not-allowed' : ''
+                     }`}
+                     disabled={!sandboxDeployed || isAgentRunning || isSandboxDeploying || agentStatus === "completed"}
+                     title="Start building the application based on Phase 1 requirements"
+                   >
+                     {isAgentRunning ? (
+                       <>
+                         <Loader2 className="h-4 w-4 animate-spin" />
+                         Building...
+                       </>
+                     ) : (
+                       <>
+                         <Play className="h-4 w-4" />
+                         Start Building →
+                       </>
+                     )}
+                   </button>
+                 </div> 
+                )}
+                
+                {/* Agent Status Messages */}
+                {isAgentRunning && currentPhase && (
+                  <div className="flex justify-start items-center space-x-3 ml-10 mt-2">
+                    <div className="text-blue-400 text-sm flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="animate-pulse">Agent is implementing Phase {currentPhase}...</span>
+                    </div>
+                  </div>
+                )}
+                
+                {agentStatus === "completed" && currentPhase && (
+                  <div className="flex justify-start items-center space-x-3 ml-10 mt-2">
+                    <div className="text-green-400 text-sm flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Phase {currentPhase} completed successfully!</span>
+                    </div>
+                  </div>
+                )}
+                
+                {agentStatus === "failed" && (
+                  <div className="flex justify-start items-center space-x-3 ml-10 mt-2">
+                    <div className="text-red-400 text-sm flex items-center gap-2">
+                      <XCircle className="h-4 w-4" />
+                      <span>Agent execution failed. Please try again.</span>
+                    </div>
+                  </div>
                 )}
                 
                 {/* Auto-scroll target */}
@@ -2449,7 +2709,13 @@ const DevPage = () => {
                 </div>
                 
                 <div className={`h-full ${activeTab === 'sandbox' ? 'block' : 'hidden'}`}>
-                  <SandboxViewer sandboxData={sandboxData} isDeploying={isSandboxDeploying} />
+                  <SandboxViewer 
+                    sandboxData={sandboxData} 
+                    isDeploying={isSandboxDeploying}
+                    agentStatus={agentStatus}
+                    currentPhase={currentPhase}
+                    isAgentRunning={isAgentRunning}
+                  />
                 </div>
               </div>
             </div>

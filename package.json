@@ -63,7 +63,8 @@
     "tailwind-merge": "^3.3.0",
     "three": "^0.179.1",
     "tiktoken": "^1.0.22",
-    "zod": "^3.25.54"
+    "zod": "^4.1.12",
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

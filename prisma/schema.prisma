@@ -269,6 +269,11 @@ model SandboxDeployment {
   filesList  Json?
   status     String   @default("pending")
   error      String?
+  agentStatus String   @default("not_started")
+  currentPhase Int?
+  agentError   String?
+  agentStartedAt DateTime?
+  agentCompletedAt DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   chat       Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)

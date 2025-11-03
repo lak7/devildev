@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, File, Folder, Copy, ExternalLink, Check, Loader2, Server } from "lucide-react"
+import { ChevronRight, File, Folder, Copy, ExternalLink, Check, Loader2, Server, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -18,6 +18,9 @@ interface SandboxViewerProps {
     }>;
   } | null;
   isDeploying: boolean;
+  agentStatus?: string;
+  currentPhase?: number | null;
+  isAgentRunning?: boolean;
 }
 
 interface FileNode {
@@ -30,7 +33,10 @@ interface FileNode {
 
 export default function SandboxViewer({
   sandboxData,
-  isDeploying
+  isDeploying,
+  agentStatus,
+  currentPhase,
+  isAgentRunning
 }: SandboxViewerProps) {
   const [selectedFile, setSelectedFile] = React.useState<string | null>(null);
   const [isCopied, setIsCopied] = React.useState<boolean>(false);
@@ -309,6 +315,39 @@ export default function SandboxViewer({
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
+
+              {/* Build Agent Status */}
+              {agentStatus && agentStatus !== "not_started" && (
+                <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
+                  <label className="text-sm font-medium text-white/80 mb-2 block">Build Agent Status</label>
+                  <div className="space-y-2">
+                    {isAgentRunning && (
+                      <div className="flex items-center gap-2 text-blue-400">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm animate-pulse">
+                          Agent is implementing Phase {currentPhase}...
+                        </span>
+                      </div>
+                    )}
+                    {agentStatus === "completed" && (
+                      <div className="flex items-center gap-2 text-green-400">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="text-sm">
+                          Phase {currentPhase} implementation completed
+                        </span>
+                      </div>
+                    )}
+                    {agentStatus === "failed" && (
+                      <div className="flex items-center gap-2 text-red-400">
+                        <XCircle className="h-4 w-4" />
+                        <span className="text-sm">
+                          Agent execution failed
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* File Statistics */}
               <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">

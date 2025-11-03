@@ -5,7 +5,7 @@ import {
   createNetwork,
   type Tool,
 } from "@inngest/agent-kit";
-import z from "zod";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { Sandbox } from "@e2b/code-interpreter";
 import { generateArchitectureWithToolCalling, triggerArchitectureGeneration } from "../../actions/architecture";
@@ -203,13 +203,82 @@ export const codeAgentFunction = inngest.createFunction(
   { id: "code-agent" },
   { event: "code-agent/run" },
   async ({ event, step }) => {
-    const sandboxId = await step.run("get-sandbox-id", async () => {
-      const sandbox = await Sandbox.create("devil-nextjs-test");
-      return sandbox.sandboxId;
+    const { deploymentId, sandboxId } = event.data as { deploymentId: string; sandboxId: string };
+
+    // Step 1: Update agent status to in-progress
+    await step.run("update-agent-status-in-progress", async () => {
+      await db.sandboxDeployment.update({
+        where: { id: deploymentId },
+        data: { 
+          agentStatus: "in-progress", 
+          agentStartedAt: new Date(), 
+          currentPhase: 1 
+        },
+      });
+      return { success: true };
     });
 
-    // e.g. transcript step
-    // await step.sleep("wait-a-moment", "5s");
+    // Step 2: Read documentation files from .devildev
+    const docsContent = await step.run("read-devildev-docs", async () => {
+      const sandbox = await getSandbox(sandboxId);
+      const docs = {
+        projectRules: "",
+        prd: "",
+        plan: "",
+        phase1: "",
+      };
+
+      try {
+        docs.projectRules = await sandbox.files.read("/home/user/.devildev/PROJECT_RULES.md");
+      } catch (e) {
+        console.log("PROJECT_RULES.md not found");
+      }
+
+      try {
+        docs.prd = await sandbox.files.read("/home/user/.devildev/PRD.md");
+      } catch (e) {
+        console.log("PRD.md not found");
+      }
+
+      try {
+        docs.plan = await sandbox.files.read("/home/user/.devildev/PLAN.md");
+      } catch (e) {
+        console.log("PLAN.md not found");
+      }
+
+      try {
+        docs.phase1 = await sandbox.files.read("/home/user/.devildev/Phases/Phase_1.md");
+      } catch (e) {
+        console.log("Phase_1.md not found");
+      }
+
+      return docs;
+    });
+
+    // Step 3: Construct enhanced agent prompt
+    const agentPrompt = await step.run("construct-agent-prompt", async () => {
+      let prompt = "Read the Phase 1 requirements from .devildev/Phases/Phase_1.md and implement them. Also review PROJECT_RULES.md, PRD.md, and PLAN.md for context.\n\n";
+
+      if (docsContent.projectRules) {
+        prompt += "## PROJECT_RULES\n" + docsContent.projectRules + "\n\n";
+      }
+
+      if (docsContent.prd) {
+        prompt += "## PRD\n" + docsContent.prd + "\n\n";
+      }
+
+      if (docsContent.plan) {
+        prompt += "## PLAN\n" + docsContent.plan + "\n\n";
+      }
+
+      if (docsContent.phase1) {
+        prompt += "## PHASE 1 REQUIREMENTS\n" + docsContent.phase1 + "\n\n";
+      }
+
+      prompt += "Implement Phase 1 requirements in /home/user directory. Do not modify anything in .devildev folder.";
+
+      return prompt;
+    });
 
     // Create a new agent with a system prompt (you can add optional tools, too)
     const codeAgent = createAgent<AgentState>({
@@ -350,55 +419,65 @@ export const codeAgentFunction = inngest.createFunction(
       },
     });
 
-    const result = await network.run(event.data.value);
+    const result = await network.run(agentPrompt);
 
     const isError =
       !result.state.data.summary ||
       Object.keys(result.state.data.files || {}).length === 0;
 
+    try {
+      const sandboxUrl = await step.run("get-sandbox-url", async () => {
+        const sandbox = await getSandbox(sandboxId);
+        const host = sandbox.getHost(3000);
+        return `https://${host}`;
+      });
 
-    const sandboxUrl = await step.run("get-sandbox-url", async () => {
-      const sandbox = await getSandbox(sandboxId);
-      const host = sandbox.getHost(3000);
-      return `https://${host}`;
-    });
+      // Step 4: Update agent status based on result
+      await step.run("update-agent-status-completed", async () => {
+        if (isError) {
+          await db.sandboxDeployment.update({
+            where: { id: deploymentId },
+            data: {
+              agentStatus: "failed",
+              agentError: "Agent failed to generate summary or create files",
+              agentCompletedAt: new Date(),
+            },
+          });
+        } else {
+          await db.sandboxDeployment.update({
+            where: { id: deploymentId },
+            data: {
+              agentStatus: "completed",
+              agentCompletedAt: new Date(),
+            },
+          });
+        }
+        return { success: true };
+      });
 
-    // Save to db
-    // await step.run("save-result", async () => {
-    //   if (isError) {
-    //     return await db.message.create({
-    //       data: {
-    //         projectId: event.data.projectId,
-    //         content: "Something went wrong. Please try again.",
-    //         role: "ASSISTANT",
-    //         type: "ERROR",
-    //       },
-    //     });
-    //   }
-
-    //   return await db.message.create({
-    //     data: {
-    //       projectId: event.data.projectId,
-    //       content: result.state.data.summary,
-    //       role: "ASSISTANT",
-    //       type: "RESULT",
-    //       fragment: {
-    //         create: {
-    //           sandboxUrl: sandboxUrl,
-    //           title: "Fragment",
-    //           files: result.state.data.files,
-    //         },
-    //       },
-    //     },
-    //   });
-    // });
-
-    return {
-      url: sandboxUrl,
-      title: "Fragment",
-      files: result.state.data.files,
-      summary: result.state.data.summary,
-    };
+      return {
+        deploymentId,
+        status: isError ? "failed" : "completed",
+        url: sandboxUrl,
+        title: "Fragment",
+        files: result.state.data.files,
+        filesCreated: Object.keys(result.state.data.files || {}).length,
+        summary: result.state.data.summary,
+      };
+    } catch (error) {
+      // Handle any unexpected errors during execution
+      await step.run("update-agent-status-error", async () => {
+        await db.sandboxDeployment.update({
+          where: { id: deploymentId },
+          data: {
+            agentStatus: "failed",
+            agentError: error instanceof Error ? error.message : "Unknown error occurred",
+            agentCompletedAt: new Date(),
+          },
+        });
+      });
+      throw error; // Let Inngest handle retries
+    }
   },
 );
 
