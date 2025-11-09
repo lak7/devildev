@@ -1404,7 +1404,7 @@ const chain = prompt.pipe(llm).pipe(new StringOutputParser());
 const result = await chain.invoke({architectureData: JSON.stringify(architectureData), planContent: plan, prd: prd});
 return result;
 }
-
+ 
 export async function generateDocsWithStreaming(
   messages: any[],
   architectureData: any,
@@ -1438,28 +1438,23 @@ export async function generateDocsWithStreaming(
     
     const prd = await generatePRDStreaming(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases, onUpdate);
     
-    // Step 3: Generate PLAN with streaming  
-    onUpdate("PLAN.md", "# Development Plan\n\nGenerating development plan...", false);
-    
-    const plan = await generatePlanStreaming(messages, architectureData, parsedPhasesDetails.numberOfPhases, parsedPhasesDetails.phases, prd, onUpdate);
-    
-    // Step 4: Generate Project Structure with streaming
+    // Step 3: Generate Project Structure with streaming
     onUpdate("Docs/Project_Structure.md", "# Project Structure\n\nGenerating project structure...", false);
     
-    const projectStructure = await generateProjectStructureStreaming(architectureData, plan, prd, onUpdate);
+    const projectStructure = await generateProjectStructureStreaming(architectureData, prd, onUpdate);
     
-    // Step 5: Generate UI/UX with streaming
+    // Step 4: Generate UI/UX with streaming
     onUpdate("Docs/UI_UX.md", "# UI/UX Documentation\n\nGenerating UI/UX guidelines...", false);
     
-    const uiUX = await generateUIUXStreaming(architectureData, plan, prd, onUpdate);
+    const uiUX = await generateUIUXStreaming(architectureData, prd, onUpdate);
 
-    // Step 6: Generate all phases with streaming
+    // Step 5: Generate all phases with streaming
     const allPhases: string[] = [];
     
     for (let i = 1; i <= Number(parsedPhasesDetails.numberOfPhases); i++) {
       onUpdate(`Phases/Phase_${i}.md`, `# Phase ${i}\n\nGenerating phase ${i} documentation...`, false);
       
-      const nthPhase = await generateNthPhaseStreaming(architectureData, plan, i.toString(), parsedPhasesDetails.phases, prd, parsedPhasesDetails.numberOfPhases, onUpdate, i);
+      const nthPhase = await generateNthPhaseStreaming(architectureData, i.toString(), parsedPhasesDetails.phases, prd, parsedPhasesDetails.numberOfPhases, onUpdate, i);
       allPhases.push(nthPhase);
     }
 
@@ -1467,7 +1462,6 @@ export async function generateDocsWithStreaming(
       phaseCount: Number(parsedPhasesDetails.numberOfPhases),
       phases: allPhases,
       prd,
-      plan,
       projectStructure,
       uiUX,
       projectRules: "" // This can be generated separately if needed
@@ -1825,7 +1819,6 @@ The PLAN.md should be the go-to document that any coding assistant can reference
 // Streaming version of generateProjectStructure
 export async function generateProjectStructureStreaming(
   architectureData: any,
-  plan: string,
   prd: string,
   onUpdate: StreamingUpdateCallback
 ) {
@@ -1839,10 +1832,9 @@ export async function generateProjectStructureStreaming(
   const template = `
   # Project Structure Document Generator
 
-You are an expert software architect specializing in creating comprehensive project structure documentation. Your task is to analyze the project requirements, architecture, and development plan to generate a detailed Project_Structure.md that defines the complete file organization, folder hierarchy, and structural guidelines for the development team.
+You are an expert software architect specializing in creating comprehensive project structure documentation. Your task is to analyze the project requirements and architecture to generate a detailed Project_Structure.md that defines the complete file organization, folder hierarchy, and structural guidelines for the development team.
 
 ## INPUT DATA:
-- **Project Plan:** {planContent}
 - **Project Architecture:** {architectureData}
 - **PRD:** {prd}
 
@@ -1864,7 +1856,7 @@ Based on architectureData components:
 - **Establish component relationships**: Parent-child and sibling component organization
 
 ### Step 3: Development Workflow Integration
-From planContent, understand:
+From architectureData and PRD, understand:
 - **Phase-based development needs**: Structure that supports incremental development
 - **Team collaboration requirements**: Clear separation of concerns for multiple developers
 - **Testing and quality assurance structure**: Where tests, docs, and quality tools live
@@ -2071,7 +2063,6 @@ Generate a comprehensive Project_Structure.md that serves as the rough guide for
   
   const stream = await llm.stream(await prompt.format({
     architectureData: JSON.stringify(architectureData),
-    planContent: plan,
     prd: prd
   }));
 
@@ -2087,7 +2078,6 @@ Generate a comprehensive Project_Structure.md that serves as the rough guide for
 // Streaming version of generateUIUX
 export async function generateUIUXStreaming(
   architectureData: any,
-  plan: string,
   prd: string,
   onUpdate: StreamingUpdateCallback
 ) {
@@ -2101,10 +2091,9 @@ export async function generateUIUXStreaming(
   const template = `
 # UI/UX Documentation Generator
 
-You are an expert UI/UX designer and user experience strategist specializing in creating comprehensive design documentation. Your task is to analyze the project requirements, architecture, and development plan to generate a detailed UI_UX.md that defines design standards, user flows, and interface guidelines for the development team.
+You are an expert UI/UX designer and user experience strategist specializing in creating comprehensive design documentation. Your task is to analyze the project requirements and architecture to generate a detailed UI_UX.md that defines design standards, user flows, and interface guidelines for the development team.
 
 ## INPUT DATA:
-- **Project Plan:** {planContent}
 - **Project Architecture:** {architectureData}
 - **PRD:** {prd}
 
@@ -2411,7 +2400,6 @@ Generate comprehensive UI/UX documentation that serves as the definitive guide f
   
   const stream = await llm.stream(await prompt.format({
     architectureData: JSON.stringify(architectureData),
-    planContent: plan,
     prd: prd
   }));
 
@@ -2427,7 +2415,6 @@ Generate comprehensive UI/UX documentation that serves as the definitive guide f
 // Streaming version of generateNthPhase
 export async function generateNthPhaseStreaming(
   architectureData: any,
-  plan: string,
   numOfPhase: string,
   phaseDetails: string,
   prd: string,
@@ -2447,7 +2434,6 @@ export async function generateNthPhaseStreaming(
 You are an expert software development lead creating actionable execution plans for AI coding agents. Generate a focused phase execution document with a comprehensive todo list tailored specifically to the current phase requirements, including mandatory human review checkpoints.
 
 ## INPUT DATA:
-- **Project Plan:** {planContent}
 - **Project Architecture:** {architectureData}  
 - **Target Phase:** {phaseNumber}
 - **Phase Details:** {phaseDetails}
@@ -2690,7 +2676,6 @@ Generate the complete phase execution plan now, ensuring all tasks are specific 
   
   const stream = await llm.stream(await prompt.format({
     architectureData: JSON.stringify(architectureData),
-    planContent: plan,
     phaseNumber: numOfPhase,
     phaseDetails: typeof phaseDetails !== 'string' ? JSON.stringify(phaseDetails) : phaseDetails,
     prd: prd,

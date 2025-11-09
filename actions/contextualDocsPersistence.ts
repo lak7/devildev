@@ -7,9 +7,6 @@ import { revalidatePath } from "next/cache";
 // Types for contextual documentation data
 export interface ContextualDocsData {
   // Core documentation content
-  projectRules?: string;
-  humanReview?: string;
-  plan?: string;
   prd?: string;
   
   // Docs folder content
@@ -22,9 +19,6 @@ export interface ContextualDocsData {
   phaseCount?: number;
   
   // Completion status
-  isProjectRulesComplete?: boolean;
-  isHumanReviewComplete?: boolean;
-  isPlanComplete?: boolean;
   isPrdComplete?: boolean;
   isBugTrackingComplete?: boolean;
   isProjectStructureComplete?: boolean;
@@ -68,9 +62,6 @@ export async function saveContextualDocs(input: ContextualDocsInput) {
       },
       update: {
         // Core documentation
-        projectRules: input.docsData.projectRules,
-        humanReview: input.docsData.humanReview,
-        plan: input.docsData.plan,
         prd: input.docsData.prd,
         
         // Docs folder content
@@ -83,9 +74,6 @@ export async function saveContextualDocs(input: ContextualDocsInput) {
         phaseCount: input.docsData.phaseCount,
         
         // Completion status
-        isProjectRulesComplete: input.docsData.isProjectRulesComplete ?? false,
-        isHumanReviewComplete: input.docsData.isHumanReviewComplete ?? false,
-        isPlanComplete: input.docsData.isPlanComplete ?? false,
         isPrdComplete: input.docsData.isPrdComplete ?? false,
         isBugTrackingComplete: input.docsData.isBugTrackingComplete ?? false,
         isProjectStructureComplete: input.docsData.isProjectStructureComplete ?? false,
@@ -101,9 +89,6 @@ export async function saveContextualDocs(input: ContextualDocsInput) {
         chatId: input.chatId,
         
         // Core documentation
-        projectRules: input.docsData.projectRules,
-        humanReview: input.docsData.humanReview,
-        plan: input.docsData.plan,
         prd: input.docsData.prd,
         
         // Docs folder content
@@ -116,9 +101,6 @@ export async function saveContextualDocs(input: ContextualDocsInput) {
         phaseCount: input.docsData.phaseCount,
         
         // Completion status
-        isProjectRulesComplete: input.docsData.isProjectRulesComplete ?? false,
-        isHumanReviewComplete: input.docsData.isHumanReviewComplete ?? false,
-        isPlanComplete: input.docsData.isPlanComplete ?? false,
         isPrdComplete: input.docsData.isPrdComplete ?? false,
         isBugTrackingComplete: input.docsData.isBugTrackingComplete ?? false,
         isProjectStructureComplete: input.docsData.isProjectStructureComplete ?? false,
@@ -173,9 +155,6 @@ export async function getContextualDocs(chatId: string) {
     // Parse the JSON data and reconstruct the contextual docs object
     const contextualDocsData: ContextualDocsData = {
       // Core documentation
-      projectRules: docs.projectRules || undefined,
-      humanReview: docs.humanReview || undefined,
-      plan: docs.plan || undefined,
       prd: docs.prd || undefined,
       
       // Docs folder content
@@ -188,9 +167,6 @@ export async function getContextualDocs(chatId: string) {
       phaseCount: docs.phaseCount || undefined,
       
       // Completion status
-      isProjectRulesComplete: docs.isProjectRulesComplete,
-      isHumanReviewComplete: docs.isHumanReviewComplete,
-      isPlanComplete: docs.isPlanComplete,
       isPrdComplete: docs.isPrdComplete,
       isBugTrackingComplete: docs.isBugTrackingComplete,
       isProjectStructureComplete: docs.isProjectStructureComplete,
@@ -391,9 +367,6 @@ export async function getDocsCompletionStatus(chatId: string) {
       include: {
         contextualDocs: {
           select: {
-            isProjectRulesComplete: true,
-            isHumanReviewComplete: true,
-            isPlanComplete: true,
             isPrdComplete: true,
             isBugTrackingComplete: true,
             isProjectStructureComplete: true,

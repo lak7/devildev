@@ -97,9 +97,6 @@ model Architecture {
 model ContextualDocs {
   id                         String   @id @default(uuid())
   chatId                     String   @unique
-  projectRules               String?
-  humanReview                String?
-  plan                       String?
   prd                        String?
   bugTracking                String?
   projectStructure           String?
@@ -109,9 +106,6 @@ model ContextualDocs {
   requirement                String?
   generatedAt                DateTime @default(now())
   lastDocUpdate              DateTime @default(now())
-  isProjectRulesComplete     Boolean  @default(false)
-  isHumanReviewComplete      Boolean  @default(false)
-  isPlanComplete             Boolean  @default(false)
   isPrdComplete              Boolean  @default(false)
   isBugTrackingComplete      Boolean  @default(false)
   isProjectStructureComplete Boolean  @default(false)

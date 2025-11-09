@@ -186,9 +186,6 @@ const DevPage = () => {
   const [showCharacterLimitDialog, setShowCharacterLimitDialog] = useState(false);
   
   
-  // Coach mark state
-  const [showDocsCoachMark, setShowDocsCoachMark] = useState(false);
-  const [showDownloadCoachMark, setShowDownloadCoachMark] = useState(false);
   const [isArchitectureGeneratedOnce, setIsArchitectureGeneratedOnce] = useState(false);
   const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
   const docsButtonRef = useRef<HTMLButtonElement>(null);
@@ -306,8 +303,6 @@ const DevPage = () => {
 
   // Helper function to sync individual doc states with contextualDocs
   const syncIndividualStates = (docs: ContextualDocsData) => {
-    if (docs.projectRules) setProjectRules(docs.projectRules);
-    if (docs.plan) setPlan(docs.plan);
     if (docs.prd) setPrd(docs.prd);
     if (docs.phases) setPhase(docs.phases);
     if (docs.phaseCount) setPhaseCount(docs.phaseCount);
@@ -618,33 +613,7 @@ const DevPage = () => {
     }
   }, [messages, isLoading, isArchitectureLoading, isGeneratingDocs, architectureData]);
 
-  // Show coach mark for Generate Docs button when conditions are met
-  useEffect(() => {
-    const shouldShowCoachMark = !isLoading && !isArchitectureLoading && !isGeneratingDocs && architectureData && !docsGenerated && !isArchitectureGeneratedOnce;
-    if (shouldShowCoachMark && docsButtonRef.current) {
-      // Small delay to ensure the button is rendered
-      const timer = setTimeout(() => {
-        setShowDocsCoachMark(true);
-      }, 700);
-      return () => clearTimeout(timer);
-    } else {
-      setShowDocsCoachMark(false);
-    }
-  }, [isLoading, isArchitectureLoading, isGeneratingDocs, docsGenerated]);
 
-  // Show coach mark for Download button when docs are generated
-  useEffect(() => {
-    if (docsGenerated && !isStreamingDocs && downloadButtonRef.current) {
-      // Small delay to ensure the button is rendered and docs generation is complete
-      const timer = setTimeout(() => {
-        setActiveTab('context')
-        setShowDownloadCoachMark(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setShowDownloadCoachMark(false);
-    }
-  }, [docsGenerated, isStreamingDocs]);
 
   // Function to generate architecture
   const genArchitecture = async (requirement: string, conversationHistory: any[] = []) => {
@@ -964,12 +933,7 @@ const DevPage = () => {
       
       setIsLoading(false);
     }
-
     }
-
-    
-
-
   };
 
   const handleGenerateDocs = async () => {
@@ -989,7 +953,7 @@ const DevPage = () => {
           messages,
           architectureData
         }),
-      });
+      }); 
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -1056,25 +1020,19 @@ const DevPage = () => {
                         setPhaseCount(result.phaseCount);
                         setPhase(result.phases);
                         setPrd(result.prd);
-                        setPlan(result.plan);
                         setProjectStructure(result.projectStructure);
                         setUiUX(result.uiUX);
-                        setProjectRules(result.projectRules);
                         
                         // Save all docs to database
                         const docsData: ContextualDocsData = {
-                          plan: result.plan,
                           prd: result.prd,
                           projectStructure: result.projectStructure,
                           uiUX: result.uiUX,
-                          projectRules: result.projectRules,
                           phases: result.phases,
                           phaseCount: result.phaseCount,
-                          isPlanComplete: !!result.plan,
                           isPrdComplete: !!result.prd,
                           isProjectStructureComplete: !!result.projectStructure,
                           isUiUXComplete: !!result.uiUX,
-                          isProjectRulesComplete: !!result.projectRules,
                           arePhasesComplete: !!result.phases?.length,
                         };
                         
@@ -1114,25 +1072,19 @@ const DevPage = () => {
                     setPhaseCount(result.phaseCount);
                     setPhase(result.phases);
                     setPrd(result.prd);
-                    setPlan(result.plan);
                     setProjectStructure(result.projectStructure);
                     setUiUX(result.uiUX);
-                    setProjectRules(result.projectRules);
                     
                     // Save all docs to database
                     const docsData: ContextualDocsData = {
-                      plan: result.plan,
                       prd: result.prd,
                       projectStructure: result.projectStructure,
                       uiUX: result.uiUX,
-                      projectRules: result.projectRules,
                       phases: result.phases,
                       phaseCount: result.phaseCount,
-                      isPlanComplete: !!result.plan,
                       isPrdComplete: !!result.prd,
                       isProjectStructureComplete: !!result.projectStructure,
                       isUiUXComplete: !!result.uiUX,
-                      isProjectRulesComplete: !!result.projectRules,
                       arePhasesComplete: !!result.phases?.length,
                     };
                     
@@ -1165,7 +1117,7 @@ const DevPage = () => {
   const handleDeployToSandbox = async () => {
     try {
       // Step 1: Validation and Setup
-      if (!contextualDocs || (!contextualDocs.prd && !contextualDocs.plan && (!contextualDocs.phases || contextualDocs.phases.length === 0))) {
+      if (!contextualDocs || (!contextualDocs.prd && (!contextualDocs.phases || contextualDocs.phases.length === 0))) {
         console.error("Please generate documentation first");
         alert("Please generate documentation first");
         return;
@@ -1189,8 +1141,6 @@ const DevPage = () => {
 
       // Step 2: Prepare Docs Data
       const docsData: ContextualDocsData = {
-        projectRules: contextualDocs.projectRules,
-        plan: contextualDocs.plan,
         prd: contextualDocs.prd,
         projectStructure: contextualDocs.projectStructure,
         uiUX: contextualDocs.uiUX,
@@ -2222,8 +2172,6 @@ const DevPage = () => {
                 
                 <div className={`h-full ${activeTab === 'context' ? 'block' : 'hidden'}`}>
                   <FileExplorer 
-                    projectRules={projectRules} 
-                    plan={plan} 
                     phaseCount={phaseCount} 
                     phases={phases} 
                     prd={prd} 
@@ -2780,8 +2728,6 @@ const DevPage = () => {
                 
                 <div className={`h-full ${activeTab === 'context' ? 'block' : 'hidden'}`}>
                   <FileExplorer 
-                    projectRules={projectRules} 
-                    plan={plan} 
                     phaseCount={phaseCount} 
                     phases={phases} 
                     prd={prd} 
@@ -3002,35 +2948,9 @@ const DevPage = () => {
           }
         }
       `}</style>
-
-      {/* Coach Mark for Generate Docs Button */}
-      {!isMobile && (<CoachMark
-        isVisible={showDocsCoachMark}
-        targetElement={docsButtonRef.current}
-        title="For Context Engineering"
-        message="Click this button to generate your docs for context engineering"
-        position="right"
-        onNext={() => setShowDocsCoachMark(false)}
-        onSkip={() => setShowDocsCoachMark(false)}
-        onClose={() => setShowDocsCoachMark(false)}
-        nextLabel="Got it"
-        showSkip={false}
-      />)}
       
 
-      {/* Coach Mark for Download Button */}
-      <CoachMark
-        isVisible={showDownloadCoachMark}
-        targetElement={downloadButtonRef.current}
-        title="Download the Docs"
-        message="Just download these docs and copy-paste these into your new project's root folder. Then tell your coding assistant to read PROJECT_RULES.md and start building"
-        position="left"
-        onNext={() => setShowDownloadCoachMark(false)}
-        onSkip={() => setShowDownloadCoachMark(false)}
-        onClose={() => setShowDownloadCoachMark(false)}
-        nextLabel="Got it"
-        showSkip={false}
-      />
+
 
       {/* Character Limit Pricing Dialog */}
       <PricingDialog 

@@ -222,28 +222,14 @@ export const codeAgentFunction = inngest.createFunction(
     const docsContent = await step.run("read-devildev-docs", async () => {
       const sandbox = await getSandbox(sandboxId);
       const docs = {
-        projectRules: "",
         prd: "",
-        plan: "",
         currentPhase: "",
       };
-
-      try {
-        docs.projectRules = await sandbox.files.read("/home/user/.devildev/PROJECT_RULES.md");
-      } catch (e) {
-        console.log("PROJECT_RULES.md not found");
-      }
 
       try {
         docs.prd = await sandbox.files.read("/home/user/.devildev/PRD.md");
       } catch (e) {
         console.log("PRD.md not found");
-      }
-
-      try {
-        docs.plan = await sandbox.files.read("/home/user/.devildev/PLAN.md");
-      } catch (e) {
-        console.log("PLAN.md not found");
       }
 
       try {
@@ -257,18 +243,10 @@ export const codeAgentFunction = inngest.createFunction(
 
     // Step 3: Construct enhanced agent prompt
     const agentPrompt = await step.run("construct-agent-prompt", async () => {
-      let prompt = `Read the Phase ${phaseNumber} requirements from .devildev/Phases/Phase_${phaseNumber}.md and implement them. Also review PROJECT_RULES.md, PRD.md, and PLAN.md for context.\n\n`;
-
-      if (docsContent.projectRules) {
-        prompt += "## PROJECT_RULES\n" + docsContent.projectRules + "\n\n";
-      }
+      let prompt = `Read the Phase ${phaseNumber} requirements from .devildev/Phases/Phase_${phaseNumber}.md and implement them. Also review PRD.md for context.\n\n`;
 
       if (docsContent.prd) {
         prompt += "## PRD\n" + docsContent.prd + "\n\n";
-      }
-
-      if (docsContent.plan) {
-        prompt += "## PLAN\n" + docsContent.plan + "\n\n";
       }
 
       if (docsContent.currentPhase) {
@@ -540,16 +518,6 @@ export const deploySandboxWithDocs = inngest.createFunction(
       const filesWritten = await step.run("write-docs-files", async () => {
         const sandbox = await getSandbox(sandboxId);
         let count = 0;
-
-        if (docsData.projectRules) {
-          await sandbox.files.write("/home/user/.devildev/PROJECT_RULES.md", docsData.projectRules);
-          count++;
-        }
-
-        if (docsData.plan) {
-          await sandbox.files.write("/home/user/.devildev/PLAN.md", docsData.plan);
-          count++;
-        }
 
         if (docsData.prd) {
           await sandbox.files.write("/home/user/.devildev/PRD.md", docsData.prd);
