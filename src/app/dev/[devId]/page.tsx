@@ -942,7 +942,7 @@ const DevPage = () => {
     setActiveTab('context');
     setIsStreamingDocs(true);
     setStreamingUpdates([]);
-
+  
     try {
       const response = await fetch('/api/generate-docs-stream', {
         method: 'POST',

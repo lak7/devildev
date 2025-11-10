@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
           } catch (error) {
             console.error('Error encoding streaming update:', error);
           }
-        };
+        }; 
 
         try {
           // Generate docs with streaming
