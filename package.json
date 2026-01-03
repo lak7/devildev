@@ -48,7 +48,7 @@
     "langchain": "^0.3.29",
     "lucide-react": "^0.511.0",
     "motion": "^12.23.12",
-    "next": "15.3.3",
+    "next": "15.3.8",
     "openai": "^5.8.2",
     "react": "^19.0.0",
     "react-device-detect": "^2.2.3",
