@@ -13,14 +13,14 @@ export function useSubscriptionHandler() {
     }
     const userWithSubscription = await fetchUserWithSubscription(user.id)
     if (userWithSubscription?.subscriptionPlan == "FREE" && userWithSubscription?.subscription?.status !== "ACTIVE") {
-      if(!process.env.DODO_PAYMENT_LINK || !process.env.NEXT_PUBLIC_BASE_URL) {
+      if(!process.env.NEXT_PUBLIC_DODO_PAYMENT_LINK || !process.env.NEXT_PUBLIC_BASE_URL) {
         alert("Payment link or base URL not found")
         return
       }
       const redirectUrl = process.env.NEXT_PUBLIC_BASE_URL + "/success"
       const userEmail = userWithSubscription.email
 
-      const liveUrl = process.env.DODO_PAYMENT_LINK + `?quantity=1&redirect_url=${redirectUrl}&email=${userEmail}&disableEmail=true`
+      const liveUrl = process.env.NEXT_PUBLIC_DODO_PAYMENT_LINK + `?quantity=1&redirect_url=${redirectUrl}&email=${userEmail}&disableEmail=true`
  
       if (!liveUrl) {
         alert("Payment link not found")

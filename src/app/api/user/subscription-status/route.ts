@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    if(!process.env.COOKIE_SECRET || !process.env.NEXTAUTH_SECRET) {
-        return NextResponse.json({ error: 'Cookie secret or NextAuth secret not found' }, { status: 500 });
-    }
  
     const secret = process.env.COOKIE_SECRET || process.env.NEXTAUTH_SECRET;
+
+    if(!secret) {
+        return NextResponse.json({ error: 'Cookie secret or NextAuth secret not found' }, { status: 500 });
+    }
 
     // Check if we have a cached subscription status in cookies
     const cookieStore = await cookies();
