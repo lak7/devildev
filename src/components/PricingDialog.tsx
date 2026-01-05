@@ -6,10 +6,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useUser } from "@clerk/nextjs"
-import { fetchUserWithSubscription } from "../../actions/subscription"
 import useUserSubscription from "@/hooks/useSubscription"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useSubscriptionHandler } from "@/hooks/useSubscriptionHandler"
 
 interface PricingDialogProps {
   open: boolean
@@ -18,9 +18,10 @@ interface PricingDialogProps {
 }
 
 export default function PricingDialog({ open, onOpenChange, description }: PricingDialogProps) {
-  const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription()
+  const { userSubscription } = useUserSubscription()
   const { user } = useUser()
   const router = useRouter()
+  const handleSubscription = useSubscriptionHandler()
 
   const freeFeatures = [
     "Up to 3 Chats",
@@ -35,29 +36,6 @@ export default function PricingDialog({ open, onOpenChange, description }: Prici
     "Extended token limit for each chat",
     "Up to 100 Chats",
   ]
-
-  const handleSubscription = async () => {
-    if (!user) {
-      router.push('/sign-in')
-      return
-    }
-    const userWithSubscription = await fetchUserWithSubscription(user.id)
-    if (userWithSubscription?.subscriptionPlan == "FREE" && userWithSubscription?.subscription?.status !== "ACTIVE") {
-      const liveRedirectUrl = "https://devildev.com/success"
-      const userEmail = userWithSubscription.email
-
-      const liveUrl = `https://checkout.dodopayments.com/buy/pdt_cI4VU7DR9rRQGlD0QHERi?quantity=1&redirect_url=${liveRedirectUrl}&email=${userEmail}&disableEmail=true`
-
-      if (!liveUrl) {
-        alert("Payment link not found")
-        return
-      }
-      window.location.href = liveUrl
-      return
-    } else {
-      alert("You are rich man")
-    }
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

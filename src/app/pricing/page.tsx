@@ -8,15 +8,17 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import TempFooter from "@/components/core/TempFooter"
 import { useUser } from "@clerk/nextjs"
-import { fetchUserWithSubscription } from "../../../actions/subscription"
 import useUserSubscription from "@/hooks/useSubscription"
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"
+import { useSubscriptionHandler } from "@/hooks/useSubscriptionHandler"
 
 export default function PricingPage() {
   const { userSubscription, isLoadingUserSubscription, isErrorUserSubscription } = useUserSubscription();
     const { user } = useUser();
    
     const router = useRouter();
+    const handleSubscription = useSubscriptionHandler();
+    
     const freeFeatures = [
         "Up to 3 Chats",
         "Only 1 Project",
@@ -30,31 +32,6 @@ export default function PricingPage() {
       "Extended token limit for each chat",
       "Up to 100 Chats",
     ]
-
-    const handleSubscription = async () => {
-      if(!user){
-        router.push('/sign-in');
-        return;
-      }
-      const userWithSubscription = await fetchUserWithSubscription(user.id);
-      if(userWithSubscription?.subscriptionPlan == "FREE" && userWithSubscription?.subscription?.status !== "ACTIVE"){
-        const redirectUrl = "https://rested-anchovy-mistakenly.ngrok-free.app/success";
-        const liveRedirectUrl = "https://devildev.com/success";
-        const userEmail = userWithSubscription.email;
-        
-        const url = `https://test.checkout.dodopayments.com/buy/pdt_WOJtkAzaBaXWSYEKRxIGa?quantity=1&redirect_url=${redirectUrl}&email=${userEmail}&disableEmail=true`;
-        const liveUrl = `https://checkout.dodopayments.com/buy/pdt_cI4VU7DR9rRQGlD0QHERi?quantity=1&redirect_url=${liveRedirectUrl}&email=${userEmail}&disableEmail=true`;
-
-        if(!liveUrl){
-          alert("Payment link not found");
-          return;
-        }
-        window.location.href = liveUrl;
-        return;
-      }else{ 
-        alert("You are rich man")
-      }
-    }
 
     return (
         <div className="min-h-screen bg-black">
