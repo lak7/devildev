@@ -1,22 +1,9 @@
-import { generateArchitectureWithToolCalling, triggerArchitectureGeneration } from "../../actions/architecture";
+import { generateArchitectureWithToolCalling } from "../../actions/architecture";
 import { saveArchitectureWithUserId } from "../../actions/architecturePersistence";
 import { inngest } from "./client";
 import { generateArchitecture } from "../../actions/reverse-architecture";
 import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
 
-export const helloWorld = inngest.createFunction(
-  { id: "hello-world", },
-  { event: "test/hello.world" },
-  async ({ event, step }) => {
-    await step.run("fn", () => {
-      console.log("something else") // this will always be run once
-      return "something else"
-    })
-  
-    await step.sleep("wait-a-moment", "1s");
-    return { message: `Hello ${event.data.email}!` };
-  },
-);
 
 export const generateArchitectureFunction = inngest.createFunction(
   { 

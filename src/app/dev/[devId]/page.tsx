@@ -93,6 +93,53 @@ const toRomanNumeral = (num: number): string => {
   return result;
 };
 
+// Helper function to sanitize JSON string by removing/escaping control characters
+const sanitizeJsonString = (jsonString: string): string => {
+  // Remove markdown code blocks first
+  let cleaned = jsonString
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/, '') 
+    .replace(/\s*```\s*$/, '')
+    .trim();
+  
+  // Remove or escape control characters (except \n, \r, \t which are valid in JSON strings)
+  // Control characters are characters with ASCII codes 0-31 except for \n (10), \r (13), \t (9)
+  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  
+  return cleaned;
+};
+
+// Helper function to safely parse JSON with error handling
+const safeJsonParse = (jsonString: string | any): any => {
+  // If it's already an object, return it
+  if (typeof jsonString !== 'string') {
+    return jsonString;
+  }
+  
+  try {
+    // First, try to sanitize and parse
+    const sanitized = sanitizeJsonString(jsonString);
+    return JSON.parse(sanitized);
+  } catch (error) {
+    console.error('JSON parse error:', error);
+    console.error('Problematic JSON string:', jsonString.substring(0, 500));
+    
+    // Try to extract JSON from the string if it's embedded in text
+    const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const sanitized = sanitizeJsonString(jsonMatch[0]);
+        return JSON.parse(sanitized);
+      } catch (retryError) {
+        console.error('Retry parse also failed:', retryError);
+      }
+    }
+    
+    // If all parsing fails, throw the error
+    throw error;
+  }
+};
+
 const DevPage = () => {
   const params = useParams();
   const chatId = params?.devId as string;
@@ -339,7 +386,7 @@ const DevPage = () => {
   // Load chat data and architecture when component mounts
   useEffect(() => {
     const loadChatAndArchitecture = async () => {
-      // alert("Step 0") 
+ 
       if (!chatId || !isSignedIn) return; 
       
       
@@ -354,7 +401,7 @@ const DevPage = () => {
         
         if (isNewChat && firstMessage) {
           // This is a new chat - create it and process the first message
-          // alert("Step 2")
+
 
           // Set up initial state
           const userMessage: ChatMessageType = {
@@ -397,7 +444,7 @@ const DevPage = () => {
             const chatMessages = chatResult.chat.messages as unknown as ChatMessageType[];
             setMessages(chatMessages);
             setIsChatMode(true); 
-            // alert(0)
+
             // Load architecture data if it exists 
             const archResult = await getArchitecture(chatId);
             if (archResult.success && archResult.architectures && archResult.architectures.length > 0) {
@@ -411,7 +458,7 @@ const DevPage = () => {
               setComponentPositions(archResult.architectures[latestIndex].componentPositions || {});
               setArchitectureGenerated(true);
             }
-            // alert(1)
+
             setIsLoadingChat(false);
 
             // Load contextual docs data if it exists
@@ -421,7 +468,7 @@ const DevPage = () => {
               syncIndividualStates(docsResult.contextualDocs);
               setDocsGenerated(true);
             }
-            // alert(2)
+
           } else {
             setIsLoadingChat(false);
             console.error("Failed to load chat:", chatResult.error);
@@ -686,17 +733,8 @@ const DevPage = () => {
       const chatbotResponse = await chatbot(initialMessage, currentMessages);
       // const isStart = await startOrNot(initialMessage, [], null);
       let cleanedIsStart = chatbotResponse;
-      if (typeof cleanedIsStart === 'string') {
-        cleanedIsStart = cleanedIsStart
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '') 
-          .replace(/\s*```\s*$/, '')
-          .trim();
-      }
       
-      const parsedClassifier = typeof cleanedIsStart === 'string' 
-        ? JSON.parse(cleanedIsStart) 
-        : cleanedIsStart;  
+      const parsedClassifier = safeJsonParse(cleanedIsStart);  
 
 
       setCurrentStartOrNot(parsedClassifier.can_start); 
@@ -776,127 +814,117 @@ const DevPage = () => {
 
     if(architectureData){
       setIsArchitectureGeneratedOnce(true);
-      const chatbotResponse = await architectureModificationBot(currentInput, messages, architectureData);
-      let cleanedIsStart = chatbotResponse;
-      if (typeof cleanedIsStart === 'string') {
-        cleanedIsStart = cleanedIsStart
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '') 
-          .replace(/\s*```\s*$/, '')
-          .trim();
-      }
-      
-      const parsedClassifier = typeof cleanedIsStart === 'string' 
-        ? JSON.parse(cleanedIsStart) 
-        : cleanedIsStart; 
- 
-    setCurrentStartOrNot(parsedClassifier.is_change);
-    if(parsedClassifier.is_change){
-      const assistantMessage: ChatMessageType = {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: parsedClassifier.verification,
-        timestamp: new Date().toISOString()
-      };
-      const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
-      setMessages(updatedMessages); 
-      setIsLoading(false);
-      await genArchitecture(currentInput, messages);
-      await updateChatMessages(chatId, updatedMessages);
-    }else{
-      const assistantMessage: ChatMessageType = {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: parsedClassifier.general,
-        timestamp: new Date().toISOString()
-      };
-      const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
-      setMessages(updatedMessages); 
-      setIsLoading(false); 
-      await updateChatMessages(chatId, updatedMessages);
-    }
-      setIsLoading(false);
-    }else{
-
-      const chatbotResponse = await chatbot(currentInput, messages);
-      // const isStart = await startOrNot(initialMessage, [], null);
-      let cleanedIsStart = chatbotResponse;
-      if (typeof cleanedIsStart === 'string') {
-        cleanedIsStart = cleanedIsStart
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/, '') 
-          .replace(/\s*```\s*$/, '')
-          .trim();
-      }
-      
-      const parsedClassifier = typeof cleanedIsStart === 'string' 
-        ? JSON.parse(cleanedIsStart) 
-        : cleanedIsStart; 
-
-    setCurrentStartOrNot(parsedClassifier.canStart);
-
-
-    try {
-      if(!parsedClassifier.can_start && parsedClassifier.need_clarification){
-        const formattedQuestion = formatAssistantContent(parsedClassifier.question);
-        const assistantMessage: ChatMessageType = {
-          id: Date.now().toString(),
-          type: 'assistant',
-          content: formattedQuestion,
-          timestamp: new Date().toISOString()
-        };
-        const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
-        setMessages(updatedMessages); 
-        setIsLoading(false); 
-        await updateChatMessages(chatId, updatedMessages);
-      }else if(parsedClassifier.can_start && !parsedClassifier.need_clarification){
-        const assistantMessage: ChatMessageType = { 
-          id: Date.now().toString(),
-          type: 'assistant',
-          content: parsedClassifier.verification,
-          timestamp: new Date().toISOString()
-        };
-        const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
-        setMessages(updatedMessages); 
-        setIsLoading(false);
-        await genArchitecture(currentInput, messages);
-        await updateChatMessages(chatId, updatedMessages);
-      }else{
-        const assistantMessage: ChatMessageType = {
-          id: Date.now().toString(),
-          type: 'assistant',
-          content: parsedClassifier.reason,
-          timestamp: new Date().toISOString()
-        };
-        const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
-        setMessages(updatedMessages); 
-        setIsLoading(false); 
-        await updateChatMessages(chatId, updatedMessages);
-      }
-      
-    } catch (error) {
-      console.error('Error calling firstBot:', error);
-      
-      const errorMessage: ChatMessageType = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: 'Sorry, I encountered an error while processing your request. Please try again.',
-        timestamp: new Date().toISOString()
-      };
-      
-      const finalMessages = [...updatedMessagesWithUser, errorMessage];
-      setMessages(finalMessages);
-      
-      // Save error message to database
       try {
-        await addMessageToChat(chatId, errorMessage);
+        const chatbotResponse = await architectureModificationBot(currentInput, messages, architectureData);
+        const parsedClassifier = safeJsonParse(chatbotResponse); 
+ 
+        setCurrentStartOrNot(parsedClassifier.is_change);
+        if(parsedClassifier.is_change){
+          const assistantMessage: ChatMessageType = {
+            id: Date.now().toString(),
+            type: 'assistant',
+            content: parsedClassifier.verification,
+            timestamp: new Date().toISOString()
+          };
+          const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+          setMessages(updatedMessages); 
+          setIsLoading(false);
+          await genArchitecture(currentInput, messages);
+          await updateChatMessages(chatId, updatedMessages);
+        }else{
+          const assistantMessage: ChatMessageType = {
+            id: Date.now().toString(),
+            type: 'assistant',
+            content: parsedClassifier.general,
+            timestamp: new Date().toISOString()
+          };
+          const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+          setMessages(updatedMessages); 
+          setIsLoading(false); 
+          await updateChatMessages(chatId, updatedMessages);
+        }
       } catch (error) {
-        console.error('Error saving error message:', error);
+        console.error('Error processing architecture modification:', error);
+        const errorMessage: ChatMessageType = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: 'Sorry, I encountered an error while processing your request. Please try again.',
+          timestamp: new Date().toISOString()
+        };
+        const finalMessages = [...updatedMessagesWithUser, errorMessage];
+        setMessages(finalMessages);
+        try {
+          await addMessageToChat(chatId, errorMessage);
+        } catch (saveError) {
+          console.error('Error saving error message:', saveError);
+        }
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    }
+    }else{
+      try {
+        const chatbotResponse = await chatbot(currentInput, messages);
+        const parsedClassifier = safeJsonParse(chatbotResponse);
 
+        setCurrentStartOrNot(parsedClassifier.canStart);
+
+        if(!parsedClassifier.can_start && parsedClassifier.need_clarification){
+          const formattedQuestion = formatAssistantContent(parsedClassifier.question);
+          const assistantMessage: ChatMessageType = {
+            id: Date.now().toString(),
+            type: 'assistant',
+            content: formattedQuestion,
+            timestamp: new Date().toISOString()
+          };
+          const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+          setMessages(updatedMessages); 
+          setIsLoading(false); 
+          await updateChatMessages(chatId, updatedMessages);
+        }else if(parsedClassifier.can_start && !parsedClassifier.need_clarification){
+          const assistantMessage: ChatMessageType = { 
+            id: Date.now().toString(),
+            type: 'assistant',
+            content: parsedClassifier.verification,
+            timestamp: new Date().toISOString()
+          };
+          const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+          setMessages(updatedMessages); 
+          setIsLoading(false);
+          await genArchitecture(currentInput, messages);
+          await updateChatMessages(chatId, updatedMessages);
+        }else{
+          const assistantMessage: ChatMessageType = {
+            id: Date.now().toString(),
+            type: 'assistant',
+            content: parsedClassifier.reason,
+            timestamp: new Date().toISOString()
+          };
+          const updatedMessages = [...updatedMessagesWithUser, assistantMessage];
+          setMessages(updatedMessages); 
+          setIsLoading(false); 
+          await updateChatMessages(chatId, updatedMessages);
+        }
+      } catch (error) {
+        console.error('Error calling chatbot:', error);
+        
+        const errorMessage: ChatMessageType = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: 'Sorry, I encountered an error while processing your request. Please try again.',
+          timestamp: new Date().toISOString()
+        };
+        
+        const finalMessages = [...updatedMessagesWithUser, errorMessage];
+        setMessages(finalMessages);
+        
+        // Save error message to database
+        try {
+          await addMessageToChat(chatId, errorMessage);
+        } catch (saveError) {
+          console.error('Error saving error message:', saveError);
+        }
+        
+        setIsLoading(false);
+      }
     }
 
     

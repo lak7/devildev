@@ -47,7 +47,7 @@ export class SubscriptionService {
         data: { subscriptionPlan: userPlan },
       });
       
-      console.log(`Subscription ${data.subscriptionId} upserted for user ${data.userId}`);
+      ;
       return subscription;
     } catch (error) {
       console.error('Error upserting subscription:', error);
@@ -75,7 +75,7 @@ export class SubscriptionService {
         });
       }
       
-      console.log(`Subscription ${subscriptionId} updated`);
+      ;
       return subscription;
     } catch (error) {
       console.error('Error updating subscription:', error);
@@ -131,7 +131,7 @@ export class SubscriptionService {
         data: { subscriptionPlan: SubscriptionPlan.FREE },
       });
       
-      console.log(`Free subscription created for user ${userId}`);
+      ;
       return subscription;
     } catch (error) {
       console.error('Error creating free subscription:', error);
@@ -157,7 +157,7 @@ export class SubscriptionService {
         data: { subscriptionPlan: SubscriptionPlan.PRO },
       });
       
-      console.log(`Subscription ${subscriptionId} activated`);
+      ;
       return subscription;
     } catch (error) {
       console.error('Error activating subscription:', error);
@@ -183,7 +183,7 @@ export class SubscriptionService {
         data: { subscriptionPlan: SubscriptionPlan.FREE },
       });
       
-      console.log(`Subscription ${subscriptionId} cancelled`);
+      ;
       return subscription;
     } catch (error) {
       console.error('Error cancelling subscription:', error);
@@ -208,7 +208,7 @@ export class SubscriptionService {
         data: { subscriptionPlan: SubscriptionPlan.FREE },
       });
       
-      console.log(`Subscription ${subscriptionId} put on hold`);
+      ;
       return subscription;
     } catch (error) {
       console.error('Error putting subscription on hold:', error);

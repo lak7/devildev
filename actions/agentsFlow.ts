@@ -291,7 +291,7 @@ You are DevilDev Assistant, an expert AI software architect and development cons
 } 
 
 export async function chatbot(userInput: string, conversationHistory: any[] = []) {
-    console.log("chatbot");
+    ;
 
     const template = chatbotPrompt;
 

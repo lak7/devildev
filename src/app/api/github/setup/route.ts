@@ -25,8 +25,6 @@ async function retryWithBackoff<T>(
       const exponentialDelay = baseDelayMs * Math.pow(2, attempt);
       const jitter = Math.random() * 0.1 * exponentialDelay; // Add 10% jitter
       const delay = Math.min(exponentialDelay + jitter, maxDelayMs);
-      
-      console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${Math.round(delay)}ms`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -37,7 +35,7 @@ async function retryWithBackoff<T>(
 // Function to find and update installation with retry logic
 async function findAndUpdateInstallation(installationId: string, userId: string) {
   return await retryWithBackoff(async () => {
-    console.log(`Attempting to update installation ${installationId} with userId ${userId}`);
+    ;
     
     // Try to find the installation first
     const installation = await db.gitHubAppInstallation.findUnique({
@@ -54,20 +52,20 @@ async function findAndUpdateInstallation(installationId: string, userId: string)
       data: { userId: userId }
     });
     
-    console.log(`Successfully updated installation ${installationId} with userId ${userId}`);
+    ;
     return updated;
   }, 3, 500, 3000); // 3 retries, start with 500ms, max 3s delay
 }
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("GitHub Setup Callback");
+    ;
     const { searchParams } = new URL(request.url);
     const installationId = searchParams.get('installation_id');
     const setupAction = searchParams.get('setup_action');
     const state = searchParams.get('state');
     
-    console.log('GitHub Setup Callback:', { installationId, setupAction, state });
+    ;
     
     if (!installationId) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/?error=${encodeURIComponent('Missing installation ID')}`);
@@ -77,27 +75,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/?error=${encodeURIComponent('Missing state parameter')}`);
     }
 
-    console.log("GitHub Setup Callback 2");
+    ;
     
     // Look up the pending installation to get the userId
     const pending = await db.pendingGitHubInstallation.findUnique({
       where: { state: state }
     });
     
-    console.log("GitHub Setup Callback 3");
+    ;
     if (!pending || pending.expiresAt < new Date()) {
-      console.log('No valid pending installation found for state:', state);
+      ;
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/?error=${encodeURIComponent('Invalid or expired installation state')}`);
     }
     
     const userId = pending.userId;
-    console.log('Found userId from state:', userId); 
+    ; 
     
     // Update the installation with retry logic
     try {
-      console.log("GitHub Setup Callback 4 - Starting installation update with retry logic");
+      ;
       await findAndUpdateInstallation(installationId, userId);
-      console.log('Successfully updated installation with userId after retries');
+      ;
     } catch (error) {
       console.error('Failed to update installation after all retries:', error);
       // You might want to handle this differently - maybe redirect to an error page
@@ -105,7 +103,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/?error=${encodeURIComponent('Installation setup failed - please try again')}`);
     }
 
-    console.log("GitHub Setup Callback 5 - Fetching installation record");
+    ;
     
     // Fetch installation to obtain the GitHub username (accountLogin)
     // Also use retry logic here in case of timing issues
@@ -122,7 +120,7 @@ export async function GET(request: NextRequest) {
       return record;
     }, 2, 300, 1500); // Shorter retry for this operation
 
-    console.log("GitHub Setup Callback 6 - Updating user");
+    ;
     
     // Update user's GitHub App connection status and username
     await db.user.update({
@@ -133,14 +131,14 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    console.log("GitHub Setup Callback 7 - Cleaning up pending installation");
+    ;
     
     // Clean up the temporary record
     await db.pendingGitHubInstallation.delete({
       where: { state: state }
     });
     
-    console.log("GitHub Setup Callback - Success!");
+    ;
     
     // Redirect to success page
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/new?github_app_connected=true`);

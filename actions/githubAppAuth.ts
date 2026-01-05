@@ -17,7 +17,7 @@ const metrics = {
 function log(event: string, details: Record<string, unknown>) {
   if (process.env.GITHUB_APP_LOGGING === "true") {
     // Keep logs concise and structured
-    console.log(`[githubAppAuth] ${event}`, details);
+    ;
   }
 }
 

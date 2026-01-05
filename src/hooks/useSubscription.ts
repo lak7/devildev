@@ -20,7 +20,7 @@ export default function useUserSubscription() {
     
     const isPro = data?.subscriptionPlan === "PRO" && data?.subscription?.status === "ACTIVE";
 
-    // alert(data?.subscriptionPlan)
+
    
     return {
       userSubscription: isPro,

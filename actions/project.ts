@@ -5,11 +5,7 @@ import { cache } from "react";
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-import { architectureModificationPrompt, chatbotPrompt } from "../prompts/Chatbot";
-import { generateEasyMediumPrompt, generateNthProjectPhase, generateProjectPlanDocs, initialDocsGenerationPrompt, projectChatBotPrompt, theProjectChatBotPrompt, ultraProjectChatBotPrompt } from "../prompts/ReverseArchitecture";
-import { DynamicStructuredTool } from "langchain/tools";
-import z from "zod";
-import { AgentExecutor, createToolCallingAgent } from "langchain/agents";
+import { generateEasyMediumPrompt, generateNthProjectPhase, generateProjectPlanDocs, initialDocsGenerationPrompt, ultraProjectChatBotPrompt } from "../prompts/ReverseArchitecture";
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
   openAIApiKey: openaiKey,
@@ -77,7 +73,7 @@ export async function getProject(projectId: string) {
             }
         }
     });
-    console.log("Project: ", project)
+    
     return project;
 }
 
@@ -89,10 +85,10 @@ export async function saveProjectArchitecture(
     componentPositions?: any,
     initialMessage?: string
 ) {
-    console.log("In saveProjectArchitecture Step 0");
+    ;
 
 
-    console.log("In saveProjectArchitecture Step 1");
+    ;
 
     try {
         // First verify the project belongs to the user
@@ -100,7 +96,7 @@ export async function saveProjectArchitecture(
             where: { id: projectId },
             select: { id: true }
         });
-        console.log("In saveProjectArchitecture Step 2");
+        ;
         if (!project) {
             return { error: 'Project not found' };
         }
@@ -109,7 +105,7 @@ export async function saveProjectArchitecture(
         const existingArchitecture = await db.projectArchitecture.findUnique({
             where: { projectId: projectId } 
         });
-        console.log("In saveProjectArchitecture Step 3");
+        ;
         let savedArchitecture;
         
         if (existingArchitecture) {
@@ -149,7 +145,7 @@ export async function saveProjectArchitecture(
                 await addMessageToProject(projectId, assistantMessage);
             }
         }
-        console.log("In saveProjectArchitecture Step 4");
+        ;
         return { success: true, architecture: savedArchitecture };
     } catch (error) {
         console.error("Error saving project architecture:", error);
@@ -444,41 +440,11 @@ export async function projectChatBot( userInput: string, projectFramework: strin
         return { error: 'Unauthorized' };
     }
 
-    // Get project analysis tool
-    // const getProjectArchitecture = new DynamicStructuredTool({
-    //     name: "get_project_architecture",
-    //     description: "Get the project architecture",
-    //     schema: z.object({
-    //         projectArchitecture: z.string().describe("The project architecture")
-    //     }),
-    //     func: async () => {
-    //         console.log("I am being used bitch")
-    //         return JSON.stringify(projectArchitecture);
-    //     }
-    // })
-
      // Format conversation history for the prompt
      const formattedHistory = conversationHistory.map(msg => 
         `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
     ).join('\n'); 
 
-    console.log("This is the user Input: ", userInput);
-    console.log("This is the conversation History: ", formattedHistory);
-
-    // const tools = [getProjectArchitecture];
-
-// const agent = await createToolCallingAgent({
-//   llm: llmWithWeb,
-//   tools,
-//   prompt: ultraProjectChatBotPrompt,
-// });
-
-// const agentExecutor = new AgentExecutor({
-//     agent,
-//     tools,
-//     verbose: true,
-//     maxIterations: 2, // Allow multiple tool calls
-//   });
     
     const prompt = PromptTemplate.fromTemplate(ultraProjectChatBotPrompt);
     const chain = prompt.pipe(llmWithWeb).pipe(new StringOutputParser());
@@ -488,14 +454,6 @@ export async function projectChatBot( userInput: string, projectFramework: strin
         projectArchitecture: projectArchitecture,
         conversationHistory: formattedHistory
     });
-
-    // const response = await agentExecutor.invoke({
-    //          userQuery: userInput,
-    //     framework: projectFramework,
-    //     conversationHistory: formattedHistory
-    //   });
-    //   console.log("This is the result output: ", result.output);
-    //   console.log("This is the result output text: ", result.output[0].text);
 
     return response;
 }
@@ -583,24 +541,24 @@ export async function createProjectContextDocs(
 
 // Get project context docs by ID
 export async function getProjectContextDocs(projectChatId: any) {
-    console.log("Step 0")
+    
     const { userId } = await auth();
     if (!userId) {
         return { error: 'Unauthorized' };
     }
 
-    console.log("This is the projectChatId: ", projectChatId);
+    ;
 
     try {
-        console.log("Step 1")
+        
         const projectContextDocs = await db.projectContextDocs.findMany({
             where: {projectChatId: projectChatId}
         });
-        console.log("Step 2")
+        
         if (!projectContextDocs) {
             return { error: 'Project context docs not found' };
         }
-        console.log("Step 3")
+        
         return {success: true, projectContextDocs: projectContextDocs};
     } catch (error) {
         console.error("Error getting project context docs:", error);

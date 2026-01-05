@@ -27,5 +27,5 @@ return_url: 'https://rested-anchovy-mistakenly.ngrok-free.app/success',
 quantity: 1,
 });
 
-console.log(subscription.subscription_id);
+;
 }

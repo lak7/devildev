@@ -10,7 +10,6 @@ import { aimlComponentsTool } from "./architecture/aimlComponents";
 import { analyticsComponentsTool } from "./architecture/analyticsComponents";
 import { authComponentsTool } from "./architecture/authComponents";
 import { blockchainComponentsTool } from "./architecture/blockchainComponents";
-import { DynamicStructuredTool } from "langchain/tools"; 
 import { databaseComponentsTool } from "./architecture/databaseComponents";
 import { mobileComponentsTool } from "./architecture/mobileComponents";
 import { notificationComponentsTool } from "./architecture/notificationComponents";
@@ -365,7 +364,6 @@ Generate ONLY this JSON:
     const prompt1 = PromptTemplate.fromTemplate(template1);
     const prompt2 = PromptTemplate.fromTemplate(template2);
     const prompt3 = PromptTemplate.fromTemplate(template3);
-    // const context = await retrieveFunc(requirement, conversationHistory);
      // Format conversation history for the prompt
      const formattedHistory = conversationHistory.map(msg => 
       `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`

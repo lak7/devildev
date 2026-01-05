@@ -127,11 +127,12 @@ export const mobileComponentsTool = new DynamicStructuredTool({
     conversation_history: z.string().describe("All prior conversation messages as a single formatted string"),
     architectureData: z.string().describe("Previous architecture as stringified JSON if any"),
   }),
-  func: async ({ requirement, conversation_history, architectureData }) => {
+  func: async (input) => {
+    const { requirement, conversation_history, architectureData } = input as { requirement: string, conversation_history: string, architectureData: string };
     const result = await chain.invoke({
       requirement,
       conversation_history,
-      architectureData,
+      architectureData, 
     });
     return result;
   },

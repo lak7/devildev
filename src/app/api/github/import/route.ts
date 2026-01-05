@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         // Package.json might not exist, that's fine
-        console.log('No package.json found or error reading it');
+        ;
       }
 
 

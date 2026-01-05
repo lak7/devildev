@@ -6,7 +6,7 @@ import { createOctokitWithToken } from '@/lib/githubClient';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("Step 0")
+    
     const { userId } = await auth();
     
     if (!userId) {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         githubUsername: true,
       },
     });
-    console.log("Step 1")
+    
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -100,16 +100,16 @@ export async function GET(request: NextRequest) {
 
     let url = `https://api.github.com/user/repos?sort=updated&per_page=${per_page}&page=${page}`;
 
-    console.log("Step 2")
+    
     
     // If search is provided, use the search API instead
     if (search) {
       url = `https://api.github.com/search/repositories?q=${encodeURIComponent(search)}+user:${user.githubUsername}`;
     }
 
-    console.log("url", url)
+    
 
-    console.log("Step 3")
+    
 
     const response = await fetch(url, {
       headers: {
@@ -119,18 +119,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log("Step 4")
+    
 
     if (!response.ok) {
       console.error('GitHub API error:', response.status, response.statusText);
       return NextResponse.json({ error: 'Failed to fetch repositories' }, { status: response.status });
     }
 
-    console.log("Step 5")
+    
 
     const data = await response.json();
     
-    console.log("Step 6")
+    
 
     // Format the response consistently whether it's search results or direct repos
     const repos = search ? data.items : data;
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
       },
     }));
 
-    console.log("Step 7")
+    
 
     return NextResponse.json({
       repos: formattedRepos,

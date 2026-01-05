@@ -384,11 +384,8 @@ const ProjectPage = () => {
         }
         
         try {
-          ////alert(0)
           const projectData = await getProject(projectId);
-          //alert(1)
-          if (projectData && !('error' in projectData)) { 
-            //alert(2)
+          if (projectData && !('error' in projectData)) {   
             setProject(projectData);
             loadArchitecture(projectData);
             
@@ -405,7 +402,6 @@ const ProjectPage = () => {
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               );
               setProjectChats(sortedChats);
-              //alert(3)
               
               // Determine which chat to load
               let targetChatId: string | null = null;
@@ -417,7 +413,6 @@ const ProjectPage = () => {
                   targetChatId = urlChatId;
                 }
               }
-              //alert(4)
               // If no valid URL chat ID, use the latest chat or create one
               if (!targetChatId) {
                 if (sortedChats.length > 0) {
@@ -437,13 +432,11 @@ const ProjectPage = () => {
                   }
                 }
               }
-              //alert(5)              
                               // Set active chat and load its messages
               if (targetChatId) {
                 setActiveChatId(targetChatId);
                 const activeChat = sortedChats.find(chat => chat.id.toString() === targetChatId) || 
                                   (await getProjectChat(projectId, targetChatId)).projectChat;
-  //alert(6)                
                 if (activeChat && activeChat.messages && Array.isArray(activeChat.messages)) {
                   const loadedMessages = (activeChat.messages as unknown as ProjectMessage[]).map((msg, index) => ({
                     ...msg,
@@ -451,14 +444,12 @@ const ProjectPage = () => {
                   }));
                   setMessages(loadedMessages);
                 }
-                //alert(7)
                 // Update URL if needed
                 if (urlChatId !== targetChatId) {
                   const newUrl = new URL(window.location.href);
                   newUrl.searchParams.set('c', targetChatId);
                   window.history.replaceState({}, '', newUrl.toString());
                 }
-                //alert(8)
               }
             } else {
               // No chats exist, create the first one
@@ -475,16 +466,13 @@ const ProjectPage = () => {
                 setMessages([]);
                 
                 // Update URL
-                alert("Reloading 1");
                 window.location.reload();
                 const newUrl = new URL(window.location.href);
                 newUrl.searchParams.set('c', newChat.id.toString());
                 window.history.replaceState({}, '', newUrl.toString());
               }
             }
-            //alert(10)
             if(isThisFirstGeneration){
-              // alert("Reloading 2");
               window.location.reload();
             }
             setIsLoading(false);
@@ -498,9 +486,7 @@ const ProjectPage = () => {
       };
 
       const loadArchitecture = async (theProjectData: any) => {
-        //alert("Step 1")
         if(theProjectData?.ProjectArchitecture && theProjectData.ProjectArchitecture.length > 0){
-          //alert("Step 2")
                   // Load existing architecture
                   const existingArchitecture = theProjectData.ProjectArchitecture[0];
                   const architectureData = { 
@@ -516,7 +502,6 @@ const ProjectPage = () => {
                   setIsArchitectureGenerating(false);
             
               }else{
-                //alert("Step 5") 
                 setIsArchitectureGenerating(true);
                 setIsThisFirstGeneration(true);
                 
@@ -644,12 +629,10 @@ const ProjectPage = () => {
       timestamp: new Date().toISOString()
     };
 
-    //alert(0)
 
     // Add user message to local state immediately
     setMessages(prevMessages => [...prevMessages, userMessage]);
 
-    //alert(1)
     
     const currentInput = inputMessage;
     setInputMessage('');
@@ -657,10 +640,8 @@ const ProjectPage = () => {
     setIsChatLoading(true);
 
     try {
-      //alert(2) 
       // Save user message to database
       const saveResult = await addMessageToProjectChat(projectId, activeChatId, userMessage);
-      //alert(3)
       
       // Update chat title in local state if this is the first user message
       if (saveResult.success && messages.length === 0) {
@@ -677,14 +658,11 @@ const ProjectPage = () => {
         );
       } 
 
-      // //alert(currentInput.trim())
-      //alert(4.1)
       
       // TODO: Add AI response handling here when implementing chat functionality
       // here 
 
       const chatbotResponse = await projectChatBot(currentInput.trim() ,project.framework, messages, architectureData, project.detailedAnalysis);
-      //alert(4)
       let cleanedResponse = chatbotResponse; 
       if (typeof cleanedResponse === 'string') {
         cleanedResponse = cleanedResponse
@@ -712,12 +690,6 @@ const ProjectPage = () => {
       setMessages(prevMessages => [...prevMessages, assistantMessage]);
       setIsChatLoading(false);
 
-      // //alert(parsedResponse.docs)
-      // //alert(parsedResponse.wannaStart)
-      
- 
-
-      
       if(parsedResponse.prompt && parsedResponse.wannaStart && (parsedResponse.difficulty === "easy" || parsedResponse.difficulty === "medium")){
         // Count existing prompts already generated in this chat
         setIsPromptGenerating(true);
@@ -745,7 +717,6 @@ const ProjectPage = () => {
             setIsPromptGenerating(false);
           }
       }else if(parsedResponse.docs && parsedResponse.wannaStart){
-        //alert("Starting to generate docs")
         setIsDocsGenerating(true);   
          // Here Docs generation logic 
          const projectSummarizedContext = await summarizeProjectDocsContext(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
@@ -753,15 +724,6 @@ const ProjectPage = () => {
           ? JSON.parse(projectSummarizedContext) 
           : projectSummarizedContext;
 
-          // alert("Starting to generate webSearchDocs")
-
-          // const webSearchDocs = await generateWebSearchDocs(parsedprojectSummarizedContext.exactRequirement, project.framework);
-
-          // const saveProjectSummarizedContextResult = await saveProjectSummarizedContext(activeChatId, parsedprojectSummarizedContext.nameDocs, parsedprojectSummarizedContext.exactRequirement);
-          // alert("Saving webSearchDocs")
-          // const saveProjectWebSearchDocsResult = await saveProjectWebSearchDocs(activeChatId, webSearchDocs.toString());
-
-         
          try {
            // Create project context docs in database with BigChanges content
            const bigChangesContent = `# Development Agent Workflow\n\n## Primary Directive\nYou are a development agent implementing a project based on established documentation. Your goal is to build a cohesive, well-documented, and maintainable software product. **ALWAYS** consult documentation before taking any action and maintain strict consistency with project standards.\n\n[This is a truncated version of the BigChanges content for ${parsedprojectSummarizedContext.nameDocs}]`;
@@ -797,33 +759,26 @@ const ProjectPage = () => {
            }
 
            if(!projectContextDocsResult.projectContextDocs){
-            //alert("no project context docs");
             console.error('Error creating project context docs:', projectContextDocsResult.error);
             return;
            }
 
-           //alert("Starting to generate plan")
  
            //Here generate plan  
            const plan = await generateProjectPlan(project.framework, parsedprojectSummarizedContext.phaseCount, project.detailedAnalysis, parsedprojectSummarizedContext.exactRequirement);
 
-           //alert("Plan generated")
            setProjectPlan(plan.toString()); 
 
-           //alert("Starting to generate phases")
            let projectPhases: string[] = [];
            
            for(let i = 0; i< parsedprojectSummarizedContext.phaseCount; i++){
-            //alert(i)
             const nthPhase = await generateNthPhase(JSON.stringify(plan), project.framework, parsedprojectSummarizedContext.exactRequirement, String(i+1));
 
             projectPhases.push(nthPhase.toString());
            }
            setProjectPhases(projectPhases);
-           //alert("Phases generated")
            setIsDocsGenerating(false);
            const updateDocsRes = await updateProjectContextDocs(projectContextDocsResult.projectContextDocs.id, projectPlan, projectPhases);
-           //alert("Yeahh")
            
          } catch (error) {
            console.error('Error creating project context docs:', error);

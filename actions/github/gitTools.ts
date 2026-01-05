@@ -70,7 +70,8 @@ export const getRepoTreeTool = new DynamicStructuredTool({
     accessToken: z.string().describe("GitHub access token for authentication (OAuth or installation token)"),
   }),
   
-  func: async ({ owner, repo, branch = "main", accessToken }): Promise<string> => {
+  func: async (input): Promise<string> => {
+    const { owner, repo, branch = "main", accessToken } = input as { owner: string, repo: string, branch: string, accessToken: string };
     try {
       const url = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
       
@@ -175,7 +176,8 @@ export const getFileContentTool = new DynamicStructuredTool({
     branch: z.string().optional().describe("Branch name (optional, uses default branch if not specified)"),
   }),
   
-  func: async ({ owner, repo, path, accessToken, branch }): Promise<string> => {
+  func: async (input): Promise<string> => {
+    const { owner, repo, path, accessToken, branch } = input as { owner: string, repo: string, path: string, accessToken: string, branch: string };
     try {
       let url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
       if (branch) {
@@ -237,7 +239,8 @@ export const searchCodeTool = new DynamicStructuredTool({
     path: z.string().optional().describe("Filter by file path pattern (e.g., 'src/', 'components/')"),
   }),
   
-  func: async ({ owner, repo, query, accessToken, language, extension, path }): Promise<string> => {
+  func: async (input): Promise<string> => {
+    const { owner, repo, query, accessToken, language, extension, path } = input as { owner: string, repo: string, query: string, accessToken: string, language: string, extension: string, path: string };
     try {
       // Build search query with filters
       let searchQuery = `${query} repo:${owner}/${repo}`;

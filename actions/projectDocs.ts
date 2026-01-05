@@ -111,13 +111,13 @@ export async function summarizeProjectDocsContext(userQuery: string, projectFram
 
 //   // ✅ Count tokens locally before sending
 //   const tokenCount =  countTokens(rawPrompt);
-//   console.log("Estimated input tokens:", tokenCount);
-//   console.log("Raw Prompt:", rawPrompt);
+//   ;
+//   ;
 
 //   const enc = encoding_for_model("gpt-4"); // close enough for gpt-5-nano
 //   const tokenCount = enc.encode(formattedPrompt).length;
-//   console.log("Final Prompt Token Count:", tokenCount);
-//   console.log("Prompt Preview:", formattedPrompt.slice(0, 1500));
+//   ;
+//   );
     const chain = prompt.pipe(llm);
     const response = await chain.invoke({
         userQuery: userQuery,
@@ -125,8 +125,8 @@ export async function summarizeProjectDocsContext(userQuery: string, projectFram
         projectAnalysis: projectAnalysis,
         conversationHistory: formattedHistory
     });
-    console.log("Summarized Context Response: ", response.content);
-    console.log("Token Usage Summarized Context: ", response.usage_metadata);
+    ;
+    ;
     return response.content;
 }
 
@@ -163,8 +163,8 @@ export async function generateWebSearchDocs(summarizedContext: string, framework
             framework: framework
         });
         
-        console.log("Web Search Response: ", response.content);
-        console.log("Token Usage Web Search: ", response.usage_metadata);
+        ;
+        ;
         return response.content;
     } catch (error) {
         console.error("Context window exceeded:", error);
@@ -174,8 +174,8 @@ export async function generateWebSearchDocs(summarizedContext: string, framework
             summarizedContext: veryShortContext,
             framework: framework
         });
-        console.log("Web Search Response: ", response.content);
-        console.log("Token Usage Web Search: ", response.usage_metadata);
+        ;
+        ;
         return response.content;
     }
 

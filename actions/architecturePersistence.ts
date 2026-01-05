@@ -146,7 +146,7 @@ export async function saveArchitectureWithUserId(architectureId: string, input: 
 // Get all architectures for a chat
 export async function getArchitecture(chatId: string) {
 
-  console.log("In getArchitecture Step 0");
+  ;
   try {
     const { userId } = await auth();
     
@@ -177,7 +177,7 @@ export async function getArchitecture(chatId: string) {
       return { success: true, architectures: [], count: 0, architecture: null };
     }
 
-    console.log("The architecture count is: ", chatWithArchitecture.architecture.length);
+    ;
 
     // Parse all architectures
     const architectures = chatWithArchitecture.architecture.map((arch: any) => {
@@ -275,42 +275,6 @@ export async function updateComponentPositions(
     return { success: false, error: "Failed to update positions" };
   }
 }
-
-// Delete architecture (if needed)
-// export async function deleteArchitecture(chatId: string) {
-//   try {
-//     const { userId } = await auth();
-    
-//     if (!userId) {
-//       throw new Error("User not authenticated");
-//     }
-
-//     // Verify chat ownership
-//     const chat = await db.chat.findFirst({
-//       where: {
-//         id: chatId,
-//         userId: userId,
-//       },
-//     });
-
-//     if (!chat) {
-//       throw new Error("Chat not found or access denied");
-//     }
-
-//     // Delete architecture
-//     await db.architecture.delete({
-//       where: {
-//         chatId: chatId,
-//       },
-//     });
-
-//     revalidatePath(`/dev/${chatId}`);
-//     return { success: true };
-//   } catch (error) {
-//     console.error("Error deleting architecture:", error);
-//     return { success: false, error: "Failed to delete architecture" };
-//   }
-// }
 
 // Batch update positions with debouncing (for smooth UI)
 let positionUpdateTimeouts: Record<string, NodeJS.Timeout> = {};

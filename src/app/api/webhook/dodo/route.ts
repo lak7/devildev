@@ -15,13 +15,13 @@ function getWebhook(): Webhook {
 }
 
 export async function POST(request: Request) {
-  console.log("DODO webhook 1");
+  ;
   try {
     const headersList = await headers();
     const rawBody = await request.text();
     const webhook = getWebhook();
-    console.log("DODO webhook 2");
-    console.log("RAW BODY: ", rawBody);
+    ;
+    ;
 
 
     const webhookHeaders = {
@@ -29,22 +29,22 @@ export async function POST(request: Request) {
       "webhook-signature": headersList.get("webhook-signature") || "",
       "webhook-timestamp": headersList.get("webhook-timestamp") || "",
     };
-    console.log("DODO webhook 3");
+    ;
     // Verify webhook signature
     await webhook.verify(rawBody, webhookHeaders);
     const payload = JSON.parse(rawBody) as WebhookPayload;
-    console.log("DODO webhook 4");
-    console.log(`Received webhook: ${payload.type}`, { id: payload.id });
+    ;
+    ;
 
     // Handle subscription events
     if (payload.data.payload_type === 'Subscription') {
       await handleSubscriptionEvent(payload);
     }
-    console.log("DODO webhook 5");
+    ;
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error('Webhook error:', error);
-    console.log("DODO webhook 6");
+    ;
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 400 }
@@ -53,10 +53,10 @@ export async function POST(request: Request) {
 }
 
 async function handleSubscriptionEvent(payload: WebhookPayload) {
-  console.log("DODO webhook 7");
+  ;
   const data = payload.data as SubscriptionEventData;
   const { subscription_id, customer, status, next_billing_date, cancelled_at } = data;
-  console.log("DATA: ", data)
+  
 
   // Find user by email (authoritative mapping)
   const user = await db.user.findUnique({ where: { email: customer.email } });
@@ -64,12 +64,12 @@ async function handleSubscriptionEvent(payload: WebhookPayload) {
     throw new Error(`User not found for email: ${customer.email}`);
   }
   const userId = user.id;
-  console.log("DODO webhook 8");  
+  ;  
   try {
-    console.log("DODO webhook 9");
+    ;
     switch (payload.data.status) { 
       case 'active':
-        console.log(`Activating subscription ${subscription_id} for user ${userId}`);
+        ;
         await SubscriptionService.upsertSubscription({
           userId,
           subscriptionId: subscription_id,
@@ -80,7 +80,7 @@ async function handleSubscriptionEvent(payload: WebhookPayload) {
         break;
 
       case 'renewed':
-        console.log(`Subscription ${subscription_id} renewed`);
+        ;
         await SubscriptionService.updateSubscriptionByDodoId(subscription_id, {
           status: SubscriptionStatus.ACTIVE,
           currentPeriodEnd: new Date(next_billing_date),
@@ -88,12 +88,12 @@ async function handleSubscriptionEvent(payload: WebhookPayload) {
         break;
         
       case 'on_hold':
-        console.log(`Subscription ${subscription_id} put on hold`);
+        ;
         await SubscriptionService.holdSubscription(subscription_id);
         break;
         
       case 'cancelled':
-        console.log(`Subscription ${subscription_id} cancelled`);
+        ;
         await SubscriptionService.updateSubscriptionByDodoId(subscription_id, {
           status: SubscriptionStatus.CANCELLED,
           canceledAt: cancelled_at ? new Date(cancelled_at) : new Date(),
@@ -101,16 +101,16 @@ async function handleSubscriptionEvent(payload: WebhookPayload) {
         break;
         
       case 'failed':
-        console.log(`Subscription ${subscription_id} failed`);
+        ;
         await SubscriptionService.updateSubscriptionByDodoId(subscription_id, {
           status: SubscriptionStatus.NONE, // Set back to free on failure
         });
         break;
         
       default:
-        console.log(`Unhandled subscription status: ${payload.data.status}`);
+        ;
     }
-    console.log("DODO webhook 15");
+    ;
   } catch (error) {
     console.error(`Error handling ${payload.type}:`, error);
     throw error;

@@ -1,13 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import * as Color from 'color-bits';
 import { twMerge } from 'tailwind-merge';
-// import Sandbox from "@e2b/code-interpreter"; 
-
-// export async function getSandbox(sandboxId: string) {
-//   const sandbox = await Sandbox.connect(sandboxId);
-//   return sandbox;
-// }
-
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

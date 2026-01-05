@@ -23,7 +23,7 @@ const llm = new ChatOpenAI({
 
 
 export async function checkInfo(repositoryId: string, repoFullName: string){
-  console.log("Step 0")
+  
     const { userId } = await auth();
     let repoContent = null;
     let packageJson = null;
@@ -36,7 +36,7 @@ export async function checkInfo(repositoryId: string, repoFullName: string){
     if (!repositoryId || !repoFullName) {
         return { error: 'Missing required repository information' };
     }
-    console.log("Step 1")
+    
     
     // Get user's GitHub access token
     const user = await db.user.findUnique({
@@ -46,11 +46,11 @@ export async function checkInfo(repositoryId: string, repoFullName: string){
           isGithubConnected: true,
         },
       });
-      console.log("Step 2")
+      
       if (!user?.isGithubConnected || !user.githubAccessToken) {
         return { error: 'GitHub not connected' };
       }
-      console.log("Step 3")
+      
 
       // Get repository info to fetch default branch
       try {
@@ -64,14 +64,14 @@ export async function checkInfo(repositoryId: string, repoFullName: string){
             },
           }
         );
-        console.log("Step 3.1")
+        
         if (!repoInfoResponse.ok) {
           return { error: 'Failed to fetch repository information' };
         }
         const repoInfo = await repoInfoResponse.json();
-        console.log("Step 3.1.1: ", repoInfo)
+        
         defaultBranch = repoInfo.default_branch;
-        console.log("Step 3.2: Default branch is", defaultBranch);
+        ;
         return { repoInfo: repoInfo, defaultBranch: defaultBranch };
       } catch (error) {
         console.error('Error fetching repository info:', error);
@@ -81,7 +81,7 @@ export async function checkInfo(repositoryId: string, repoFullName: string){
 
  
 export async function checkPackageAndFramework(repositoryId: string, repoFullName: string, maxProjectSize: number, installationId?: string){
-    console.log("Step 0")
+    
     const { userId } = await auth();
     let repoContent = null;
     let packageJson = null;
@@ -94,13 +94,13 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
     if (!repositoryId || !repoFullName) {
         return { error: 'Missing required repository information' };
     }
-    console.log("Step 1")
+    
     
     const appFlowEnabled = process.env.GITHUB_APP_FLOW_ENABLED === 'true';
     // Prefer installation token when provided
     let authToken: string | null = null; 
     if (appFlowEnabled && installationId) {
-      console.log("Bitch")
+      
       const { getInstallationToken } = await import('../actions/githubAppAuth');
       const { token } = await getInstallationToken(installationId);
       authToken = token;
@@ -113,13 +113,13 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
             isGithubConnected: true,
           },
         });
-        console.log("Step 2, really")
+        
         if (!user?.isGithubConnected || !user.githubAccessToken) {
           return { error: 'GitHub not connected' };
         }
         authToken = user.githubAccessToken;
     }
-      console.log("Step 3")
+      
 
       // Get repository info to fetch default branch
       try {
@@ -133,7 +133,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
             },
           }
         );
-        console.log("Step 3.1")
+        
         if (!repoInfoResponse.ok) {
           return { error: 'Failed to fetch repository information' };
         }
@@ -141,14 +141,14 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
         if(repoInfo.size > maxProjectSize){
           return {status: "tooBig", error: 'Repository size is too large' };
         }
-        console.log("Step 3.1.1: ", repoInfo)
+        
         defaultBranch = repoInfo.default_branch;
-        console.log("Step 3.2: Default branch is", defaultBranch);
+        ;
       } catch (error) {
         console.error('Error fetching repository info:', error);
         return { error: 'Failed to fetch repository information' };
       }  
-      console.log("Step 3.3")
+      
       // Get repository contents
       try{   
         const repoContentResponse = await fetch(
@@ -161,28 +161,28 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
               }, 
             }
           );                              
-          console.log("Step 4")
+          
           if (!repoContentResponse.ok) {
             return { error: 'Failed to fetch repository contents' };
           } 
-          console.log("Step 5")      
+                
 
            repoContent = await repoContentResponse.json();
            repoContent = repoContent.map((item: { name: any; }) => item.name);
-           console.log("Step 5.1: ", repoContent)
+           
       }catch(error){
         console.error('Error fetching repository contents:', error);
         return { error: 'Failed to fetch repository contents' };
       }
-      console.log("Step 6")
+      
       // Get package.json if exists
       try{ 
         if(repoContent){ 
-            console.log("Step 6.1")
+            
             const packageJsonResponse = repoContent.find((item: any) => item === 'package.json');
-            console.log("Step 6.2: ", packageJsonResponse)
+            
             if(packageJsonResponse){
-                console.log("Step 6.3")
+                
                 const packageJsonContent = await fetch(
                     `https://api.github.com/repos/${repoFullName}/contents/package.json`,
                     { 
@@ -193,9 +193,9 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
                         },
                       }
                 );
-                console.log("Step 6.4")
+                
                 if (packageJsonContent.ok) {
-                  console.log("Step 6.5")
+                  
                   packageJson = await packageJsonContent.json();
                   
                   // Decode the Base64 content to plain text
@@ -203,12 +203,12 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
                     const decoded = Buffer.from(packageJson.content, "base64").toString("utf-8");
                     packageJson = JSON.parse(decoded); // Now it's the actual JSON object
                   }
-                  console.log("Step 6.5.1: ", packageJson)
+                  
                 }else{
                     return { error: 'Failed to fetch package.json' };
                 }
             }else{
-                console.log("Step 6.6")
+                
                 return { isValid: false, framework: "" };
             }
           }
@@ -216,13 +216,13 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
         console.error('Error fetching package.json:', error);
         return { isValid: false, framework: "" };
       } 
-      console.log("Step 7")
+      
       // Check if the project is a react or next project
       const template = isNextOrReactPrompt 
       const prompt = PromptTemplate.fromTemplate(template);
       const chain = prompt.pipe(llm).pipe(new StringOutputParser());
       const result = await chain.invoke({repoContent: JSON.stringify(repoContent), packageJson: JSON.stringify(packageJson)});
-      console.log("Step 8")
+      
       const resultObject = JSON.parse(result);
       let project = null;
       if(resultObject.isValid){
@@ -244,7 +244,7 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
 }
  
 export async function generateArchitecture(projectId: string){
-    console.log("Gen Step 0") 
+     
 
 
     const project = await db.project.findUnique({
@@ -266,7 +266,7 @@ export async function generateArchitecture(projectId: string){
             }
         }
     });
-    console.log("Gen Step 1")
+    
     if(!project){
         return { error: 'Project not found' };
     }
@@ -295,7 +295,7 @@ export async function generateArchitecture(projectId: string){
     if (!resolvedAccessToken) {
         return { error: 'Missing authentication token for GitHub access' };
     }
-    console.log("Gen Step 2")
+    
     // If a detailed analysis already exists, skip invoking the agent and directly generate the architecture
     if (project.detailedAnalysis) {
         try {
@@ -327,7 +327,7 @@ export async function generateArchitecture(projectId: string){
         getFileContentTool, 
         searchCodeTool
     ];
-    console.log("Gen Step 3")
+    
    // Create the reverse architecture analysis prompt
       const prompt = ChatPromptTemplate.fromMessages([
       ["system", `You are an elite software architecture reverse engineer specializing in React/Next.js applications. Your mission is to analyze GitHub repositories and extract comprehensive architectural insights through strategic code examination.
@@ -498,22 +498,22 @@ export async function generateArchitecture(projectId: string){
 
 
 
-    console.log("Gen Step 4")
-    console.log("Gen Step 5")
+    
+    
     // Create agent executor
     const agent = await createToolCallingAgent({
         llm,
         tools: repoAnalysisTools,
         prompt,
     });
-    console.log("Gen Step 6")
+    
     const agentExecutor = new AgentExecutor({
         agent,
         tools: repoAnalysisTools,
         verbose: true,
         maxIterations: 40, // Allow thorough analysis
     });
-    console.log("Gen Step 7")
+    
     try {
         // Execute repository analysis
         const analysisResult = await agentExecutor.invoke({
@@ -526,14 +526,14 @@ export async function generateArchitecture(projectId: string){
             defaultBranch: defaultBranch || 'main',
             githubAccessToken: resolvedAccessToken
         });
-        console.log("Gen Step 8")
-        console.log("Analysis Result: ", analysisResult.output)
-        console.log("Gen Step 9")
+        
+        
+        
         const detailedAnalysis = await db.project.update({
             where: { id: projectId },
             data: { detailedAnalysis: JSON.stringify(analysisResult.output) }
         });
-        console.log("Step 10")
+        
             // Create the final architecture synthesis prompt
         // Enhanced Architecture Generation Prompt - Dynamic & Analysis-Driven
         const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt2);       // Generate final architecture based on analysis
@@ -543,7 +543,7 @@ export async function generateArchitecture(projectId: string){
             name: name,
             framework: framework
         });
-        console.log("Step 11")
+        
         return {architecture: architecture, detailedAnalysis: JSON.stringify(analysisResult.output)};
 
     } catch (error) {
@@ -553,8 +553,7 @@ export async function generateArchitecture(projectId: string){
 }
 
 export async function testGenerateArchitecture(analysis: any, name: string, framework: string) {
-  console.log("Step 0")
-  console.log(JSON.stringify(analysis))
+  
   if(!analysis){
     return { error: 'No analysis found' };
   }
@@ -565,7 +564,7 @@ export async function testGenerateArchitecture(analysis: any, name: string, fram
             name: name,
             framework: framework
         });
-        console.log("Step 11")
+        
         return architecture;
 
 }

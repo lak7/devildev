@@ -17,21 +17,21 @@ function verifySignature(secret: string, body: string, signatureHeader: string |
 }
 
 export async function POST(req: NextRequest) {
-  console.log('Webhook 1');
+  ;
   try {
     const secret = process.env.GITHUB_WEBHOOK_SECRET;
     if (!secret) {
       return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
     }
-    console.log('Webhook 2');
+    ;
     const signature = req.headers.get('x-hub-signature-256');
     const delivery = req.headers.get('x-github-delivery');
     const event = req.headers.get('x-github-event');
     const rawBody = await req.text();
 
-    console.log("Event: ", event);
+    ;
     const action = JSON.parse(rawBody).action;
-    console.log("Action: ", action);
+    ;
 
     if (!verifySignature(secret, rawBody, signature)) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
@@ -40,10 +40,10 @@ export async function POST(req: NextRequest) {
     if (!delivery) {
       return NextResponse.json({ error: 'Missing delivery id' }, { status: 400 });
     }
-    console.log('Webhook 3');
+    ;
 
     // Dedupe strictly on unique delivery eventId
-    console.log('Webhook 3.1');
+    ;
     await db.webhookEvent.upsert({
       where: { eventId: delivery },
       create: { eventId: delivery, source: 'github' },
@@ -51,16 +51,16 @@ export async function POST(req: NextRequest) {
     });
 
     const payload = JSON.parse(rawBody);
-    console.log('Webhook 4');
+    ;
 
     if (event === 'installation') {
-      console.log('Webhook 5');
+      ;
       const installation = payload.installation;
-      console.log('Webhook 5.1: ', installation);
+      ;
       
       if (installation) { 
         if (action === 'created') {
-          console.log('Webhook 5.2: Creating installation record');
+          ;
           
           // Webhook creates installation without user connection
           // User connection will be handled by the setup callback
@@ -88,9 +88,9 @@ export async function POST(req: NextRequest) {
             },
           });
           
-          console.log('Webhook 5.3: Installation record created/updated');
+          ;
         } else if (action === 'deleted') {
-          console.log('Webhook 5.4: Deleting installation and related records');
+          ;
           
           // Find the installation record to get the userId
           const installationRecord = await db.gitHubAppInstallation.findUnique({
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
               data: { isGithubAppConnected: false, githubUsername: null }
             });
             
-            console.log('Webhook 5.5: Updated user and deleted pending installations');
+            ;
           }
           
           // Delete the GitHub App installation record
@@ -118,17 +118,16 @@ export async function POST(req: NextRequest) {
             where: { installationId: BigInt(installation.id) }
           }).catch(() => {
             // Installation might not exist in our DB, which is fine
-            console.log('Webhook 5.6: Installation record not found in DB (already deleted or never existed)');
           });
           
-          console.log('Webhook 5.7: Installation deletion completed');
+          ;
         }
       }
-      console.log('Webhook 6');
+      ;
     }
 
     if (event === 'installation_repositories') {
-      console.log('Webhook 7');
+      ;
       const installationId = payload.installation?.id;
       if (installationId) {
         await db.gitHubAppInstallation.update({
@@ -136,11 +135,11 @@ export async function POST(req: NextRequest) {
           data: { repositories: payload.repositories, lastSyncedAt: new Date() },
         }).catch(() => Promise.resolve());
       }
-      console.log('Webhook 8');
+      ;
     }
 
     return NextResponse.json({ ok: true }); 
-    console.log('Webhook 9');
+    ;
   } catch (error) {
     console.error('GitHub webhook error:', error);
     return NextResponse.json({ error: 'Webhook error' }, { status: 500 });

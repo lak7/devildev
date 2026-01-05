@@ -178,8 +178,6 @@ export default function Page() {
     if (urlParams.get('github_connected') === 'true') {
       // Remove the parameter from URL
       window.history.replaceState({}, document.title, window.location.pathname);
-      // Show success message
-      // alert('GitHub successfully connected!');
     }
     
     if (isSignedIn && isLoaded) {
