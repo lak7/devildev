@@ -9,14 +9,14 @@
   
 </p>
 
-<p align="center">Spec driven lovable alternative.</p>
+<p align="center">A spec-driven, lovable alternative that turns explicit specifications into reliable, scalable code.</p>
 
 <p align="center">
-  <img src="public/devildev-architecture.png" alt="DevilDev Architecture Preview" width="90%">
+  <img src="public/devildev-architecture.png" alt="DevilDev Architecture Preview" width="125%">
 </p>
 
 ## Table of Contents
-- [DevilDev](#DevilDev)
+- [DevilDev](#devildev)
 - [Why DevilDev](#why-devildev)
 - [Getting Started](#getting-started)
 - [Tech Stack](#tech-stack)
