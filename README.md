@@ -6,10 +6,18 @@
       <img src="public/full-logo-light.svg" alt="DevilDev logo" height="125">
     </picture>
   </a>
-  
 </p>
 
-<p align="center">A spec-driven, lovable alternative that turns explicit specifications into reliable, scalable code.</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.1.0-blue" />
+   <img src="https://img.shields.io/badge/status-experimental-orange" />
+   <a href="https://opensource.org/licenses/Apache-2.0">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" />
+  </a>
+
+<p align="center">
+  <strong>VISION:</strong> A spec-driven, lovable alternative that turns explicit specifications into reliable, scalable code.
+</p>
 
 <p align="center">
   <img src="public/devildev-architecture.png" alt="DevilDev Architecture Preview" width="125%">
@@ -19,20 +27,29 @@
 - [DevilDev](#devildev)
 - [Why DevilDev](#why-devildev)
 - [Getting Started](#getting-started)
-- [Tech Stack](#tech-stack)
-- [Local Setup](#local-setup)
+  - [Tech Stack](#tech-stack)
+  - [Installation Guide](#installation-guide)
 - [License](#license)
 
 ## DevilDev
-DevilDev is a Next.js platform for generating, reviewing, and iterating on software architecture with integrated authentication, repository imports, and background job processing.
+
+DevilDev is a **spec-driven architecture workspace** that helps developers generate, inspect, and iterate on software architecture using natural-language specifications and existing repositories.
+
+Instead of jumping straight to code, DevilDev focuses on **making architecture explicit**-breaking systems into clear phases, components, and relationships that can be reasoned about, evolved, and reviewed before implementation.
+
 
 ## Why DevilDev
-- Clerk authentication with webhook-driven user provisioning
-- GitHub OAuth/App integration for imports and installation events
-- Architecture generation and reverse architecture via Inngest workers
-- Vectorized document retrieval backed by Supabase
-- Subscription handling with Dodo Payments webhooks
-- PostgreSQL persistence managed through Prisma
+
+Modern AI coding tools jump straight to code. DevilDev does the opposite.
+
+DevilDev is built for developers who want to **think clearly about systems before writing code**. It helps you:
+
+- **Turn vague ideas into explicit architecture** using structured, spec-driven generation
+- **Understand existing codebases** by reverse-engineering architecture from repositories
+- **Iterate safely** by evolving architecture in phases instead of rewriting everything
+- **Create a shared mental model** that humans and AI can reason about together
+
+DevilDev is intentionally focused on architecture today—**not code generation**—because clear architecture is the hardest part to fix later.
 
 ## Getting Started
 Use the Local Setup instructions below to configure your environment, webhooks, and required third-party keys before running the app locally.
@@ -41,12 +58,13 @@ Use the Local Setup instructions below to configure your environment, webhooks, 
 - Next.js (App Router), React, TypeScript
 - PostgreSQL + Prisma
 - Clerk for auth and webhooks
-- GitHub OAuth/App integrations
+- GitHub App integration
 - Supabase for vector store
+- LangChain for agent orchestration
 - Inngest for background jobs
 - Dodo Payments for subscriptions
 
-## Local Setup
+## Installation Guide
 
 ### Prerequisites
 
@@ -65,9 +83,9 @@ Choose your setup path:
 ### Step 1: Clone and Install Dependencies
 
 ```bash
-# Clone the repository (if not already done)
-git clone <repository-url>
-cd v1
+# Clone the repository
+git clone https://github.com/lak7/devildev.git
+cd devildev
 
 # Install dependencies
 npm install
@@ -109,7 +127,7 @@ bun install
 - [localtunnel](https://localtunnel.github.io/www/)
 - [serveo](https://serveo.net/)
 
-**Note**: The public URL will change each time you restart ngrok (unless you have a paid plan). Update webhook URLs in service dashboards when it changes.
+**Note**: The public URL will change each time you restart ngrok unless you use an ngrok static URL. Choose a static URL when possible to avoid updating webhook URLs in your service dashboards after every restart.
 
 ### Step 3: Set Up Services
 
@@ -128,24 +146,15 @@ bun install
    - Copy the **Signing Secret** to `CLERK_WEBHOOK_SECRET` in `.env.local`
    - **Important**: Update this URL whenever your ngrok URL changes
 
-#### GitHub OAuth App
-
-1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
-2. Click **"New OAuth App"**
-3. Fill in:
-   - **Application name**: DevilDev (Local)
-   - **Homepage URL**: `https://your-ngrok-url.ngrok.io` (use your ngrok URL)
-   - **Authorization callback URL**: `https://your-ngrok-url.ngrok.io/api/github/callback`
-4. Copy **Client ID** and **Client Secret** to `.env.local`
-
-#### GitHub Webhook (If using GitHub App)
+#### GitHub Webhook (Using GitHub App)
 
 **⚠️ CRITICAL**: If you're using GitHub App features, webhooks are required to receive installation events.
 
-1. In your GitHub App settings, go to **Webhooks**
-2. Set webhook URL: `https://your-ngrok-url.ngrok.io/api/webhook/github`
-3. Set webhook secret to `GITHUB_WEBHOOK_SECRET` in `.env.local`
-4. Select events: `installation`, `installation_repositories`
+1. Create a GitHub App: go to GitHub **Settings** → **Developer settings** → **GitHub Apps** → **New GitHub App**. Use your ngrok URL for the homepage and callback (e.g., `https://your-ngrok-url.ngrok.io` and `https://your-ngrok-url.ngrok.io/api/github/callback`).
+2. In your GitHub App settings, go to **Webhooks**
+3. Set webhook URL: `https://your-ngrok-url.ngrok.io/api/webhook/github`
+4. Set webhook secret to `GITHUB_WEBHOOK_SECRET` in `.env.local`
+5. Select events: `installation`, `installation_repositories`
 
 #### Supabase Setup
 
@@ -164,7 +173,7 @@ bun install
 
 #### Dodo Payments Webhook
 
-**⚠️ CRITICAL**: Dodo webhooks are required to update subscription status when payments are processed.
+**CRITICAL**: Dodo webhooks are required to update subscription status when payments are processed.
 
 1. In your Dodo Payments dashboard, go to **Webhooks**
 2. Add webhook endpoint: `https://your-ngrok-url.ngrok.io/api/webhook/dodo`
@@ -205,9 +214,6 @@ OPENAI_API_KEY=sk-...
 # Base URL (Required for local - use your ngrok URL)
 NEXT_PUBLIC_BASE_URL=https://your-ngrok-url.ngrok.io
 
-# GitHub OAuth Integration (Required for GitHub features)
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
 
 # Supabase Vector Store (Required for document retrieval)
 SUPABASE_URL=https://your-project.supabase.co
@@ -230,8 +236,6 @@ GITHUB_APP_SLUG=your_app_slug
 GITHUB_APP_FLOW_ENABLED=false
 GITHUB_APP_NEW_USERS=false
 
-# Optional: E2B (for code interpreter sandbox)
-E2B_API_KEY=your_e2b_api_key
 
 # Optional: GitHub App Logging
 GITHUB_APP_LOGGING=false
@@ -252,7 +256,7 @@ npx prisma migrate dev
 npx prisma studio
 ```
 
-### Step 6: Run the Development Server
+### Step 5: Run the Development Server
 
 **Important**: Make sure you have these running:
 
@@ -277,49 +281,7 @@ pnpm dev
 bun dev
 ```
 
-**Important**: 
-- Use the ngrok HTTPS URL (not localhost) when accessing the app
-- Example: `https://abc123.ngrok.io` instead of `http://localhost:3000`
-- Update webhook URLs in service dashboards if your ngrok URL changes
-
-### Step 7: Verify Local Setup
-
-1. **Authentication**: Sign up/Sign in should work via Clerk
-2. **GitHub Integration**: Try connecting GitHub from the settings page
-3. **Database**: Verify tables are created in your PostgreSQL database
-4. **Inngest**: Check that Inngest Dev Server is running and receiving events
-5. **Architecture Generation**: Test creating a new architecture (this requires Inngest)
-
 ---
 
-## Troubleshooting
-
-### Local Development Issues
-
-- **Webhooks Not Working**: 
-  - **CRITICAL**: Ensure ngrok is running and you're using the ngrok HTTPS URL (not localhost)
-  - Verify webhook URLs in service dashboards match your current ngrok URL
-  - Check that webhook endpoints are accessible: `https://your-ngrok-url.ngrok.io/api/webhook/clerk`
-  - Test webhook endpoints using the service's webhook testing tools
-  - **Clerk**: Without working webhook, users won't be created in database when signing up
-  - **Dodo**: Without working webhook, subscription status won't update after payments
-  - **GitHub**: Without working webhook, GitHub App installation events won't be received
-- **Database Connection Issues**: Verify `DATABASE_URL` is correct and database is running
-- **Clerk Errors**: 
-  - Ensure webhook secret matches in `.env.local` and Clerk dashboard
-  - Verify webhook URL in Clerk dashboard uses your ngrok URL
-  - Check that `user.created` event is enabled in webhook settings
-- **GitHub OAuth**: Verify callback URL matches exactly: `https://your-ngrok-url.ngrok.io/api/github/callback`
-- **Prisma Errors**: Run `npx prisma generate` after schema changes
-- **Inngest Not Working**: 
-  - Ensure Inngest Dev Server is running (`npx inngest-cli@latest dev`)
-  - Verify `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` are set correctly
-  - Check that Inngest app URL in dashboard matches your ngrok URL
-  - Architecture generation features will not work without Inngest
-- **ngrok URL Changed**: 
-  - Update all webhook URLs in service dashboards (Clerk, Dodo, GitHub, Inngest)
-  - Update `NEXT_PUBLIC_BASE_URL` in `.env.local`
-  - Restart your Next.js dev server after updating environment variables
-
 ## License
-Licensed under the Apache License 2.0. See `LICENSE` for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
