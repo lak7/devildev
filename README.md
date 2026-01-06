@@ -16,7 +16,7 @@
   </a>
 
 <p align="center">
-  <strong>VISION:</strong> A spec-driven, lovable alternative that turns explicit specifications into reliable, scalable code.
+  <strong>Vision:</strong> A spec-driven, lovable alternative that turns explicit specifications into reliable, scalable code.
 </p>
 
 <p align="center">
@@ -26,6 +26,7 @@
 ## Table of Contents
 - [DevilDev](#devildev)
 - [Why DevilDev](#why-devildev)
+- [Vision & Future](#vision--future)
 - [Getting Started](#getting-started)
   - [Tech Stack](#tech-stack)
   - [Installation Guide](#installation-guide)
@@ -50,6 +51,26 @@ DevilDev is built for developers who want to **think clearly about systems befor
 - **Create a shared mental model** that humans and AI can reason about together
 
 DevilDev is intentionally focused on architecture today—**not code generation**—because clear architecture is the hardest part to fix later.
+
+## Vision & Future
+
+DevilDev’s vision is to build **any piece of software** not just websites - using **explicit, spec-driven workflows** instead of opaque, one-shot code generation.
+
+Today, DevilDev generates architecture and documentation from specifications. In the future, those same specifications will drive the creation of the **entire software system**, built **phase by phase** with human review at every step.
+
+The goal is not to generate code quickly, but to generate **correct, maintainable, non-garbage software** by treating specifications as the source of truth:
+
+**spec → architecture → modules → implementation**
+
+DevilDev is designed to work across all kinds of software:
+- backend services
+- distributed systems
+- developer tools
+- internal platforms
+- libraries and infrastructure
+
+By keeping every phase explicit and reviewable, DevilDev aims to make AI-assisted software development **trustworthy, predictable, and genuinely useful**, while remaining simple and enjoyable to work with.
+
 
 ## Getting Started
 Use the Local Setup instructions below to configure your environment, webhooks, and required third-party keys before running the app locally.

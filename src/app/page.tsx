@@ -3,27 +3,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import 'highlight.js/styles/github-dark.css';
-import { Search, FileText, HelpCircle, Image as ImageIcon, Globe, Paperclip, Mic, SendHorizonal, Maximize, X, Menu, MessageCircle, Loader2, Github } from 'lucide-react';
-import Architecture from '@/components/core/architecture';
+import { Image as ImageIcon, SendHorizonal, X, Menu, MessageCircle, Loader2, Github, Star, ChevronRight } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { startOrNot, firstBot } from '../../actions/agentsFlow';
 import { getUserChats } from '../../actions/chat';
-import FileExplorer from '@/components/core/ContextDocs';
-import Noise from '@/components/Noise/Noise';
-import { SignOutButton, UserProfile, useUser } from '@clerk/nextjs';
+import { SignOutButton, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { GlowButton } from '@/components/ui/GlowButton05';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import Link from 'next/link';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import HomeNav from '@/components/core/HomeNav';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import GithubOAuthDeprecatedNotice from '@/components/GithubOAuthDeprecatedNotice';
 import { maxFreeChats, maxProChats } from '../../Limits';
 import useUserSubscription from '@/hooks/useSubscription';
 import PricingDialog from '@/components/PricingDialog';
-
+import { cn } from '@/lib/utils';
+import OpenSourceDialog from '@/components/OpenSrcDialog';
+import AnimatedGradientText from '@/components/AnimatedGradientText';
 
 
 interface UserChat {
@@ -76,6 +72,7 @@ export default function Page() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 640px)'); 
   const [showMaxChatsDialog, setShowMaxChatsDialog] = useState(false);
+  const [isOpenSourceDialogOpen, setIsOpenSourceDialogOpen] = useState(false);
   // Typewriter rotating heading state
   const rotatingTexts = ["Visualize your Codebase","10x your vibe coding"];
   const [currentRotateIndex, setCurrentRotateIndex] = useState(0);
@@ -167,6 +164,16 @@ export default function Page() {
 
   // Fetch chats and GitHub status when user is signed in
   useEffect(() => {
+    // Only show the Open Source dialog once per user (per browser)
+    try {
+      const hasSeenOpenSourceDialog = localStorage.getItem('hasSeenOpenSourceDialog');
+      if (!hasSeenOpenSourceDialog) {
+        setIsOpenSourceDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error accessing localStorage for Open Source dialog:', error);
+    }
+
     const firstMessage = localStorage.getItem('firstMessage');
     if (firstMessage) {
       setInputMessage(firstMessage);
@@ -247,12 +254,6 @@ export default function Page() {
   };
 
 
-  // if(!isLoaded){
-  //   return <div className="flex justify-center items-center h-screen">
-  //     <Loader2 className="h-10 w-10 animate-spin" />
-  //   </div>
-  // }
-
 
   return (
     <div className="h-dvh bg-black text-white relative overflow-hidden">
@@ -268,6 +269,18 @@ export default function Page() {
         <div className="hidden lg:block">
           <HomeNav currentPage="Home"/>
         </div>
+
+        <OpenSourceDialog
+          isOpen={isOpenSourceDialogOpen}
+          onClose={() => {
+            try {
+              localStorage.setItem('hasSeenOpenSourceDialog', 'true');
+            } catch (error) {
+              console.error('Error setting Open Source dialog flag in localStorage:', error);
+            }
+            setIsOpenSourceDialogOpen(false);
+          }}
+        />
         {/* Mobile/Tablet Navbar */}
         <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-30 bg-black/50 backdrop-blur-md border-b border-red-500/30">
           <div className="h-full flex items-center justify-between px-4 md:px-6">
@@ -413,9 +426,6 @@ export default function Page() {
               </div>
       </div>
 
-      
-
-  
 
       {/* Hover trigger area - invisible but extends to far left */}
       {isSignedIn && (
@@ -567,6 +577,23 @@ export default function Page() {
           isSignedIn ? 'md:ml-0' : ''
         } ${isSignedIn && isMobileSidebarOpen ? 'blur-sm md:blur-none' : ''}`}>
 
+          <div className="relative z-10 pb-5 px-6">
+            <div className="z-10 flex min-h-[2rem] items-center justify-center">
+              <AnimatedGradientText href="https://github.com/lak7/devildev">
+                <span className="animate-gradient bg-gradient-to-r from-[#fef2f2] via-[#fef2f2] to-[#fef2f2] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent flex justify-center items-center">
+                  We're Open Source
+                  <hr className="mx-2 h-4 w-[0.5px] bg-[#fef2f2]" />
+                  Star Now!
+                </span>
+                &nbsp;
+                <Star className="size-4 fill-yellow-500 text-yellow-500" />
+                <ChevronRight
+                  className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5"
+                  style={{ color: "#fef2f2" }}
+                />
+              </AnimatedGradientText>
+            </div>
+          </div>
 
           <h1 className="text-xl md:text-2xl lg:text-5xl font-black mb-12 text-center relative">
             
