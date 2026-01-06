@@ -12,7 +12,7 @@
 <p align="center">Spec driven lovable alternative.</p>
 
 <p align="center">
-  <img src="public/devildev-arhitecture.png" alt="OpenSpec dashboard preview" width="90%">
+  <img src="public/devildev-architecture.png" alt="DevilDev Architecture Preview" width="90%">
 </p>
 
 ## Table of Contents
