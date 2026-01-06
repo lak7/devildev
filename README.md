@@ -1,9 +1,9 @@
 <p align="center">
   <a href="https://github.com/lak7/devildev">
     <picture>
-      <source srcset="/full-logo-dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="/full-logo-light.svg" media="(prefers-color-scheme: light)">
-      <img src="full-logo-light.svg" alt="DevilDev logo" height="64">
+      <source srcset="public/full-logo-dark.svg" media="(prefers-color-scheme: dark)">
+      <source srcset="public/full-logo-light.svg" media="(prefers-color-scheme: light)">
+      <img src="public/full-logo-light.svg" alt="DevilDev logo" height="64">
     </picture>
   </a>
   
@@ -12,7 +12,7 @@
 <p align="center">Spec driven lovable alternative.</p>
 
 <p align="center">
-  <img src="assets/devildev-arhitecture.png" alt="OpenSpec dashboard preview" width="90%">
+  <img src="public/devildev-arhitecture.png" alt="OpenSpec dashboard preview" width="90%">
 </p>
 
 ## Table of Contents
