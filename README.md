@@ -3,7 +3,7 @@
     <picture>
       <source srcset="public/full-logo-dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset="public/full-logo-light.svg" media="(prefers-color-scheme: light)">
-      <img src="public/full-logo-light.svg" alt="DevilDev logo" height="100">
+      <img src="public/full-logo-light.svg" alt="DevilDev logo" height="125">
     </picture>
   </a>
   
