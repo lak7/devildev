@@ -140,7 +140,9 @@ export async function POST(req: NextRequest) {
           const filesAdded = payload.head_commit.added;
           const filesRemoved = payload.head_commit.removed;
           const filesModified = payload.head_commit.modified;
+          const repoFullName = payload.repository.full_name;
           const inngestDataToSend = {
+            repoFullName: repoFullName,
             beforeCommit: beforeCommit,
             afterCommit: afterCommit,
             filesAdded: filesAdded,

@@ -1,26 +1,26 @@
 import { generateArchitectureWithToolCalling } from "../../actions/architecture";
 import { saveArchitectureWithUserId } from "../../actions/architecturePersistence";
 import { inngest } from "./client";
-import { generateArchitecture } from "../../actions/reverse-architecture";
+import { generateArchitecture, getGitHubCommitComparison } from "../../actions/reverse-architecture";
 import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
 
 
 export const generateArchitectureFunction = inngest.createFunction(
-  { 
+  {
     id: "generate-architecture",
   },
   { event: "architecture/generate" },
   async ({ event, step }) => {
-    const {generationId, requirement, conversationHistory, architectureData, chatId, componentPositions, userId } = event.data;
+    const { generationId, requirement, conversationHistory, architectureData, chatId, componentPositions, userId } = event.data;
 
     try {
       // Step 1: Generate architecture (the expensive 5-10 min operation)
       const architectureResult = await step.run("generate-architecture", async () => {
         return await generateArchitectureWithToolCalling(
-          requirement, 
-          conversationHistory, 
+          requirement,
+          conversationHistory,
           architectureData
-        );
+        ); 
       });
 
       // Step 2: Clean and parse the result
@@ -33,9 +33,9 @@ export const generateArchitectureFunction = inngest.createFunction(
             .replace(/\s*```\s*$/, '')
             .trim();
         }
-        
-        return typeof cleanedResult === 'string' 
-          ? JSON.parse(cleanedResult) 
+
+        return typeof cleanedResult === 'string'
+          ? JSON.parse(cleanedResult)
           : cleanedResult;
       });
 
@@ -48,17 +48,17 @@ export const generateArchitectureFunction = inngest.createFunction(
             requirement,
             componentPositions: componentPositions,
           }, userId);
-          
+
           if (!saveResult.success) {
             throw new Error(`Failed to save architecture: ${saveResult.error}`);
           }
-          
+
           return saveResult;
         });
       }
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         architectureId: generationId,
         architecture: parsedArchitecture,
       };
@@ -91,7 +91,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
       }
 
       const { architecture: architectureJSON, detailedAnalysis } = architectureResult;
-  
+
       // Step 2: Clean and parse the architecture result
       const parsedArchitecture = await step.run("parse-architecture", async () => {
         let cleanedResult = architectureJSON;
@@ -102,14 +102,14 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
             .replace(/\s*```\s*$/, '')
             .trim();
         }
-        
-        const parsed = typeof cleanedResult === 'string' 
-          ? JSON.parse(cleanedResult) 
+
+        const parsed = typeof cleanedResult === 'string'
+          ? JSON.parse(cleanedResult)
           : cleanedResult;
 
         // Add detailed analysis to the parsed architecture
         parsed.detailedAnalysis = detailedAnalysis;
-        
+
         return parsed
       });
 
@@ -124,7 +124,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
       // Step 4: Save architecture to database
       if (parsedArchitecture && parsedArchitecture.components && parsedArchitecture.architectureRationale) {
         await step.run("save-project-architecture", async () => {
-          
+
           const saveResult = await saveProjectArchitecture(
             projectId,
             parsedArchitecture.architectureRationale,
@@ -132,11 +132,11 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
             parsedArchitecture.connectionLabels || {},
             parsedArchitecture.componentPositions || {}
           );
-          
+
           if (saveResult.error || !saveResult.success) {
             throw new Error(`Failed to save architecture: ${saveResult.error}`);
           }
-          
+
           return saveResult;
         });
 
@@ -154,8 +154,8 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
         throw new Error('Invalid architecture structure - missing required fields');
       }
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         projectId,
         architecture: parsedArchitecture,
         initialMessage,
@@ -175,6 +175,27 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
   },
   { event: "reverse-architecture/regenerate" },
   async ({ event, step }) => {
-    const { beforeCommit, afterCommit, filesAdded, filesRemoved, filesModified } = event.data;
+    const { repoFullName, beforeCommit, afterCommit, filesAdded, filesRemoved, filesModified } = event.data;
+
+    try {
+      // Step 1: Find project and verify it has ProjectArchitecture, get installation token, and fetch commit comparison
+      const commitComparison = await step.run("fetch-commit-comparison", async () => {
+        const result = await getGitHubCommitComparison(repoFullName, beforeCommit, afterCommit);
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        return result.data;
+      });
+
+      return {
+        success: true,
+        commitComparison,
+      };
+    } catch (error) {
+      console.error('Error in regenerateReverseArchitectureFunction:', error);
+      throw error; // Let Inngest handle retries
+    }
   }
 );

@@ -677,3 +677,66 @@ export async function checkProjectArchitectureById(projectId: string) {
 
 // Legacy alias for backward compatibility
 export const checkProjectArchitectureByGenerationId = checkProjectArchitectureById;
+
+export async function getGitHubCommitComparison(
+  repoFullName: string,
+  beforeCommit: string,
+  afterCommit: string
+) {
+  try {
+    // Step 1: Find project by repoFullName
+    const project = await db.project.findFirst({
+      where: { repoFullName: repoFullName },
+      select: {
+        id: true,
+        githubInstallationId: true,
+        ProjectArchitecture: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!project) {
+      return { error: 'Project not found' };
+    }
+
+    // Step 2: Verify project has ProjectArchitecture
+    if (!project.ProjectArchitecture || project.ProjectArchitecture.length === 0) {
+      return { error: 'Project has no existing architecture' };
+    }
+
+    // Step 3: Get installation token (no OAuth fallback)
+    if (!project.githubInstallationId) {
+      return { error: 'Project has no GitHub installation ID' };
+    }
+
+    const { getInstallationToken } = await import('./githubAppAuth');
+    const { token } = await getInstallationToken(project.githubInstallationId);
+
+    // Step 4: Make GitHub API call to compare commits
+    const compareResponse = await fetch(
+      `https://api.github.com/repos/${repoFullName}/compare/${beforeCommit}...${afterCommit}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'DevilDev-App',
+        },
+      }
+    );
+
+    if (!compareResponse.ok) {
+      const errorText = await compareResponse.text();
+      return { error: `GitHub API error (${compareResponse.status}): ${errorText}` };
+    }
+
+    const compareData = await compareResponse.json();
+
+    return { success: true, data: compareData };
+  } catch (error) {
+    console.error('Error in getGitHubCommitComparison:', error);
+    return { error: error instanceof Error ? error.message : 'Failed to get commit comparison' };
+  }
+}
