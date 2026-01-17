@@ -1250,7 +1250,7 @@ const ProjectPage = () => {
             </div>
           </div>
 
-          {/* Mobile bottom bar for Architecture and Documentation */}
+          {/* Mobile bottom bar for Architecture and Pacts */}
           <div className="fixed bottom-4 left-4 right-4 z-30 flex gap-3">
             <button
               onClick={() => setMobileActivePanel('architecture')}
@@ -1262,7 +1262,7 @@ const ProjectPage = () => {
               onClick={() => setMobileActivePanel('docs')}
               className="flex-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-600 bg-black/60 text-white hover:bg-gray-900"
             >
-              Documentation
+              Pacts
             </button>
           </div>
 
@@ -1271,7 +1271,7 @@ const ProjectPage = () => {
             <div className="fixed inset-0 z-40 bg-black">
               <div className="h-16 bg-black/90 backdrop-blur-sm border-b border-gray-800/50 flex items-center justify-between px-4">
                 <div className="text-white font-semibold text-base">
-                  {mobileActivePanel === 'architecture' ? 'Architecture' : 'Documentation'}
+                  {mobileActivePanel === 'architecture' ? 'Architecture' : 'Pacts'}
                 </div>
                 <button
                   onClick={() => setMobileActivePanel(null)}
@@ -1531,7 +1531,7 @@ const ProjectPage = () => {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                Documentation
+                Pacts
               </button>
             </div>
             
@@ -1560,7 +1560,7 @@ const ProjectPage = () => {
               />
             </div>
             
-            {/* Documentation Tab */}
+            {/* Pacts Tab */}
             <div className={`h-full ${activeTab === 'docs' ? 'block' : 'hidden'}`}>
               <ProjectContextDocs 
                 key={activeChatId || 'no-chat'}

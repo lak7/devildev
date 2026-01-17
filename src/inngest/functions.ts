@@ -77,7 +77,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
   },
   { event: "reverse-architecture/generate" },
   async ({ event, step }) => {
-    const { projectId, activeChatId, userId } = event.data;
+    const { projectId, activeChatId } = event.data;
 
     try {
       // Step 1: Generate architecture from GitHub repo analysis (expensive 5-7 min operation)
@@ -165,5 +165,16 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
       console.error('Error generating reverse architecture:', error);
       throw error; // Let Inngest handle retries
     }
+  }
+);
+
+export const regenerateReverseArchitectureFunction = inngest.createFunction(
+  {
+    id: "regenerate-reverse-architecture",
+    idempotency: 'event.data.projectId'
+  },
+  { event: "reverse-architecture/regenerate" },
+  async ({ event, step }) => {
+    const { beforeCommit, afterCommit, filesAdded, filesRemoved, filesModified } = event.data;
   }
 );
