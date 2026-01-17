@@ -3,6 +3,8 @@ import { saveArchitectureWithUserId } from "../../actions/architecturePersistenc
 import { inngest } from "./client";
 import { generateArchitecture, getGitHubCommitComparison } from "../../actions/reverse-architecture";
 import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
+import { db } from "@/lib/db";
+import { maxFilesChangedFree, maxFilesChangedPro, maxLinesChangedFree, maxLinesChangedPro } from "../../Limits";
 
 
 export const generateArchitectureFunction = inngest.createFunction(
@@ -179,19 +181,91 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
 
     try {
       // Step 1: Find project and verify it has ProjectArchitecture, get installation token, and fetch commit comparison
-      const commitComparison = await step.run("fetch-commit-comparison", async () => {
+      const commitComparisonResult = await step.run("fetch-commit-comparison", async () => {
         const result = await getGitHubCommitComparison(repoFullName, beforeCommit, afterCommit);
         
         if (result.error) {
           throw new Error(result.error);
         }
 
-        return result.data;
+        if (!result.success || !result.data || !result.userId) {
+          throw new Error('Invalid commit comparison result');
+        }
+
+        return result as { success: true; data: any; userId: string };
+      });
+
+      const commitComparison = commitComparisonResult.data;
+      const userId = commitComparisonResult.userId;
+
+      // Step 2: Get user subscription status
+      const userSubscription = await step.run("get-user-subscription", async () => {
+        const user = await db.user.findUnique({
+          where: { id: userId },
+          select: {
+            subscriptionPlan: true,
+            subscription: {
+              select: {
+                status: true,
+              },
+            },
+          },
+        });
+
+        if (!user) {
+          throw new Error('User not found');
+        }
+
+        const isPro = user.subscriptionPlan === "PRO" && user.subscription?.status === "ACTIVE";
+        return { isPro, subscriptionPlan: user.subscriptionPlan };
+      });
+
+      // Step 3: Calculate total files changed
+      const totalFilesChanged = await step.run("calculate-files-changed", async () => {
+        const filesAddedCount = Array.isArray(filesAdded) ? filesAdded.length : 0;
+        const filesRemovedCount = Array.isArray(filesRemoved) ? filesRemoved.length : 0;
+        const filesModifiedCount = Array.isArray(filesModified) ? filesModified.length : 0;
+        return filesAddedCount + filesRemovedCount + filesModifiedCount;
+      });
+
+      // Step 4: Calculate total lines changed
+      const totalLinesChanged = await step.run("calculate-lines-changed", async () => {
+        if (!commitComparison.files || !Array.isArray(commitComparison.files)) {
+          return 0;
+        }
+        return commitComparison.files.reduce((sum: number, file: any) => {
+          return sum + (file.changes || 0);
+        }, 0);
+      });
+
+      // Step 5: Validate against limits
+      await step.run("validate-limits", async () => {
+        const maxFiles = userSubscription.isPro ? maxFilesChangedPro : maxFilesChangedFree;
+        const maxLines = userSubscription.isPro ? maxLinesChangedPro : maxLinesChangedFree;
+        const planName = userSubscription.isPro ? "PRO" : "FREE";
+
+
+
+        if (totalFilesChanged > maxFiles) {
+          throw new Error(
+            `File change limit exceeded: ${totalFilesChanged} files changed (limit: ${maxFiles} for ${planName} users)`
+          );
+        }
+
+        if (totalLinesChanged > maxLines) {
+          throw new Error(
+            `Line change limit exceeded: ${totalLinesChanged} lines changed (limit: ${maxLines} for ${planName} users)`
+          );
+        }
+
+        return { validated: true };
       });
 
       return {
         success: true,
         commitComparison,
+        totalFilesChanged,
+        totalLinesChanged,
       };
     } catch (error) {
       console.error('Error in regenerateReverseArchitectureFunction:', error);

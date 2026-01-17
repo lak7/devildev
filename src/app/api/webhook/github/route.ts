@@ -135,12 +135,12 @@ export async function POST(req: NextRequest) {
 
         // Only regenerating the architecture if the pushed branch is the default branch
         if(pushedBranch === defaultBranch){
+          const repoFullName = payload.repository.full_name;
           const beforeCommit = payload.before;
           const afterCommit = payload.after;
           const filesAdded = payload.head_commit.added;
           const filesRemoved = payload.head_commit.removed;
           const filesModified = payload.head_commit.modified;
-          const repoFullName = payload.repository.full_name;
           const inngestDataToSend = {
             repoFullName: repoFullName,
             beforeCommit: beforeCommit,

@@ -689,6 +689,7 @@ export async function getGitHubCommitComparison(
       where: { repoFullName: repoFullName },
       select: {
         id: true,
+        userId: true,
         githubInstallationId: true,
         ProjectArchitecture: {
           select: {
@@ -734,7 +735,7 @@ export async function getGitHubCommitComparison(
 
     const compareData = await compareResponse.json();
 
-    return { success: true, data: compareData };
+    return { success: true, data: compareData, userId: project.userId };
   } catch (error) {
     console.error('Error in getGitHubCommitComparison:', error);
     return { error: error instanceof Error ? error.message : 'Failed to get commit comparison' };
