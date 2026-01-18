@@ -5,7 +5,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { isNextOrReactPrompt, mainGenerateArchitecturePrompt, mainGenerateArchitecturePrompt2 } from '../prompts/ReverseArchitecture';
-import { getFileContentTool, getRepoTreeTool, searchCodeTool } from './github/gitTools';
+import { getFileContentTool, getRepoTreeTool, searchCodeTool, getFilePatchTool } from './github/gitTools';
 import { getInstallationToken } from './githubAppAuth';
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
@@ -739,5 +739,138 @@ export async function getGitHubCommitComparison(
   } catch (error) {
     console.error('Error in getGitHubCommitComparison:', error);
     return { error: error instanceof Error ? error.message : 'Failed to get commit comparison' };
+  }
+}
+
+export async function regeneratePushedArchitecture(args: {
+  projectId: string;
+  repoFullName: string;
+  beforeCommit: string;
+  afterCommit: string;
+  exactFilesChanges: Array<{
+    filename: string;
+    status: string;
+    additions: number;
+    deletions: number;
+    changes: number;
+  }>;
+  latestArchitecture: any;
+}) {
+  const { projectId, repoFullName, beforeCommit, afterCommit, exactFilesChanges, latestArchitecture } = args;
+
+  try {
+    // Fetch project details
+    const project = await db.project.findUnique({
+      where: { id: projectId },
+      select: {
+        githubInstallationId: true,
+        framework: true,
+        name: true,
+      },
+    });
+
+    if (!project) {
+      return { error: 'Project not found' };
+    }
+
+    // Get installation token
+    if (!project.githubInstallationId) {
+      return { error: 'Project has no GitHub installation ID' };
+    }
+
+    const { token: accessToken } = await getInstallationToken(String(project.githubInstallationId));
+
+    // Parse repo owner and name
+    const [owner, repo] = repoFullName.split('/');
+
+    // Create tools for the agent
+    const tools = [getFilePatchTool, getFileContentTool];
+
+    // Create the prompt for architecture regeneration
+    const prompt = ChatPromptTemplate.fromMessages([
+      ["system", `You are an expert software architect tasked with updating a project's architecture diagram based on recent code changes.
+
+CURRENT ARCHITECTURE:
+{latestArchitecture}
+
+RECENT CHANGES:
+The following files were changed in commits {beforeCommit}...{afterCommit}:
+{exactFilesChanges}
+
+YOUR TASK:
+1. Analyze the file changes to understand what was modified
+2. Use the getFilePatch tool to examine specific file changes if you need more detail
+3. Update the architecture to reflect these changes
+4. Maintain the same JSON structure as the current architecture
+
+AVAILABLE TOOLS:
+- getFilePatch: Get the detailed patch/diff for any changed file
+  Parameters: owner="{owner}", repo="{repo}", beforeCommit="{beforeCommit}", afterCommit="{afterCommit}", filename="<filename>", accessToken="<token>"
+- getFileContent: Get the full current content of any file (use sparingly)
+
+OUTPUT FORMAT:
+Return ONLY a valid JSON object with these fields:
+- architectureRationale: string (updated explanation of the architecture)
+- components: array (updated list of components)
+- connectionLabels: object (updated connection labels)
+- componentPositions: object (preserve existing positions unless components changed significantly)
+
+IMPORTANT:
+- Keep component IDs consistent where possible
+- Only add/remove/modify components if the changes warrant it
+- Preserve componentPositions from the current architecture unless components are added/removed
+- Be concise but accurate in your rationale`],
+      ["human", `Analyze the changes and update the architecture. Return ONLY the JSON object.`],
+      new MessagesPlaceholder("agent_scratchpad")
+    ]);
+
+    // Create agent
+    const agent = await createToolCallingAgent({
+      llm,
+      tools,
+      prompt,
+    });
+
+    const agentExecutor = new AgentExecutor({
+      agent,
+      tools,
+      verbose: true,
+      maxIterations: 20,
+    });
+
+    // Execute the agent
+    const result = await agentExecutor.invoke({
+      latestArchitecture: JSON.stringify(latestArchitecture, null, 2),
+      exactFilesChanges: JSON.stringify(exactFilesChanges, null, 2),
+      owner,
+      repo,
+      beforeCommit,
+      afterCommit,
+      accessToken,
+    });
+
+    // Parse the output
+    let cleanedResult = result.output;
+    if (typeof cleanedResult === 'string') {
+      cleanedResult = cleanedResult
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/, '')
+        .replace(/\s*```\s*$/, '')
+        .trim();
+    }
+
+    const parsedArchitecture = typeof cleanedResult === 'string'
+      ? JSON.parse(cleanedResult)
+      : cleanedResult;
+
+    // Validate required fields
+    if (!parsedArchitecture.components || !parsedArchitecture.architectureRationale) {
+      throw new Error('Invalid architecture structure - missing required fields');
+    }
+
+    return { success: true, architecture: parsedArchitecture };
+  } catch (error) {
+    console.error('Error in regeneratePushedArchitecture:', error);
+    return { error: error instanceof Error ? error.message : 'Failed to regenerate architecture' };
   }
 }

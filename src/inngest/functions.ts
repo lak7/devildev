@@ -1,7 +1,7 @@
 import { generateArchitectureWithToolCalling } from "../../actions/architecture";
 import { saveArchitectureWithUserId } from "../../actions/architecturePersistence";
 import { inngest } from "./client";
-import { generateArchitecture, getGitHubCommitComparison } from "../../actions/reverse-architecture";
+import { generateArchitecture, getGitHubCommitComparison, regeneratePushedArchitecture } from "../../actions/reverse-architecture";
 import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
 import { db } from "@/lib/db";
 import { maxFilesChangedFree, maxFilesChangedPro, maxLinesChangedFree, maxLinesChangedPro } from "../../Limits";
@@ -302,12 +302,49 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
         return project.ProjectArchitecture[0];
       });
 
+      // Step 7: Regenerate architecture based on pushed changes
+      const regeneratedArchitecture = await step.run("regenerate-pushed-architecture", async () => {
+        const result = await regeneratePushedArchitecture({
+          projectId,
+          repoFullName,
+          beforeCommit,
+          afterCommit,
+          exactFilesChanges,
+          latestArchitecture,
+        });
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        return result.architecture;
+      });
+
+      // Step 8: Save new architecture version
+      const savedArchitecture = await step.run("save-new-architecture-version", async () => {
+        const saveResult = await saveProjectArchitecture(
+          projectId,
+          regeneratedArchitecture.architectureRationale,
+          regeneratedArchitecture.components,
+          regeneratedArchitecture.connectionLabels || {},
+          regeneratedArchitecture.componentPositions || latestArchitecture.componentPositions || {}
+        );
+
+        if (saveResult.error || !saveResult.success) {
+          throw new Error(`Failed to save architecture: ${saveResult.error}`);
+        }
+
+        return saveResult.architecture;
+      });
+
       return {
         success: true,
         commitComparison,
         totalFilesChanged,
         totalLinesChanged,
         latestArchitecture,
+        regeneratedArchitecture,
+        savedArchitecture,
       };
     } catch (error) {
       console.error('Error in regenerateReverseArchitectureFunction:', error);

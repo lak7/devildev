@@ -153,7 +153,7 @@ model Project {
 
 model ProjectArchitecture {
   id        String   @id @default(uuid())
-  projectId String   @unique
+  projectId String
   architectureRationale String?
   components            Json
   connectionLabels      Json?
@@ -161,6 +161,8 @@ model ProjectArchitecture {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt(sort: Desc)])
 }
 
 model ProjectChat {

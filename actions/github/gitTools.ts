@@ -334,3 +334,70 @@ export async function validateGitHubToken(accessToken: string): Promise<boolean>
     return false;
   }
 }
+
+/**
+ * Tool 4: Get File Patch
+ * Fetches the patch (diff) for a specific file between two commits
+ */
+export const getFilePatchTool = new DynamicStructuredTool({
+  name: "getFilePatch",
+  description: "Get the patch (diff) for a specific file between two commits. Shows exactly what changed in the file.",
+  schema: z.object({
+    owner: z.string().describe("Repository owner/organization name"),
+    repo: z.string().describe("Repository name"),
+    beforeCommit: z.string().describe("The commit SHA before the changes"),
+    afterCommit: z.string().describe("The commit SHA after the changes"),
+    filename: z.string().describe("The file path to get the patch for (e.g., 'src/app/page.tsx')"),
+    accessToken: z.string().describe("GitHub access token for authentication (OAuth or installation token)"),
+  }),
+  
+  func: async (input): Promise<string> => {
+    const { owner, repo, beforeCommit, afterCommit, filename, accessToken } = input as {
+      owner: string;
+      repo: string;
+      beforeCommit: string;
+      afterCommit: string;
+      filename: string;
+      accessToken: string;
+    };
+    
+    try {
+      const url = `https://api.github.com/repos/${owner}/${repo}/compare/${beforeCommit}...${afterCommit}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'DevilDev-Agent'
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`Comparison not found for ${beforeCommit}...${afterCommit}`);
+        }
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+      }
+
+      const compareData = await response.json();
+      
+      // Find the file in the files array
+      const file = compareData.files?.find((f: any) => f.filename === filename);
+      
+      if (!file) {
+        return `File "${filename}" not found in the commit comparison. It may not have been changed between these commits.`;
+      }
+      
+      if (!file.patch) {
+        return `Patch unavailable for "${filename}" (file might be binary, too large, or renamed without changes).`;
+      }
+      
+      return `Patch for ${filename} (${file.additions} additions, ${file.deletions} deletions):
+
+${file.patch}`;
+
+    } catch (error) {
+      return `Error fetching file patch for ${filename}: ${error instanceof Error ? error.message : "Unknown error occurred"}`;
+    }
+  }
+});
