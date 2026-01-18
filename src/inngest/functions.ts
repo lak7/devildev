@@ -188,15 +188,26 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
           throw new Error(result.error);
         }
 
-        if (!result.success || !result.data || !result.userId) {
+        if (!result.success || !result.data || !result.userId || !result.projectId) {
           throw new Error('Invalid commit comparison result');
         }
 
-        return result as { success: true; data: any; userId: string };
+        return result as { success: true; data: any; userId: string; projectId: string };
       });
 
       const commitComparison = commitComparisonResult.data;
       const userId = commitComparisonResult.userId;
+      const projectId = commitComparisonResult.projectId;
+
+      const exactFilesChanges = commitComparison.files && Array.isArray(commitComparison.files)
+        ? commitComparison.files.map((file: any) => ({
+            filename: file.filename,
+            status: file.status,
+            additions: file.additions,
+            deletions: file.deletions,
+            changes: file.changes,
+          }))
+        : [];
 
       // Step 2: Get user subscription status
       const userSubscription = await step.run("get-user-subscription", async () => {
@@ -261,11 +272,42 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
         return { validated: true };
       });
 
+      // Step 6: Fetch latest project architecture
+      const latestArchitecture = await step.run("fetch-latest-architecture", async () => {
+        const project = await db.project.findUnique({
+          where: { id: projectId },
+          select: {
+            ProjectArchitecture: {
+              orderBy: {
+                updatedAt: 'desc',
+              },
+              take: 1,
+              select: {
+                id: true,
+                architectureRationale: true,
+                components: true,
+                connectionLabels: true,
+                componentPositions: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+          },
+        });
+
+        if (!project || !project.ProjectArchitecture || project.ProjectArchitecture.length === 0) {
+          throw new Error('No architecture found for project');
+        }
+
+        return project.ProjectArchitecture[0];
+      });
+
       return {
         success: true,
         commitComparison,
         totalFilesChanged,
         totalLinesChanged,
+        latestArchitecture,
       };
     } catch (error) {
       console.error('Error in regenerateReverseArchitectureFunction:', error);
