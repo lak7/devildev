@@ -64,7 +64,12 @@ export async function getProject(projectId: string) {
             framework: true,
             createdAt: true,
             updatedAt: true,
-            ProjectArchitecture: true,
+            ProjectArchitecture: {
+                orderBy: {
+                    createdAt: 'desc', // Latest first
+                },
+                take: 5, // Only fetch latest 5
+            },
             detailedAnalysis: true,
             ProjectChat: {
                 orderBy: {

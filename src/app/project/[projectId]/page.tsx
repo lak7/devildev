@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
-import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check, FolderKanban } from 'lucide-react';
+import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check, FolderKanban, ChevronDown } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
 import { SignOutButton, useUser } from '@clerk/nextjs';
@@ -40,6 +40,15 @@ interface Project {
   ProjectChat: any[]; // Raw data from database
 }
 
+interface ProjectArchitectureVersion {
+  architecture: any;
+  componentPositions: Record<string, { x: number; y: number }>;
+  metadata: {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}
 
 const ProjectPage = () => {
     const params = useParams();
@@ -71,6 +80,9 @@ const ProjectPage = () => {
   const [isArchitectureGenerating, setIsArchitectureGenerating] = useState(false);
   const [architectureData, setArchitectureData] = useState<any>(null);
   const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const [allArchitectures, setAllArchitectures] = useState<ProjectArchitectureVersion[]>([]);
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState<number>(0);
+  const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
   const [isPromptGenerating, setIsPromptGenerating] = useState(false);
   const [isDocsGenerating, setIsDocsGenerating] = useState(false);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
@@ -155,6 +167,33 @@ const ProjectPage = () => {
       });
     } finally {
       setIsSubmittingFeedback(false);
+    }
+  };
+
+  // Helper function to convert number to Roman numerals
+  const toRomanNumeral = (num: number): string => {
+    const romanNumerals: [number, string][] = [
+      [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+      [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+      [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+    ];
+    let result = '';
+    for (const [value, numeral] of romanNumerals) {
+      while (num >= value) {
+        result += numeral;
+        num -= value;
+      }
+    }
+    return result;
+  };
+
+  // Handle version change
+  const handleVersionChange = (versionIndex: number) => {
+    if (versionIndex >= 0 && versionIndex < allArchitectures.length) {
+      setSelectedVersionIndex(versionIndex);
+      setArchitectureData(allArchitectures[versionIndex].architecture);
+      setCustomPositions(allArchitectures[versionIndex].componentPositions || {});
+      setIsVersionDropdownOpen(false);
     }
   };
 
@@ -487,18 +526,31 @@ const ProjectPage = () => {
 
       const loadArchitecture = async (theProjectData: any) => {
         if(theProjectData?.ProjectArchitecture && theProjectData.ProjectArchitecture.length > 0){
-                  // Load existing architecture
-                  const existingArchitecture = theProjectData.ProjectArchitecture[0];
-                  const architectureData = { 
-                      components: existingArchitecture.components,
-                      connectionLabels: existingArchitecture.connectionLabels,
-                      componentPositions: existingArchitecture.componentPositions,
-                      architectureRationale: existingArchitecture.architectureRationale,
-                      detailedAnalysis: existingArchitecture.detailedAnalysis
-                  };
-                  setArchitectureData(architectureData);
-                  // Load custom positions from the database
-                  setCustomPositions(existingArchitecture.componentPositions || {});
+                  // Process architectures already fetched by getProject
+                  // They come ordered desc (latest first), so reverse for UI (oldest = Version I)
+                  const architectures = theProjectData.ProjectArchitecture.slice().reverse().map((arch: any) => ({
+                    architecture: {
+                      components: arch.components,
+                      connectionLabels: arch.connectionLabels,
+                      componentPositions: arch.componentPositions,
+                      architectureRationale: arch.architectureRationale,
+                      detailedAnalysis: arch.detailedAnalysis,
+                    },
+                    componentPositions: arch.componentPositions || {},
+                    metadata: {
+                      id: arch.id,
+                      createdAt: arch.createdAt,
+                      updatedAt: arch.updatedAt,
+                    },
+                  }));
+                  
+                  setAllArchitectures(architectures);
+                  
+                  // Set the latest architecture as default (last in array after reverse)
+                  const latestIndex = architectures.length - 1;
+                  setSelectedVersionIndex(latestIndex);
+                  setArchitectureData(architectures[latestIndex].architecture);
+                  setCustomPositions(architectures[latestIndex].componentPositions || {});
                   setIsArchitectureGenerating(false);
             
               }else{
@@ -1273,13 +1325,65 @@ const ProjectPage = () => {
                 <div className="text-white font-semibold text-base">
                   {mobileActivePanel === 'architecture' ? 'Architecture' : 'Pacts'}
                 </div>
-                <button
-                  onClick={() => setMobileActivePanel(null)}
-                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
-                  title="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                
+                <div className="flex items-center space-x-2">
+                  {/* Version Dropdown for mobile */}
+                  {mobileActivePanel === 'architecture' && allArchitectures.length > 0 && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                        className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-md transition-all duration-200 border border-gray-700/50"
+                        title="Select Architecture Version"
+                      >
+                        <span className="font-medium">V{toRomanNumeral(selectedVersionIndex + 1)}</span>
+                        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {/* Dropdown Menu */}
+                      {isVersionDropdownOpen && (
+                        <>
+                          {/* Backdrop to close dropdown */}
+                          <div 
+                            className="fixed inset-0 z-30" 
+                            onClick={() => setIsVersionDropdownOpen(false)}
+                          />
+                          
+                          {/* Dropdown content */}
+                          <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                            <div className="py-1 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                              {allArchitectures.map((arch, index) => (
+                                <button
+                                  key={arch.metadata.id}
+                                  onClick={() => handleVersionChange(index)}
+                                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                    index === selectedVersionIndex
+                                      ? 'bg-red-500/20 text-white border-l-2 border-red-500'
+                                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span>Version {toRomanNumeral(index + 1)}</span>
+                                    {index === allArchitectures.length - 1 && (
+                                      <span className="text-xs text-gray-400">Latest</span>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={() => setMobileActivePanel(null)}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                    title="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
               <div className="h-[calc(100vh-4rem)] overflow-hidden">
                 {mobileActivePanel === 'architecture' ? (
@@ -1535,15 +1639,67 @@ const ProjectPage = () => {
               </button>
             </div>
             
-            {/* Fullscreen button - only show for architecture tab */}
+            {/* Version dropdown and Fullscreen button - only show for architecture tab */}
             {activeTab === 'architecture' && (
-              <button
-                onClick={() => setIsArchitectureFullscreen(true)}
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
-                title="Fullscreen Architecture View"
-              >
-                <Maximize className="h-4 w-4" />
-              </button>
+              <div className="flex items-center space-x-2">
+                {/* Version Dropdown */}
+                {allArchitectures.length > 0 && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                      className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-md transition-all duration-200 border border-gray-700/50"
+                      title="Select Architecture Version"
+                    >
+                      <span className="font-medium">Version {toRomanNumeral(selectedVersionIndex + 1)}</span>
+                      <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    {isVersionDropdownOpen && (
+                      <>
+                        {/* Backdrop to close dropdown */}
+                        <div 
+                          className="fixed inset-0 z-30" 
+                          onClick={() => setIsVersionDropdownOpen(false)}
+                        />
+                        
+                        {/* Dropdown content */}
+                        <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                          <div className="py-1 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                            {allArchitectures.map((arch, index) => (
+                              <button
+                                key={arch.metadata.id}
+                                onClick={() => handleVersionChange(index)}
+                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                  index === selectedVersionIndex
+                                    ? 'bg-red-500/20 text-white border-l-2 border-red-500'
+                                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span>Version {toRomanNumeral(index + 1)}</span>
+                                  {index === allArchitectures.length - 1 && (
+                                    <span className="text-xs text-gray-400">Latest</span>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+                
+                {/* Fullscreen button */}
+                <button
+                  onClick={() => setIsArchitectureFullscreen(true)}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
+                  title="Fullscreen Architecture View"
+                >
+                  <Maximize className="h-4 w-4" />
+                </button>
+              </div>
             )}
           </div>
 
@@ -1604,14 +1760,66 @@ const ProjectPage = () => {
               </div>
             </div>
 
-            {/* Right side - Close button */}
-            <button
-              onClick={() => setIsArchitectureFullscreen(false)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
-              title="Exit Fullscreen"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            {/* Right side - Version dropdown and Close button */}
+            <div className="flex items-center space-x-3">
+              {/* Version Dropdown in fullscreen */}
+              {allArchitectures.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                    className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-800/80 hover:bg-gray-700/80 rounded-lg transition-all duration-200 border border-gray-600/40"
+                    title="Select Architecture Version"
+                  >
+                    <span className="font-medium">Version {toRomanNumeral(selectedVersionIndex + 1)}</span>
+                    <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  {isVersionDropdownOpen && (
+                    <>
+                      {/* Backdrop to close dropdown */}
+                      <div 
+                        className="fixed inset-0 z-30" 
+                        onClick={() => setIsVersionDropdownOpen(false)}
+                      />
+                      
+                      {/* Dropdown content */}
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                        <div className="py-1 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                          {allArchitectures.map((arch, index) => (
+                            <button
+                              key={arch.metadata.id}
+                              onClick={() => handleVersionChange(index)}
+                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                index === selectedVersionIndex
+                                  ? 'bg-red-500/20 text-white border-l-2 border-red-500'
+                                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span>Version {toRomanNumeral(index + 1)}</span>
+                                {index === allArchitectures.length - 1 && (
+                                  <span className="text-xs text-gray-400">Latest</span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              
+              {/* Close button */}
+              <button
+                onClick={() => setIsArchitectureFullscreen(false)}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                title="Exit Fullscreen"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Fullscreen Architecture Content */}
