@@ -158,6 +158,12 @@ model ProjectArchitecture {
   components            Json
   connectionLabels      Json?
   componentPositions    Json?
+  commitHash            String? @unique
+  branchName            String?
+  projectStructure      Json?
+  commitMessage         String?
+  beforeCommitHash      String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
