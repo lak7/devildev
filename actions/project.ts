@@ -88,6 +88,7 @@ export async function saveProjectArchitecture(
     components: any,
     connectionLabels: any,
     componentPositions?: any,
+    projectStructure?: any,
     initialMessage?: string
 ) {
     ;
@@ -113,7 +114,8 @@ export async function saveProjectArchitecture(
                 architectureRationale,
                 components,
                 connectionLabels,
-                componentPositions: componentPositions || {}
+                componentPositions: componentPositions || {},
+                projectStructure: projectStructure || null
             }
         });
 

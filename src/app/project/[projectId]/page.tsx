@@ -7,7 +7,7 @@ import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, U
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
 import { SignOutButton, useUser } from '@clerk/nextjs';
-import { generateArchitecture, triggerReverseArchitectureGeneration, checkProjectArchitectureByGenerationId } from '../../../../actions/reverse-architecture';
+import { triggerReverseArchitectureGeneration, checkProjectArchitectureByGenerationId } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 import ProjectContextDocs from '@/components/core/ProjectContextDocs';

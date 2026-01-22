@@ -1,7 +1,7 @@
 import { generateArchitectureWithToolCalling } from "../../actions/architecture";
 import { saveArchitectureWithUserId } from "../../actions/architecturePersistence";
 import { inngest } from "./client";
-import { generateArchitecture, getGitHubCommitComparison, regeneratePushedArchitecture } from "../../actions/reverse-architecture";
+import { generateArchitecture, getGitHubCommitComparison, regeneratePushedArchitecture, getRepoTree } from "../../actions/reverse-architecture";
 import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
 import { db } from "@/lib/db";
 import { maxFilesChangedFree, maxFilesChangedPro, maxLinesChangedFree, maxLinesChangedPro } from "../../Limits";
@@ -74,18 +74,29 @@ export const generateArchitectureFunction = inngest.createFunction(
 
 export const generateReverseArchitectureFunction = inngest.createFunction(
   {
-    id: "generate-reverse-architecture",
-    idempotency: 'event.data.projectId'
+    id: "generate-reverse-architecture"
   },
   { event: "reverse-architecture/generate" },
   async ({ event, step }) => {
     const { projectId, activeChatId } = event.data;
 
     try {
-      // Step 1: Generate architecture from GitHub repo analysis (expensive 5-7 min operation)
+      // Step 1: Fetch repository tree structure up to 4 levels deep
+      const repoTreeResult = await step.run("fetch-repo-tree", async () => {
+        return await getRepoTree(projectId);
+      });
+
+      // Check for errors in repo tree fetch
+      if ('error' in repoTreeResult) {
+        throw new Error(`Repo tree fetch failed: ${repoTreeResult.error}`);
+      }
+
+      const repoTree = repoTreeResult.tree;
+
+      // Step 2: Generate architecture from GitHub repo analysis (expensive 5-7 min operation)
       const architectureResult = await step.run("generate-reverse-architecture", async () => {
         return await generateArchitecture(projectId);
-      });
+      });  
 
       // Check for errors in architecture generation
       if ('error' in architectureResult) {
@@ -94,7 +105,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
 
       const { architecture: architectureJSON, detailedAnalysis } = architectureResult;
 
-      // Step 2: Clean and parse the architecture result
+      // Step 3: Clean and parse the architecture result
       const parsedArchitecture = await step.run("parse-architecture", async () => {
         let cleanedResult = architectureJSON;
         if (typeof architectureJSON === 'string') {
@@ -115,7 +126,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
         return parsed
       });
 
-      // Step 3: Generate initial message from architecture rationale
+      // Step 4: Generate initial message from architecture rationale
       const initialMessage = await step.run("generate-initial-message", async () => {
         const architectureRationaleParagraphs = parsedArchitecture.architectureRationale.split(/\n\s*\n/);
         const firstParagraph = architectureRationaleParagraphs[0].trim();
@@ -123,7 +134,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
         return firstParagraph + "\n\n" + lastParagraph;
       });
 
-      // Step 4: Save architecture to database
+      // Step 5: Save architecture to database
       if (parsedArchitecture && parsedArchitecture.components && parsedArchitecture.architectureRationale) {
         await step.run("save-project-architecture", async () => {
 
@@ -132,7 +143,8 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
             parsedArchitecture.architectureRationale,
             parsedArchitecture.components,
             parsedArchitecture.connectionLabels || {},
-            parsedArchitecture.componentPositions || {}
+            parsedArchitecture.componentPositions || {},
+            repoTree
           );
 
           if (saveResult.error || !saveResult.success) {
@@ -142,7 +154,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
           return saveResult;
         });
 
-        // Step 5: Ensure initial message is saved to chat in background-safe way
+        // Step 6: Ensure initial message is saved to chat in background-safe way
         if (initialMessage) {
           await step.run("save-initial-message", async () => {
             const res = await saveInitialMessageForInngestRevArchitecture(projectId, initialMessage, activeChatId);
@@ -327,7 +339,8 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
           regeneratedArchitecture.architectureRationale,
           regeneratedArchitecture.components,
           regeneratedArchitecture.connectionLabels || {},
-          regeneratedArchitecture.componentPositions || latestArchitecture.componentPositions || {}
+          regeneratedArchitecture.componentPositions || latestArchitecture.componentPositions || {},
+          null
         );
 
         if (saveResult.error || !saveResult.success) {

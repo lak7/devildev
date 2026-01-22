@@ -242,6 +242,213 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
       }
         return {result: result, project: project};
 }
+
+export async function getRepoTree(projectId: string) {
+  try {
+    // Fetch project details
+    const project = await db.project.findUnique({
+      where: { id: projectId },
+      select: {
+        repoFullName: true,
+        defaultBranch: true,
+        githubInstallationId: true,
+      },
+    });
+
+    if (!project) {
+      return { error: 'Project not found' };
+    }
+
+    if (!project.githubInstallationId) {
+      return { error: 'GitHub installation ID not found for this project' };
+    }
+
+    if (!project.repoFullName) {
+      return { error: 'Repository full name not found' };
+    }
+
+    // Get installation token (GitHub App flow only)
+    const { token: accessToken } = await getInstallationToken(String(project.githubInstallationId));
+
+    // Parse repo owner and name
+    const [owner, repo] = project.repoFullName.split('/');
+    const branch = project.defaultBranch || 'main';
+
+    // Fetch repository tree recursively
+    const url = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'DevilDev-App',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { error: `Repository or branch not found: ${owner}/${repo}/${branch}` };
+      }
+      return { error: `GitHub API error: ${response.status} ${response.statusText}` };
+    }
+
+    const data = await response.json();
+
+    if (!data.tree || !Array.isArray(data.tree)) {
+      return { error: 'Invalid response from GitHub API' };
+    }
+
+    // Define excluded directories and files (build artifacts, dependencies, config files)
+    const excludedDirectories = [
+      '.github',
+      '.git',
+      'node_modules',
+      '.next',
+      '.nuxt',
+      '.vscode',
+      '.idea',
+      'dist',
+      'public',
+      'assets',
+      'build',
+      '.cache',
+      'coverage',
+      '.nyc_output',
+      '.turbo',
+      '.vercel',
+      '.DS_Store',
+      'Thumbs.db',
+    ];
+
+    // Filter items by depth (max depth 4) and exclude unwanted directories/files
+    // Root level = depth 0, counting '/' in path
+    const filteredTree = data.tree.filter((node: any) => {
+      const depth = node.path.split('/').length - 1;
+      if (depth > 4) {
+        return false;
+      }
+
+      // Check if path contains any excluded directory
+      const pathParts = node.path.split('/');
+      for (const part of pathParts) {
+        if (excludedDirectories.includes(part)) {
+          return false;
+        }
+      }
+
+      // Exclude actual .env files (but keep .env.example, .env.local.example, etc.)
+      if (node.path.endsWith('.env') && !node.path.includes('.example') && !node.path.includes('.sample')) {
+        return false;
+      }
+
+      // Exclude log files
+      if (node.path.endsWith('.log')) {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Transform flat array into nested tree structure
+    interface TreeNode {
+      f?: string[];
+      d?: { [key: string]: TreeNode };
+    }
+
+    const nestedTree: TreeNode = {
+      f: [],
+      d: {},
+    };
+
+    filteredTree.forEach((node: any) => {
+      const pathParts = node.path.split('/');
+      const isFile = node.type === 'blob';
+
+      if (pathParts.length === 1) {
+        // Root level item
+        if (isFile) {
+          if (!nestedTree.f) nestedTree.f = [];
+          nestedTree.f.push(pathParts[0]);
+        } else {
+          if (!nestedTree.d) nestedTree.d = {};
+          if (!nestedTree.d[pathParts[0]]) {
+            nestedTree.d[pathParts[0]] = {};
+          }
+        }
+      } else {
+        // Nested item - traverse the tree
+        let currentLevel = nestedTree;
+        
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          const dirName = pathParts[i];
+          
+          if (!currentLevel.d) currentLevel.d = {};
+          if (!currentLevel.d[dirName]) {
+            currentLevel.d[dirName] = {};
+          }
+          
+          currentLevel = currentLevel.d[dirName];
+        }
+
+        // Add the final item (file or directory)
+        const lastName = pathParts[pathParts.length - 1];
+        if (isFile) {
+          if (!currentLevel.f) currentLevel.f = [];
+          currentLevel.f.push(lastName);
+        } else {
+          if (!currentLevel.d) currentLevel.d = {};
+          if (!currentLevel.d[lastName]) {
+            currentLevel.d[lastName] = {};
+          }
+        }
+      }
+    });
+
+    // Helper function to remove empty directory objects
+    const cleanEmptyDirectories = (node: TreeNode): TreeNode | null => {
+      const cleaned: TreeNode = {};
+      
+      // Process files
+      if (node.f && node.f.length > 0) {
+        cleaned.f = node.f;
+      }
+      
+      // Process directories
+      if (node.d) {
+        const cleanedDirs: { [key: string]: TreeNode } = {};
+        for (const [dirName, dirNode] of Object.entries(node.d)) {
+          const cleanedDir = cleanEmptyDirectories(dirNode);
+          if (cleanedDir && (cleanedDir.f?.length || cleanedDir.d)) {
+            cleanedDirs[dirName] = cleanedDir;
+          }
+        }
+        if (Object.keys(cleanedDirs).length > 0) {
+          cleaned.d = cleanedDirs;
+        }
+      }
+      
+      // Return null if node is completely empty, otherwise return cleaned node
+      if (!cleaned.f?.length && !cleaned.d) {
+        return null;
+      }
+      
+      return cleaned;
+    };
+
+    const cleanedTree = cleanEmptyDirectories(nestedTree) || {};
+
+    return {
+      success: true,
+      tree: cleanedTree,
+      totalItems: filteredTree.length,
+      truncated: data.truncated || false,
+    };
+
+  } catch (error) {
+    console.error('Error fetching repository tree:', error);
+    return { error: error instanceof Error ? error.message : 'Failed to fetch repository tree' };
+  }
+}
  
 export async function generateArchitecture(projectId: string){
      
