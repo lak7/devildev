@@ -513,7 +513,8 @@ export async function generateArchitecture(projectId: string, repoTree?: any){
             const architecture = await finalChain.invoke({
                 analysis_findings: existingAnalysisString,
                 name: name,
-                framework: framework
+                framework: framework,
+                repoTree: repoTree ? JSON.stringify(repoTree) : 'Not provided'
             });
 
             return { architecture: architecture, detailedAnalysis: existingAnalysisString };
@@ -705,7 +706,8 @@ Start your analysis now.`],
         const architecture = await finalChain.invoke({
             analysis_findings: JSON.stringify(analysisResult.output),
             name: name,
-            framework: framework
+            framework: framework,
+            repoTree: repoTree ? JSON.stringify(repoTree) : 'Not provided'
         });
         
         return {architecture: architecture, detailedAnalysis: JSON.stringify(analysisResult.output)};
