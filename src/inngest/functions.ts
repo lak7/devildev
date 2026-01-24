@@ -95,7 +95,7 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
 
       // Step 2: Generate architecture from GitHub repo analysis (expensive 5-7 min operation)
       const architectureResult = await step.run("generate-reverse-architecture", async () => {
-        return await generateArchitecture(projectId);
+        return await generateArchitecture(projectId, repoTree);
       });  
 
       // Check for errors in architecture generation

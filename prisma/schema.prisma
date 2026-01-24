@@ -154,6 +154,7 @@ model Project {
 model ProjectArchitecture {
   id        String   @id @default(uuid())
   projectId String
+  detailedProjectAnalysis String?
   architectureRationale String?
   components            Json
   connectionLabels      Json?

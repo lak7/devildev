@@ -5,7 +5,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { isNextOrReactPrompt, mainGenerateArchitecturePrompt, mainGenerateArchitecturePrompt2 } from '../prompts/ReverseArchitecture';
-import { getFileContentTool, getRepoTreeTool, searchCodeTool, getFilePatchTool } from './github/gitTools';
+import { getFileContentTool, searchCodeTool, getFilePatchTool } from './github/gitTools';
 import { getInstallationToken } from './githubAppAuth';
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
@@ -450,9 +450,7 @@ export async function getRepoTree(projectId: string) {
   }
 }
  
-export async function generateArchitecture(projectId: string){
-     
-
+export async function generateArchitecture(projectId: string, repoTree?: any){
 
     const project = await db.project.findUnique({
         where: { id: projectId},
@@ -529,183 +527,142 @@ export async function generateArchitecture(projectId: string){
     const [owner, repo] = repoFullName.split('/');
     
     // Create tools with pre-filled GitHub credentials
+    // Note: getRepoTreeTool removed since repoTree is now passed as parameter
     const repoAnalysisTools = [
-        getRepoTreeTool,
-        getFileContentTool, 
+        getFileContentTool,
         searchCodeTool
     ];
     
    // Create the reverse architecture analysis prompt
       const prompt = ChatPromptTemplate.fromMessages([
-      ["system", `You are an elite software architecture reverse engineer specializing in React/Next.js applications. Your mission is to analyze GitHub repositories and extract comprehensive architectural insights through strategic code examination.
+      ["system", `You are Linus Torvalds - one of the greatest programmers and system architects in history. You built Linux and Git, and you have an unparalleled ability to understand complex codebases at a glance. Your expertise lies in cutting through complexity to reveal the essential architecture of any system.
 
-    REPOSITORY CONTEXT:
-    - Repository: {repoFullName}
-    - Framework: {framework} (React/Next.js confirmed)
-    - Default Branch: {defaultBranch}
-    - Package.json Dependencies: {packageJson}
-    - Root Structure: {repoContent}
+YOUR MISSION:
+Analyze this repository and produce a detailed architectural analysis report. This report will be used to generate a comprehensive architecture diagram that maps out every component, service, and their communication patterns. Write for developers who need to understand this codebase quickly and thoroughly.
 
-    STRATEGIC TOOL USAGE PHILOSOPHY:
-    🎯 **Use tools ONLY when critical information cannot be inferred from existing context**
-    - Start analysis with provided package.json and root structure
-    - Make educated assumptions based on React/Next.js patterns
-    - Tool calls should be strategic, not exhaustive
-    - Prioritize high-impact files over comprehensive scanning
+REPOSITORY CONTEXT:
+- Repository: {repoFullName}
+- Framework: {framework}
+- Default Branch: {defaultBranch}
+- Package.json: {packageJson}
+- Root Contents: {repoContent}
+- Full Repository Tree (4 levels deep): {repoTree}
 
-    AVAILABLE TOOLS (Use Sparingly):
-    1. **getRepoTree** - For understanding complete project structure (use only if root content is insufficient)
-    2. **getFileContent** - For reading critical configuration/implementation files
-    3. **searchCode** - For locating specific architectural patterns or technologies
+AVAILABLE TOOLS (use sparingly):
+1. **getFileContent** - Read specific files when you need implementation details
+2. **searchCode** - Search for specific patterns or implementations
 
-    TOOL PARAMETERS:
-    - owner: {owner}
-    - repo: {repo}
-    - accessToken: {githubAccessToken}
-    - branch: {defaultBranch}
+Tool Parameters: owner={owner}, repo={repo}, accessToken={githubAccessToken}, branch={defaultBranch}
 
-    ANALYSIS FRAMEWORK - REACT/NEXT.JS SPECIALIZED:
+CRITICAL - TOKEN EFFICIENCY RULES:
+You MUST minimize token usage. Every tool call costs tokens and time. Follow these rules strictly:
 
-    ## 1. PROJECT STRUCTURE ANALYSIS
-    **Infer from provided data first, tool call only if needed:**
-    - **Next.js App Router** (app/ directory) vs **Pages Router** (pages/ directory)
-    - **Component Organization**: components/, ui/, layouts/, hooks/
-    - **Configuration Files**: next.config.js, tailwind.config.js, tsconfig.json
-    - **Build System**: package.json scripts, build configurations
+1. **DO NOT read every file** - This is wasteful and unnecessary. You already have the full repo tree, package.json, and root structure.
 
-    ## 2. FRONTEND ARCHITECTURE DEEP DIVE
-    **Key Areas to Identify:**
-    - **Rendering Strategy**: SSG, SSR, ISR, Client-side patterns
-    - **Component Architecture**: Atomic design, feature-based, or hybrid
-    - **State Management**: React Context, Zustand, Redux, Jotai patterns
-    - **Styling System**: Tailwind, CSS Modules, Styled Components, Emotion
-    - **UI Framework**: shadcn/ui, Material-UI, Ant Design, Custom components
-    - **Form Handling**: React Hook Form, Formik, or native approaches
+2. **Limit file reads to 5-8 files maximum** - Only read files that are ESSENTIAL for understanding architecture:
+   - Main config files (next.config.js, prisma/schema.prisma, etc.)
+   - Key entry points (app/layout.tsx, pages/_app.tsx)
+   - Critical integration files only when dependencies suggest something non-obvious
 
-    ## 3. BACKEND/API LAYER ANALYSIS
-    **For Next.js Applications:**
-    - **API Routes Structure**: pages/api/ or app/api/ patterns
-    - **Server Components**: app/ directory server component usage
-    - **Middleware**: Authentication, logging, CORS implementations
-    - **Database Integration**: Prisma, Drizzle, direct database clients
-    - **Authentication**: NextAuth.js, Clerk, Supabase Auth, custom JWT
+3. **Infer before fetching** - Most architectural decisions can be determined from:
+   - package.json dependencies (tells you 80% of the stack)
+   - Directory structure (app/ vs pages/, presence of prisma/, lib/, etc.)
+   - File names and locations in the repo tree
 
-    ## 4. DATA MANAGEMENT & EXTERNAL SERVICES
-    **Critical Integrations to Identify:**
-    - **Database**: PostgreSQL, MySQL, MongoDB connection patterns
-    - **ORM/Query Builder**: Prisma, Drizzle ORM, raw SQL patterns
-    - **External APIs**: REST clients, GraphQL (Apollo, React Query)
-    - **File Storage**: AWS S3, Cloudinary, Supabase Storage
-    - **Real-time Features**: WebSockets, Server-Sent Events, Pusher
+4. **Ask yourself before each tool call:** "Can I infer this from what I already have?" If yes, DO NOT use the tool.
 
-    ## 5. DEPLOYMENT & INFRASTRUCTURE
-    **Production Considerations:**
-    - **Hosting Platform**: Vercel, Netlify, custom deployment
-    - **Environment Management**: .env patterns, configuration strategies
-    - **Performance**: Image optimization, bundle analysis, caching strategies
-    - **Monitoring**: Analytics, error tracking, logging solutions
+5. **Use searchCode over getFileContent** when you just need to confirm a pattern exists, not read the full file.
 
-    INTELLIGENT ANALYSIS STRATEGY:
+6. **Never read these files** (waste of tokens):
+   - README.md, LICENSE, CONTRIBUTING.md
+   - Test files unless specifically relevant
+   - Generated files, lock files
+   - Individual component files (infer from directory structure)
 
-    ### Phase 1: Context-Driven Inference (No Tools)
-    1. **Analyze provided package.json** for immediate architectural insights
-    2. **Interpret root structure** to understand project organization
-    3. **Make educated framework predictions** based on dependencies
-    4. **Identify likely patterns** from standard React/Next.js conventions
+ANALYSIS APPROACH:
+1. **Phase 1 - Context Analysis (NO TOOLS):** Extract everything possible from package.json, repo tree, and root contents. Identify the stack, patterns, and structure from what you already have. This phase should answer 70-80% of your questions.
 
-    ### Phase 2: Strategic Tool Usage (Minimal & Targeted)
-    **Only use tools for:**
-    - **Critical missing information** that affects architectural decisions
-    - **Ambiguous technology choices** requiring code inspection
-    - **Custom implementations** not evident from dependencies
-    - **Complex integrations** needing specific configuration analysis
+2. **Phase 2 - Targeted Tool Usage (MAX 5-8 calls):** Only use tools for critical unknowns that directly impact the architecture diagram. Examples of valid reads:
+   - prisma/schema.prisma (to understand data models)
+   - next.config.js (to understand custom configurations)
+   - A key API route to understand patterns
 
-    ### Phase 3: Comprehensive Architecture Synthesis
-    **Deliver detailed analysis covering:**
+3. **Phase 3 - Synthesis:** Combine findings into a cohesive architectural analysis.
 
-    **FRONTEND ARCHITECTURE:**
-    - Component hierarchy and organization patterns
-    - State management implementation details
-    - Routing and navigation structure
-    - UI/UX framework integration
-    - Performance optimization strategies
+WHAT TO ANALYZE:
 
-    **BACKEND/API DESIGN:**
-    - API endpoint organization and patterns
-    - Authentication and authorization flow
-    - Database schema and relationship patterns
-    - External service integration architecture
-    - Server-side rendering implementations
+**Core Architecture:**
+- Is this App Router (app/) or Pages Router (pages/)?
+- What's the component organization strategy?
+- How is state managed (Context, Zustand, Redux, etc.)?
+- What styling approach is used?
 
-    **DATA FLOW & INTEGRATIONS:**
-    - Client-server communication patterns
-    - Database connection and query strategies
-    - Third-party service integrations
-    - Real-time data handling approaches
-    - Caching and optimization layers
+**Backend & Data Layer:**
+- API routes structure and patterns
+- Database setup (Prisma, Drizzle, direct clients)
+- Authentication system (NextAuth, Clerk, Supabase, custom)
+- External service integrations
 
-    **DEPLOYMENT & SCALABILITY:**
-    - Production deployment configuration
-    - Environment variable management
-    - Performance monitoring setup
-    - Scalability considerations and patterns
+**Infrastructure:**
+- Third-party services (payment, email, storage, etc.)
+- Real-time features if any
+- Background jobs or queues
+- Caching strategies
 
-    ANALYSIS OUTPUT REQUIREMENTS:
+OUTPUT FORMAT - Your analysis MUST include these sections:
 
-    Provide a comprehensive architectural analysis structured as:
+1. **EXECUTIVE SUMMARY** (2-3 sentences describing what this app does and its core architecture)
 
-    1. **Executive Summary** (2-3 sentences)
-    2. **Technology Stack Identification** (definitive list)
-    3. **Architectural Patterns** (specific implementations found)
-    4. **Component Relationships** (data flow and dependencies)
-    5. **External Integrations** (APIs, databases, services)
-    6. **Performance & Scalability Considerations**
-    7. **Security Implementation Details**
-    8. **Development & Deployment Workflow**
+2. **TECH STACK** (List every technology with its purpose)
+   - Frontend: [frameworks, UI libraries, styling]
+   - Backend: [API patterns, server framework]
+   - Database: [DB type, ORM]
+   - Auth: [authentication solution]
+   - Infrastructure: [hosting, services]
 
-    **Quality Standards:**
-    - Be specific and technical, avoid generic descriptions
-    - Provide concrete evidence for architectural decisions
-    - Highlight unique or custom implementations
-    - Note potential architectural improvements or concerns
-    - Focus on actionable insights for diagram generation
+3. **ARCHITECTURE OVERVIEW** (How the system is organized)
+   - Directory structure philosophy
+   - Component organization pattern
+   - Data flow patterns
 
-    Remember: Tool efficiency is paramount. Make intelligent inferences from available data before resorting to repository exploration.`],
+4. **CORE COMPONENTS** (List each major component/module)
+   For each: Name, Purpose, Dependencies, Communication patterns
 
-      ["human", `Analyze the repository {repoFullName} and reverse engineer its complete software architecture.
+5. **DATA FLOW** (How data moves through the system)
+   - Client to server patterns
+   - Database interactions
+   - External API integrations
 
-    **Primary Objectives:**
-    1. **Architectural Pattern Recognition** - Identify specific React/Next.js implementation patterns
-    2. **Technology Stack Mapping** - Map exact technologies and their integration points
-    3. **Component Relationship Analysis** - Understand data flow and component interactions
-    4. **Integration Architecture** - Identify external services, APIs, and data sources
-    5. **Performance & Security Patterns** - Analyze optimization and security implementations
+6. **EXTERNAL INTEGRATIONS** (Every third-party service)
+   - Service name, purpose, how it's integrated
 
-    **Analysis Approach:**
-    - Start with the provided package.json and root structure analysis
-    - Use your React/Next.js expertise to infer architectural patterns
-    - Make strategic tool calls only for critical missing information
-    - Focus on architectural decisions that impact diagram generation
-    - Provide specific, technical insights rather than generic observations
+7. **KEY ARCHITECTURAL DECISIONS** (Notable patterns or choices)
 
-    **Expected Output:**
-    A comprehensive architectural analysis that enables accurate diagram generation, including:
-    - Exact technology stack with versions and integration patterns
-    - Specific component architecture and organization strategy
-    - Detailed data flow and state management implementation
-    - Complete external service integration mapping
-    - Performance optimization and security implementation details
+CRITICAL CONSTRAINTS:
+- Keep your entire analysis under 10000 characters
+- Be specific and technical - no generic descriptions
+- Every claim should be backed by evidence from the codebase
+- Focus on what's needed to create accurate architecture diagrams
+- Identify all components that would appear in a system architecture diagram`],
 
-    **Constraint:** Minimize tool usage - leverage your expertise and provided context first, then make targeted tool calls only for essential missing information.
+      ["human", `Analyze {repoFullName} and produce a comprehensive architectural analysis.
 
-    Begin your strategic analysis now.`],
+Your analysis will be used to generate a detailed architecture diagram showing:
+- All major components and microservices
+- How they communicate with each other
+- External service integrations
+- Data flow patterns
+
+REMEMBER:
+- The repo tree is already provided - DO NOT fetch it again
+- Use tools ONLY when absolutely necessary (max 5-8 file reads)
+- Infer from package.json and directory structure first
+- Be efficient with tokens - every tool call has a cost
+
+Start your analysis now.`],
 
       new MessagesPlaceholder("agent_scratchpad")
     ]);
-
-
-
-    
     
     // Create agent executor
     const agent = await createToolCallingAgent({
@@ -718,7 +675,7 @@ export async function generateArchitecture(projectId: string){
         agent,
         tools: repoAnalysisTools,
         verbose: true,
-        maxIterations: 40, // Allow thorough analysis
+        maxIterations: 15, // Efficient analysis with limited tool calls
     });
     
     try {
@@ -731,15 +688,15 @@ export async function generateArchitecture(projectId: string){
             packageJson: stringifiedPackageJson,
             repoContent: stringifiedRepoContent,
             defaultBranch: defaultBranch || 'main',
-            githubAccessToken: resolvedAccessToken
+            githubAccessToken: resolvedAccessToken,
+            repoTree: repoTree ? JSON.stringify(repoTree) : 'Not provided'
         });
-        
-        
         
         const detailedAnalysis = await db.project.update({
             where: { id: projectId },
             data: { detailedAnalysis: JSON.stringify(analysisResult.output) }
         });
+
         
             // Create the final architecture synthesis prompt
         // Enhanced Architecture Generation Prompt - Dynamic & Analysis-Driven
