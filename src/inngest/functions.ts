@@ -103,27 +103,21 @@ export const generateReverseArchitectureFunction = inngest.createFunction(
         throw new Error(`Architecture generation failed: ${architectureResult.error}`);
       }
 
-      const { architecture: architectureJSON, detailedAnalysis } = architectureResult;
+      const { architecture, detailedAnalysis } = architectureResult;
 
-      // Step 3: Clean and parse the architecture result
-      const parsedArchitecture = await step.run("parse-architecture", async () => {
-        let cleanedResult = architectureJSON;
-        if (typeof architectureJSON === 'string') {
-          cleanedResult = architectureJSON
-            .replace(/^```json\s*/i, '')
-            .replace(/^```\s*/, '')
-            .replace(/\s*```\s*$/, '')
-            .trim();
-        }
-
-        const parsed = typeof cleanedResult === 'string'
-          ? JSON.parse(cleanedResult)
-          : cleanedResult;
-
-        // Add detailed analysis to the parsed architecture
-        parsed.detailedAnalysis = detailedAnalysis;
-
-        return parsed
+      // Step 3: Attach detailed analysis to the structured architecture output
+      // Architecture is already a structured object from withStructuredOutput
+      const parsedArchitecture = await step.run("prepare-architecture", async () => {
+        const arch = architecture as {
+          components: any[];
+          connectionLabels: Record<string, string>;
+          architectureRationale: string;
+          componentPositions?: Record<string, any>;
+        };
+        return {
+          ...arch,
+          detailedAnalysis
+        };
       });
 
       // Step 4: Generate initial message from architecture rationale

@@ -19,7 +19,118 @@ const llm = new ChatOpenAI({
   const llm2 = new ChatOpenAI({
     openAIApiKey: openaiKey,
     model: "gpt-4o-2024-08-06"
-  }) 
+  })
+
+// JSON Schema for structured architecture output
+const architectureOutputSchema = {
+  type: "object",
+  description: "Architecture diagram output with components, connections, and rationale",
+  properties: {
+    components: {
+      type: "array",
+      description: "Array of architecture components representing runtime business capabilities",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Unique descriptive business-focused identifier" },
+          title: { type: "string", description: "Business-focused component name" },
+          icon: { type: "string", description: "Appropriate lucide icon name" },
+          color: { type: "string", description: "Tailwind gradient class e.g. bg-gradient-to-r from-[color1] to-[color2]" },
+          borderColor: { type: "string", description: "Tailwind border color class" },
+          technologies: {
+            type: "object",
+            properties: {
+              primary: { type: "string", description: "Main technology stack" },
+              framework: { type: "string", description: "Key supporting framework" },
+              additional: { type: "string", description: "Notable libraries or tools" }
+            },
+            required: ["primary", "framework", "additional"]
+          },
+          connections: {
+            type: "array",
+            items: { type: "string" },
+            description: "Array of connected component IDs"
+          },
+          position: {
+            type: "object",
+            properties: {
+              x: { type: "number", description: "X coordinate position" },
+              y: { type: "number", description: "Y coordinate position" }
+            },
+            required: ["x", "y"]
+          },
+          dataFlow: {
+            type: "object",
+            properties: {
+              sends: {
+                type: "array",
+                items: { type: "string" },
+                description: "Business data types sent by this component"
+              },
+              receives: {
+                type: "array",
+                items: { type: "string" },
+                description: "Business data types received by this component"
+              }
+            },
+            required: ["sends", "receives"]
+          },
+          purpose: { type: "string", description: "Clear business function + technical approach description" },
+          codeOwnership: {
+            type: "object",
+            properties: {
+              primaryImplementation: {
+                type: "object",
+                description: "REQUIRED - core directories and files that ARE the component",
+                properties: {
+                  directories: { type: "array", items: { type: "string" } },
+                  files: { type: "array", items: { type: "string" } },
+                  confidence: { type: "number", minimum: 0.8, maximum: 1.0 },
+                  rationale: { type: "string", description: "Brief explanation of why these paths are the core implementation" }
+                },
+                required: ["directories", "files", "confidence", "rationale"]
+              },
+              supportingRelated: {
+                type: "object",
+                description: "OPTIONAL - files that directly support this component",
+                properties: {
+                  directories: { type: "array", items: { type: "string" } },
+                  files: { type: "array", items: { type: "string" } },
+                  confidence: { type: "number", minimum: 0.5, maximum: 0.79 },
+                  rationale: { type: "string" }
+                },
+                required: ["directories", "files", "confidence", "rationale"]
+              },
+              sharedDependencies: {
+                type: "object",
+                description: "OPTIONAL - shared infrastructure and utilities",
+                properties: {
+                  directories: { type: "array", items: { type: "string" } },
+                  files: { type: "array", items: { type: "string" } },
+                  confidence: { type: "number", minimum: 0.2, maximum: 0.49 },
+                  rationale: { type: "string" }
+                },
+                required: ["directories", "files", "confidence", "rationale"]
+              }
+            },
+            required: ["primaryImplementation"]
+          }
+        },
+        required: ["id", "title", "icon", "color", "borderColor", "technologies", "connections", "position", "dataFlow", "purpose", "codeOwnership"]
+      }
+    },
+    connectionLabels: {
+      type: "object",
+      description: "Business-focused connection descriptions keyed by 'component1-to-component2' format",
+      additionalProperties: { type: "string" }
+    },
+    architectureRationale: {
+      type: "string",
+      description: "6-paragraph analysis focusing on current runtime architecture and business value delivery"
+    }
+  },
+  required: ["components", "connectionLabels", "architectureRationale"]
+} as const; 
 
 
 export async function checkInfo(repositoryId: string, repoFullName: string){
@@ -509,7 +620,8 @@ export async function generateArchitecture(projectId: string, repoTree?: any){
                 : JSON.stringify(project.detailedAnalysis);
 
             const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt2);
-            const finalChain = finalPrompt.pipe(llm).pipe(new StringOutputParser());
+            const structuredLlm = llm.withStructuredOutput(architectureOutputSchema);
+            const finalChain = finalPrompt.pipe(structuredLlm);
             const architecture = await finalChain.invoke({
                 analysis_findings: existingAnalysisString,
                 name: name,
@@ -701,15 +813,16 @@ Start your analysis now.`],
         
             // Create the final architecture synthesis prompt
         // Enhanced Architecture Generation Prompt - Dynamic & Analysis-Driven
-        const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt2);       // Generate final architecture based on analysis
-        const finalChain = finalPrompt.pipe(llm).pipe(new StringOutputParser());
+        const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt2);
+        const structuredLlm = llm.withStructuredOutput(architectureOutputSchema);
+        const finalChain = finalPrompt.pipe(structuredLlm);
         const architecture = await finalChain.invoke({
             analysis_findings: JSON.stringify(analysisResult.output),
             name: name,
             framework: framework,
             repoTree: repoTree ? JSON.stringify(repoTree) : 'Not provided'
         });
-        
+
         return {architecture: architecture, detailedAnalysis: JSON.stringify(analysisResult.output)};
 
     } catch (error) {
