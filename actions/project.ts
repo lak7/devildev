@@ -89,7 +89,13 @@ export async function saveProjectArchitecture(
     connectionLabels: any,
     componentPositions?: any,
     projectStructure?: any,
-    initialMessage?: string
+    initialMessage?: string,
+    commitInfo?: {
+        commitHash?: string;
+        branchName?: string;
+        commitMessage?: string;
+        beforeCommitHash?: string;
+    }
 ) {
     ;
 
@@ -115,7 +121,11 @@ export async function saveProjectArchitecture(
                 components,
                 connectionLabels,
                 componentPositions: componentPositions || {},
-                projectStructure: projectStructure || null
+                projectStructure: projectStructure || null,
+                ...(commitInfo?.commitHash && { commitHash: commitInfo.commitHash }),
+                ...(commitInfo?.branchName && { branchName: commitInfo.branchName }),
+                ...(commitInfo?.commitMessage && { commitMessage: commitInfo.commitMessage }),
+                ...(commitInfo?.beforeCommitHash && { beforeCommitHash: commitInfo.beforeCommitHash }),
             }
         });
 

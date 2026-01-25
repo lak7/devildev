@@ -1034,8 +1034,9 @@ export async function regeneratePushedArchitecture(args: {
     changes: number;
   }>;
   latestArchitecture: any;
+  repoTree: any;
 }) {
-  const { projectId, repoFullName, beforeCommit, afterCommit, exactFilesChanges, latestArchitecture } = args;
+  const { projectId, repoFullName, beforeCommit, afterCommit, exactFilesChanges, latestArchitecture, repoTree } = args;
 
   try {
     // Fetch project details
@@ -1067,7 +1068,14 @@ export async function regeneratePushedArchitecture(args: {
 
     // Create the prompt for architecture regeneration
     const prompt = ChatPromptTemplate.fromMessages([
-      ["system", `You are an expert software architect tasked with updating a project's architecture diagram based on recent code changes.
+      ["system", `You are Martin Fowler meets Linus Torvalds - a legendary software architect with decades of experience designing systems that stand the test of time. You are tasked with updating a project's architecture diagram based on recent code changes while maintaining code traceability.
+
+PROJECT CONTEXT:
+- Name: {projectName}
+- Framework: {framework}
+
+REPOSITORY TREE (for code ownership mapping):
+{repoTree}
 
 CURRENT ARCHITECTURE:
 {latestArchitecture}
@@ -1076,30 +1084,141 @@ RECENT CHANGES:
 The following files were changed in commits {beforeCommit}...{afterCommit}:
 {exactFilesChanges}
 
-YOUR TASK:
-1. Analyze the file changes to understand what was modified
-2. Use the getFilePatch tool to examine specific file changes if you need more detail
-3. Update the architecture to reflect these changes
-4. Maintain the same JSON structure as the current architecture
+YOUR MISSION:
+Analyze the code changes and update the architecture to accurately reflect the current state of the codebase. Every component must maintain accurate code ownership mappings to enable developers to navigate directly to relevant code.
 
-AVAILABLE TOOLS:
-- getFilePatch: Get the detailed patch/diff for any changed file
+## ANALYSIS APPROACH
+
+1. **Understand the Changes**: Review which files were modified, added, or removed
+2. **Assess Architectural Impact**: Determine if changes affect:
+   - Existing component purposes or technologies
+   - Connections between components
+   - Need for new components (if significant new functionality was added)
+   - Removal of components (if functionality was removed)
+   - Code ownership mappings (if file locations changed)
+3. **Use Tools Sparingly**: Only use getFilePatch for files that are ambiguous or critical to understand
+4. **Preserve Stability**: Don't make changes unless the code changes warrant them
+
+## AVAILABLE TOOLS
+- **getFilePatch**: Get the detailed patch/diff for any changed file
   Parameters: owner="{owner}", repo="{repo}", beforeCommit="{beforeCommit}", afterCommit="{afterCommit}", filename="<filename>", accessToken="<token>"
-- getFileContent: Get the full current content of any file (use sparingly)
+- **getFileContent**: Get the full current content of any file (use sparingly, only when patch is insufficient)
 
-OUTPUT FORMAT:
-Return ONLY a valid JSON object with these fields:
-- architectureRationale: string (updated explanation of the architecture)
-- components: array (updated list of components)
-- connectionLabels: object (updated connection labels)
-- componentPositions: object (preserve existing positions unless components changed significantly)
+## COMPONENT UPDATE RULES
 
-IMPORTANT:
-- Keep component IDs consistent where possible
-- Only add/remove/modify components if the changes warrant it
-- Preserve componentPositions from the current architecture unless components are added/removed
-- Be concise but accurate in your rationale`],
-      ["human", `Analyze the changes and update the architecture. Return ONLY the JSON object.`],
+**Rule 1: Maintain Component ID Consistency**
+- Keep existing component IDs unchanged where possible
+- Only create new IDs for genuinely new components
+- Only remove components if their functionality was completely removed
+
+**Rule 2: Update Code Ownership When Files Change**
+- If files were moved, update the paths in codeOwnership
+- If new files were added to a component's domain, add them to appropriate ownership level
+- If files were removed, remove them from codeOwnership
+- Ensure all paths in codeOwnership EXACTLY MATCH the current repository tree
+
+**Rule 3: Proportional Response**
+- Minor changes (bug fixes, small refactors) → Update rationale only if relevant
+- Feature additions → Update component purposes, technologies, or connections as needed
+- Major restructuring → Update component structure, connections, and ownership mappings
+- New service/integration added → Add new component if it represents a distinct business capability
+
+
+## CODE OWNERSHIP MAPPING REQUIREMENTS
+
+For each component, ensure codeOwnership accurately reflects the CURRENT state after the changes:
+
+### Primary Implementation (REQUIRED - confidence: 0.8-1.0)
+- Core directories and files that ARE the component
+- These files contain the main business logic for this architectural concern
+- **This field MUST always be present**
+
+### Supporting/Related (OPTIONAL - confidence: 0.5-0.79)
+- Files that directly support this component but aren't the core implementation
+- Configuration files, context providers, hooks specific to this component
+- **Only include if such supporting code exists**
+
+### Shared Dependencies (OPTIONAL - confidence: 0.2-0.49)
+- Infrastructure and utilities shared across multiple components
+- Database clients, common utilities, shared types
+- **Only include if the component uses shared infrastructure**
+
+### Path Accuracy Rules:
+- **CRITICAL**: Paths MUST EXACTLY MATCH the repository tree provided
+- Use relative paths from root (e.g., "app/api/auth" not just "auth")
+- Verify every path against the repoTree before including it
+- Remove any paths that no longer exist after the changes
+
+## OUTPUT FORMAT
+
+Return ONLY a valid JSON object with this structure:
+{{
+  "architectureRationale": "Updated 6-paragraph analysis reflecting current architecture state and any changes. Paragraph 1: Business & architectural overview. Paragraph 2: Core technology decisions. Paragraph 3: Data flow & user experience. Paragraph 4: External integrations. Paragraph 5: Performance & scalability. Paragraph 6: Architecture assessment.",
+  "components": [
+    {{
+      "id": "existing-or-new-id",
+      "title": "Business-Focused Component Name",
+      "icon": "appropriate-lucide-icon",
+      "color": "bg-gradient-to-r from-[color1] to-[color2]",
+      "borderColor": "border-[matching-color]",
+      "technologies": {{
+        "primary": "Main technology stack",
+        "framework": "Key supporting framework",
+        "additional": "Notable libraries or tools"
+      }},
+      "connections": ["connected-component-ids"],
+      "position": {{ "x": 100, "y": 200 }},
+      "dataFlow": {{
+        "sends": ["business data types sent"],
+        "receives": ["business data types received"]
+      }},
+      "purpose": "Clear business function + technical approach description",
+      "codeOwnership": {{
+        "primaryImplementation": {{
+          "directories": ["dir1", "dir2"],
+          "files": ["file1.ts", "file2.ts"],
+          "confidence": 0.9,
+          "rationale": "Brief explanation of why these paths are the core implementation"
+        }},
+        "supportingRelated": {{
+          "directories": ["support-dir1"],
+          "files": ["helper1.ts"],
+          "confidence": 0.7,
+          "rationale": "Brief explanation of how these paths support this component"
+        }},
+        "sharedDependencies": {{
+          "directories": ["lib"],
+          "files": ["db.ts"],
+          "confidence": 0.4,
+          "rationale": "Brief explanation of shared infrastructure used"
+        }}
+      }}
+    }}
+  ],
+  "connectionLabels": {{
+    "component1-to-component2": "Business-focused connection description"
+  }}
+}}
+
+## QUALITY CHECKLIST
+
+Before finalizing, verify:
+- [ ] All existing component IDs are preserved where components still exist
+- [ ] Each component has codeOwnership with at minimum a primaryImplementation field
+- [ ] All codeOwnership paths exist in the current repository tree
+- [ ] Changes are proportional to the actual code modifications
+- [ ] Component purposes reflect any functional changes
+- [ ] Connections are updated if new integrations were added/removed
+- [ ] The architectureRationale accurately describes the current state`],
+      ["human", `Analyze the changes from commits {beforeCommit}...{afterCommit} and update the architecture accordingly.
+
+Remember:
+- Use tools only when necessary to understand ambiguous changes
+- Preserve component IDs and positions where possible
+- Update codeOwnership paths to reflect current file locations
+- Be proportional - small changes don't require major architecture updates
+
+Return ONLY the JSON object with the updated architecture.`],
       new MessagesPlaceholder("agent_scratchpad")
     ]);
 
@@ -1121,6 +1240,9 @@ IMPORTANT:
     const result = await agentExecutor.invoke({
       latestArchitecture: JSON.stringify(latestArchitecture, null, 2),
       exactFilesChanges: JSON.stringify(exactFilesChanges, null, 2),
+      repoTree: repoTree ? JSON.stringify(repoTree, null, 2) : 'Not provided',
+      projectName: project.name,
+      framework: project.framework || 'Unknown',
       owner,
       repo,
       beforeCommit,

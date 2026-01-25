@@ -141,6 +141,7 @@ export async function POST(req: NextRequest) {
           const filesAdded = payload.head_commit.added;
           const filesRemoved = payload.head_commit.removed;
           const filesModified = payload.head_commit.modified;
+          const commitMessage = payload.head_commit.message;
           const inngestDataToSend = {
             repoFullName: repoFullName,
             beforeCommit: beforeCommit,
@@ -148,6 +149,8 @@ export async function POST(req: NextRequest) {
             filesAdded: filesAdded,
             filesRemoved: filesRemoved,
             filesModified: filesModified,
+            commitMessage: commitMessage,
+            branchName: pushedBranch,
           };
           await inngest.send({
             name: "reverse-architecture/regenerate",

@@ -183,7 +183,7 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
   },
   { event: "reverse-architecture/regenerate" },
   async ({ event, step }) => {
-    const { repoFullName, beforeCommit, afterCommit, filesAdded, filesRemoved, filesModified } = event.data;
+    const { repoFullName, beforeCommit, afterCommit, filesAdded, filesRemoved, filesModified, commitMessage, branchName } = event.data;
 
     try {
       // Step 1: Find project and verify it has ProjectArchitecture, get installation token, and fetch commit comparison
@@ -278,7 +278,19 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
         return { validated: true };
       });
 
-      // Step 6: Fetch latest project architecture
+      // Step 6: Fetch repository tree structure up to 4 levels deep
+      const repoTreeResult = await step.run("fetch-repo-tree", async () => {
+        return await getRepoTree(projectId);
+      });
+
+      // Check for errors in repo tree fetch
+      if ('error' in repoTreeResult) {
+        throw new Error(`Repo tree fetch failed: ${repoTreeResult.error}`);
+      }
+
+      const repoTree = repoTreeResult.tree;
+
+      // Step 7: Fetch latest project architecture
       const latestArchitecture = await step.run("fetch-latest-architecture", async () => {
         const project = await db.project.findUnique({
           where: { id: projectId },
@@ -308,15 +320,16 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
         return project.ProjectArchitecture[0];
       });
 
-      // Step 7: Regenerate architecture based on pushed changes
+      // Step 8: Regenerate architecture based on pushed changes
       const regeneratedArchitecture = await step.run("regenerate-pushed-architecture", async () => {
         const result = await regeneratePushedArchitecture({
           projectId,
           repoFullName,
           beforeCommit,
-          afterCommit,
+          afterCommit,  
           exactFilesChanges,
           latestArchitecture,
+          repoTree,
         });
 
         if (result.error) {
@@ -326,7 +339,7 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
         return result.architecture;
       });
 
-      // Step 8: Save new architecture version
+      // Step 9: Save new architecture version
       const savedArchitecture = await step.run("save-new-architecture-version", async () => {
         const saveResult = await saveProjectArchitecture(
           projectId,
@@ -334,7 +347,14 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
           regeneratedArchitecture.components,
           regeneratedArchitecture.connectionLabels || {},
           regeneratedArchitecture.componentPositions || latestArchitecture.componentPositions || {},
-          null
+          repoTree,
+          undefined, // initialMessage - not needed for regeneration
+          {
+            commitHash: afterCommit,
+            branchName: branchName,
+            commitMessage: commitMessage,
+            beforeCommitHash: beforeCommit,
+          }
         );
 
         if (saveResult.error || !saveResult.success) {
