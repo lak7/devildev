@@ -326,7 +326,7 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
           projectId,
           repoFullName,
           beforeCommit,
-          afterCommit,  
+          afterCommit,
           exactFilesChanges,
           latestArchitecture,
           repoTree,
@@ -339,14 +339,25 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
         return result.architecture;
       });
 
-      // Step 9: Save new architecture version
+      // Step 9: Prepare architecture with proper typing
+      const parsedArchitecture = await step.run("prepare-architecture", async () => {
+        const arch = regeneratedArchitecture as {
+          components: any[];
+          connectionLabels: Record<string, string>;
+          architectureRationale: string;
+        };
+        return arch;
+      });
+
+      // Step 10: Save new architecture version
       const savedArchitecture = await step.run("save-new-architecture-version", async () => {
+
         const saveResult = await saveProjectArchitecture(
           projectId,
-          regeneratedArchitecture.architectureRationale,
-          regeneratedArchitecture.components,
-          regeneratedArchitecture.connectionLabels || {},
-          regeneratedArchitecture.componentPositions || latestArchitecture.componentPositions || {},
+          parsedArchitecture.architectureRationale,
+          parsedArchitecture.components,
+          parsedArchitecture.connectionLabels || {},
+          {}, // todo: remove positions as that is on frontend
           repoTree,
           undefined, // initialMessage - not needed for regeneration
           {
@@ -370,7 +381,7 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
         totalFilesChanged,
         totalLinesChanged,
         latestArchitecture,
-        regeneratedArchitecture,
+        parsedArchitecture,
         savedArchitecture,
       };
     } catch (error) {
