@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
-import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check, FolderKanban, ChevronDown } from 'lucide-react';
+import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check, FolderKanban, ChevronDown, ChevronRight, Folder, FolderOpen, File } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
 import { SignOutButton, useUser } from '@clerk/nextjs';
@@ -43,6 +43,7 @@ interface Project {
 interface ProjectArchitectureVersion {
   architecture: any;
   componentPositions: Record<string, { x: number; y: number }>;
+  projectStructure?: any;
   metadata: {
     id: string;
     createdAt: Date;
@@ -71,6 +72,9 @@ const ProjectPage = () => {
   const [project, setProject] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'architecture' | 'docs'>('architecture');
+  const [leftActiveTab, setLeftActiveTab] = useState<'chat' | 'structure'>('chat');
+  const [repoTree, setRepoTree] = useState<any>(null);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [inputMessage, setInputMessage] = useState('');
   const [textareaHeight, setTextareaHeight] = useState('60px');
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
@@ -185,6 +189,110 @@ const ProjectPage = () => {
       }
     }
     return result;
+  };
+
+  // Toggle folder expansion in tree view
+  const toggleFolder = (path: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(path)) {
+        newSet.delete(path);
+      } else {
+        newSet.add(path);
+      }
+      return newSet;
+    });
+  };
+
+  // Get file icon based on extension
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const iconClass = "h-4 w-4 flex-shrink-0";
+
+    switch (ext) {
+      case 'ts':
+      case 'tsx':
+        return <span className={`${iconClass} text-blue-400`}>TS</span>;
+      case 'js':
+      case 'jsx':
+        return <span className={`${iconClass} text-yellow-400`}>JS</span>;
+      case 'json':
+        return <span className={`${iconClass} text-yellow-600`}>{'{}'}</span>;
+      case 'md':
+        return <span className={`${iconClass} text-gray-400`}>M↓</span>;
+      case 'css':
+      case 'scss':
+        return <span className={`${iconClass} text-pink-400`}>#</span>;
+      case 'html':
+        return <span className={`${iconClass} text-orange-400`}>{'<>'}</span>;
+      case 'prisma':
+        return <span className={`${iconClass} text-teal-400`}>◆</span>;
+      case 'env':
+        return <span className={`${iconClass} text-green-400`}>⚙</span>;
+      case 'yml':
+      case 'yaml':
+        return <span className={`${iconClass} text-red-400`}>Y</span>;
+      default:
+        return <File className={`${iconClass} text-gray-400`} />;
+    }
+  };
+
+  // Render tree node recursively
+  const renderTreeNode = (node: any, path: string = '', depth: number = 0): React.ReactNode => {
+    if (!node) return null;
+
+    const items: React.ReactNode[] = [];
+
+    // Render directories first
+    if (node.d) {
+      const sortedDirs = Object.keys(node.d).sort((a, b) => a.localeCompare(b));
+      for (const dirName of sortedDirs) {
+        const dirPath = path ? `${path}/${dirName}` : dirName;
+        const isExpanded = expandedFolders.has(dirPath);
+
+        items.push(
+          <div key={dirPath}>
+            <button
+              onClick={() => toggleFolder(dirPath)}
+              className="flex items-center w-full py-1 px-2 hover:bg-gray-800/50 rounded text-left group transition-colors"
+              style={{ paddingLeft: `${depth * 16 + 8}px` }}
+            >
+              <ChevronRight
+                className={`h-3 w-3 text-gray-500 mr-1 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+              />
+              {isExpanded ? (
+                <FolderOpen className="h-4 w-4 text-yellow-500 mr-2 flex-shrink-0" />
+              ) : (
+                <Folder className="h-4 w-4 text-yellow-600 mr-2 flex-shrink-0" />
+              )}
+              <span className="text-sm text-gray-300 truncate group-hover:text-white">{dirName}</span>
+            </button>
+            {isExpanded && renderTreeNode(node.d[dirName], dirPath, depth + 1)}
+          </div>
+        );
+      }
+    }
+
+    // Then render files
+    if (node.f) {
+      const sortedFiles = [...node.f].sort((a: string, b: string) => a.localeCompare(b));
+      for (const fileName of sortedFiles) {
+        const filePath = path ? `${path}/${fileName}` : fileName;
+        items.push(
+          <div
+            key={filePath}
+            className="flex items-center py-1 px-2 hover:bg-gray-800/50 rounded cursor-default group transition-colors"
+            style={{ paddingLeft: `${depth * 16 + 24}px` }}
+            title={filePath}
+          >
+            {getFileIcon(fileName)}
+            <span className="text-sm text-gray-400 ml-2 truncate group-hover:text-gray-200">{fileName}</span>
+          </div>
+        );
+      }
+    }
+
+    return <>{items}</>;
   };
 
   // Handle version change
@@ -537,20 +645,25 @@ const ProjectPage = () => {
                       detailedAnalysis: arch.detailedAnalysis,
                     },
                     componentPositions: arch.componentPositions || {},
+                    projectStructure: arch.projectStructure || null,
                     metadata: {
                       id: arch.id,
                       createdAt: arch.createdAt,
                       updatedAt: arch.updatedAt,
                     },
                   }));
-                  
+
                   setAllArchitectures(architectures);
-                  
+
                   // Set the latest architecture as default (last in array after reverse)
                   const latestIndex = architectures.length - 1;
                   setSelectedVersionIndex(latestIndex);
                   setArchitectureData(architectures[latestIndex].architecture);
                   setCustomPositions(architectures[latestIndex].componentPositions || {});
+                  // Set repo tree from latest architecture
+                  if (architectures[latestIndex].projectStructure) {
+                    setRepoTree(architectures[latestIndex].projectStructure);
+                  }
                   setIsArchitectureGenerating(false);
             
               }else{
@@ -1411,22 +1524,61 @@ const ProjectPage = () => {
       ) : (
       <div ref={containerRef} className="flex-1 flex gap-1 p-4 min-h-0 relative pb-0 md:pb-4 h-full">
         {/* Left Chat Panel - Resizable */}
-        <div 
+        <div
           className="bg-black border border-gray-800 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
           style={{ width: `${leftPanelWidth}%` }}
         >
           <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-800">
             <div className="flex space-x-1">
               <button
-                className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
+                onClick={() => setLeftActiveTab('chat')}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                  leftActiveTab === 'chat'
+                    ? 'text-white bg-gray-700/50'
+                    : 'text-gray-400 hover:text-white'
+                }`}
               >
                 Project Chat
               </button>
+              <button
+                onClick={() => setLeftActiveTab('structure')}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                  leftActiveTab === 'structure'
+                    ? 'text-white bg-gray-700/50'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Project Structure
+              </button>
             </div>
           </div>
-          
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+
+          {/* Project Structure Tab */}
+          <div className={`flex-1 overflow-hidden min-h-0 ${leftActiveTab === 'structure' ? 'block' : 'hidden'}`}>
+            <div className="h-full overflow-y-auto p-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+              {repoTree ? (
+                <div className="font-mono text-xs">
+                  {/* Root project name */}
+                  <div className="flex items-center py-1 px-2 mb-1">
+                    <FolderOpen className="h-4 w-4 text-yellow-500 mr-2" />
+                    <span className="text-sm font-medium text-white">{project?.name || 'Project'}</span>
+                  </div>
+                  <div className="border-l border-gray-700/50 ml-3">
+                    {renderTreeNode(repoTree)}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <Folder className="h-12 w-12 mb-3 opacity-50" />
+                  <p className="text-sm">Project structure not available</p>
+                  <p className="text-xs mt-1 text-gray-600">Structure is generated with architecture</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Chat Messages Tab */}
+          <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500 ${leftActiveTab === 'chat' ? 'block' : 'hidden'}`}>
 
 
             {/* Display actual messages from database */}
@@ -1555,40 +1707,42 @@ const ProjectPage = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
-          <div className="p-4 flex-shrink-0">
-            <form onSubmit={handleSubmit} className="relative">
-              <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
-                <textarea
-                  placeholder="Ask about your project..."
-                  value={inputMessage}
-                  onChange={handleTextareaChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit(e);
-                    }
-                  }}
-                  className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
-                  rows={2}
-                  style={{ height: textareaHeight }}
-                  maxLength={5000}
-                  disabled={isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
-                />
-              </div>
-              
-              {/* Button section */}
-              <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
-                <button 
-                  type="submit" 
-                  className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  disabled={!inputMessage.trim() || isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-            </form>
-          </div>
+          {/* Input Area - Only show for chat tab */}
+          {leftActiveTab === 'chat' && (
+            <div className="p-4 flex-shrink-0">
+              <form onSubmit={handleSubmit} className="relative">
+                <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+                  <textarea
+                    placeholder="Ask about your project..."
+                    value={inputMessage}
+                    onChange={handleTextareaChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit(e);
+                      }
+                    }}
+                    className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
+                    rows={2}
+                    style={{ height: textareaHeight }}
+                    maxLength={5000}
+                    disabled={isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
+                  />
+                </div>
+
+                {/* Button section */}
+                <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
+                  <button
+                    type="submit"
+                    className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                    disabled={!inputMessage.trim() || isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
 
         {/* Resize Handle */}
