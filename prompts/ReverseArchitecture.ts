@@ -443,6 +443,15 @@ export const mainGenerateArchitecturePrompt2 = `
 
     **IMPORTANT**: The "primaryImplementation" field is REQUIRED for every component. The "supportingRelated" and "sharedDependencies" fields are OPTIONAL - only include them when relevant supporting code or shared infrastructure actually exists for that component.
 
+    ### ⚠️ CRITICAL: EXACT PATH MATCHING REQUIREMENT ⚠️
+
+    The paths in codeOwnership MUST **EXACTLY MATCH** the paths shown in the provided Repository Tree (repoTree).
+
+    - **DO NOT assume or guess paths** based on common conventions - always verify against the actual repoTree
+    - **If a folder is at root level**, use just its name (e.g., "folderName")
+    - **If a folder is nested**, use the full relative path (e.g., "parent/folderName")
+    - **Cross-check every path** you include against the repoTree before adding it to codeOwnership
+
     ### Primary Implementation (REQUIRED - confidence: 0.8-1.0)
     - Core directories and files that ARE the component
     - These files contain the main business logic for this architectural concern

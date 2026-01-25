@@ -75,6 +75,12 @@ const ProjectPage = () => {
   const [leftActiveTab, setLeftActiveTab] = useState<'chat' | 'structure'>('chat');
   const [repoTree, setRepoTree] = useState<any>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [selectedComponentOwnership, setSelectedComponentOwnership] = useState<{
+    primaryImplementation?: { directories: string[]; files: string[] };
+    supportingRelated?: { directories: string[]; files: string[] };
+    sharedDependencies?: { directories: string[]; files: string[] };
+  } | null>(null);
+  const [selectedComponentTitle, setSelectedComponentTitle] = useState<string | null>(null);
   const [inputMessage, setInputMessage] = useState('');
   const [textareaHeight, setTextareaHeight] = useState('60px');
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
@@ -243,29 +249,64 @@ const ProjectPage = () => {
 
     const items: React.ReactNode[] = [];
 
+    // Helper to get highlight styles
+    const getHighlightStyles = (itemPath: string) => {
+      const highlight = getPathHighlightColor(itemPath);
+      switch (highlight) {
+        case 'primary':
+          return {
+            bg: 'bg-green-500/20 border-l-2 border-green-500',
+            text: 'text-green-300',
+            icon: 'text-green-400'
+          };
+        case 'supporting':
+          return {
+            bg: 'bg-blue-500/20 border-l-2 border-blue-500',
+            text: 'text-blue-300',
+            icon: 'text-blue-400'
+          };
+        case 'shared':
+          return {
+            bg: 'bg-yellow-500/20 border-l-2 border-yellow-500',
+            text: 'text-yellow-300',
+            icon: 'text-yellow-400'
+          };
+        default:
+          return { bg: '', text: '', icon: '' };
+      }
+    };
+
     // Render directories first
     if (node.d) {
       const sortedDirs = Object.keys(node.d).sort((a, b) => a.localeCompare(b));
       for (const dirName of sortedDirs) {
         const dirPath = path ? `${path}/${dirName}` : dirName;
         const isExpanded = expandedFolders.has(dirPath);
+        const highlightStyles = getHighlightStyles(dirPath);
+        const isHighlighted = !!highlightStyles.bg;
 
         items.push(
           <div key={dirPath}>
             <button
               onClick={() => toggleFolder(dirPath)}
-              className="flex items-center w-full py-1 px-2 hover:bg-gray-800/50 rounded text-left group transition-colors"
+              className={`flex items-center w-full py-1 px-2 rounded text-left group transition-colors ${
+                isHighlighted ? highlightStyles.bg : 'hover:bg-gray-800/50'
+              }`}
               style={{ paddingLeft: `${depth * 16 + 8}px` }}
             >
               <ChevronRight
-                className={`h-3 w-3 text-gray-500 mr-1 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                className={`h-3 w-3 mr-1 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} ${
+                  isHighlighted ? highlightStyles.icon : 'text-gray-500'
+                }`}
               />
               {isExpanded ? (
-                <FolderOpen className="h-4 w-4 text-yellow-500 mr-2 flex-shrink-0" />
+                <FolderOpen className={`h-4 w-4 mr-2 flex-shrink-0 ${isHighlighted ? highlightStyles.icon : 'text-yellow-500'}`} />
               ) : (
-                <Folder className="h-4 w-4 text-yellow-600 mr-2 flex-shrink-0" />
+                <Folder className={`h-4 w-4 mr-2 flex-shrink-0 ${isHighlighted ? highlightStyles.icon : 'text-yellow-600'}`} />
               )}
-              <span className="text-sm text-gray-300 truncate group-hover:text-white">{dirName}</span>
+              <span className={`text-sm truncate ${
+                isHighlighted ? highlightStyles.text : 'text-gray-300 group-hover:text-white'
+              }`}>{dirName}</span>
             </button>
             {isExpanded && renderTreeNode(node.d[dirName], dirPath, depth + 1)}
           </div>
@@ -278,15 +319,22 @@ const ProjectPage = () => {
       const sortedFiles = [...node.f].sort((a: string, b: string) => a.localeCompare(b));
       for (const fileName of sortedFiles) {
         const filePath = path ? `${path}/${fileName}` : fileName;
+        const highlightStyles = getHighlightStyles(filePath);
+        const isHighlighted = !!highlightStyles.bg;
+
         items.push(
           <div
             key={filePath}
-            className="flex items-center py-1 px-2 hover:bg-gray-800/50 rounded cursor-default group transition-colors"
+            className={`flex items-center py-1 px-2 rounded cursor-default group transition-colors ${
+              isHighlighted ? highlightStyles.bg : 'hover:bg-gray-800/50'
+            }`}
             style={{ paddingLeft: `${depth * 16 + 24}px` }}
             title={filePath}
           >
             {getFileIcon(fileName)}
-            <span className="text-sm text-gray-400 ml-2 truncate group-hover:text-gray-200">{fileName}</span>
+            <span className={`text-sm ml-2 truncate ${
+              isHighlighted ? highlightStyles.text : 'text-gray-400 group-hover:text-gray-200'
+            }`}>{fileName}</span>
           </div>
         );
       }
@@ -303,6 +351,73 @@ const ProjectPage = () => {
       setCustomPositions(allArchitectures[versionIndex].componentPositions || {});
       setIsVersionDropdownOpen(false);
     }
+  };
+
+  // Handle architecture component selection for code ownership highlighting
+  const handleArchitectureComponentSelect = (component: any, codeOwnership: any) => {
+    if (component && codeOwnership) {
+      setSelectedComponentOwnership(codeOwnership);
+      setSelectedComponentTitle(component.title);
+
+      // Auto-switch to Project Structure tab to show the highlighting
+      setLeftActiveTab('structure');
+
+      // Auto-expand folders that contain highlighted paths
+      const foldersToExpand = new Set<string>();
+
+      const addFoldersForPaths = (paths: string[] | undefined) => {
+        if (!paths) return;
+        paths.forEach(path => {
+          const parts = path.split('/');
+          let currentPath = '';
+          for (let i = 0; i < parts.length - 1; i++) {
+            currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
+            foldersToExpand.add(currentPath);
+          }
+        });
+      };
+
+      // Add folders for all ownership paths
+      addFoldersForPaths(codeOwnership.primaryImplementation?.directories);
+      addFoldersForPaths(codeOwnership.primaryImplementation?.files);
+      addFoldersForPaths(codeOwnership.supportingRelated?.directories);
+      addFoldersForPaths(codeOwnership.supportingRelated?.files);
+      addFoldersForPaths(codeOwnership.sharedDependencies?.directories);
+      addFoldersForPaths(codeOwnership.sharedDependencies?.files);
+
+      setExpandedFolders(prev => new Set([...prev, ...foldersToExpand]));
+    } else {
+      setSelectedComponentOwnership(null);
+      setSelectedComponentTitle(null);
+    }
+  };
+
+  // Get highlight color for a path based on code ownership
+  const getPathHighlightColor = (path: string): 'primary' | 'supporting' | 'shared' | null => {
+    if (!selectedComponentOwnership) return null;
+
+    // Check primary implementation (green)
+    if (selectedComponentOwnership.primaryImplementation) {
+      const { directories, files } = selectedComponentOwnership.primaryImplementation;
+      if (directories?.some(dir => path === dir || path.startsWith(dir + '/'))) return 'primary';
+      if (files?.some(file => path === file)) return 'primary';
+    }
+
+    // Check supporting related (blue)
+    if (selectedComponentOwnership.supportingRelated) {
+      const { directories, files } = selectedComponentOwnership.supportingRelated;
+      if (directories?.some(dir => path === dir || path.startsWith(dir + '/'))) return 'supporting';
+      if (files?.some(file => path === file)) return 'supporting';
+    }
+
+    // Check shared dependencies (yellow)
+    if (selectedComponentOwnership.sharedDependencies) {
+      const { directories, files } = selectedComponentOwnership.sharedDependencies;
+      if (directories?.some(dir => path === dir || path.startsWith(dir + '/'))) return 'shared';
+      if (files?.some(file => path === file)) return 'shared';
+    }
+
+    return null;
   };
 
   // Handler for component position changes
@@ -1500,14 +1615,15 @@ const ProjectPage = () => {
               </div>
               <div className="h-[calc(100vh-4rem)] overflow-hidden">
                 {mobileActivePanel === 'architecture' ? (
-                  <RevArchitecture 
-                    architectureData={architectureData} 
+                  <RevArchitecture
+                    architectureData={architectureData}
                     isFullscreen={true}
                     customPositions={customPositions}
                     onPositionsChange={handlePositionsChange}
+                    onComponentSelect={handleArchitectureComponentSelect}
                   />
                 ) : (
-                  <ProjectContextDocs 
+                  <ProjectContextDocs
                     key={activeChatId || 'no-chat-mobile'}
                     projectId={projectId}
                     projectChatId={activeChatId}
@@ -1554,8 +1670,41 @@ const ProjectPage = () => {
           </div>
 
           {/* Project Structure Tab */}
-          <div className={`flex-1 overflow-hidden min-h-0 ${leftActiveTab === 'structure' ? 'block' : 'hidden'}`}>
-            <div className="h-full overflow-y-auto p-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+          <div className={`flex-1 overflow-hidden min-h-0 flex flex-col ${leftActiveTab === 'structure' ? 'flex' : 'hidden'}`}>
+            {/* Selected Component Header & Legend */}
+            {selectedComponentOwnership && (
+              <div className="px-3 py-2 border-b border-gray-800 bg-gray-900/50 flex-shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400">Code ownership for:</span>
+                  <button
+                    onClick={() => {
+                      setSelectedComponentOwnership(null);
+                      setSelectedComponentTitle(null);
+                    }}
+                    className="text-xs text-gray-500 hover:text-white"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <div className="text-sm font-medium text-white truncate mb-2">{selectedComponentTitle}</div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span className="text-green-400">Primary</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span className="text-blue-400">Supporting</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    <span className="text-yellow-400">Shared</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
               {repoTree ? (
                 <div className="font-mono text-xs">
                   {/* Root project name */}
@@ -1862,11 +2011,12 @@ const ProjectPage = () => {
             
             {/* Architecture Tab */}
             <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
-              <RevArchitecture 
-                architectureData={architectureData} 
+              <RevArchitecture
+                architectureData={architectureData}
                 isFullscreen={false}
                 customPositions={customPositions}
                 onPositionsChange={handlePositionsChange}
+                onComponentSelect={handleArchitectureComponentSelect}
               />
             </div>
             
@@ -1978,11 +2128,12 @@ const ProjectPage = () => {
 
           {/* Fullscreen Architecture Content */}
           <div className="h-[calc(100vh-4rem)] overflow-hidden">
-            <RevArchitecture 
-              architectureData={architectureData} 
+            <RevArchitecture
+              architectureData={architectureData}
               isFullscreen={true}
               customPositions={customPositions}
               onPositionsChange={handlePositionsChange}
+              onComponentSelect={handleArchitectureComponentSelect}
             />
           </div>
         </div>
