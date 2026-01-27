@@ -137,6 +137,12 @@ export async function POST(req: NextRequest) {
         if(pushedBranch === defaultBranch){
           const repoFullName = payload.repository.full_name;
           const beforeCommit = payload.before;
+
+          // Skip regeneration for first push (null SHA means no previous commit exists)
+          if (beforeCommit === '0000000000000000000000000000000000000000') {
+            return NextResponse.json({ ok: true });
+          }
+
           const afterCommit = payload.after;
           const filesAdded = payload.head_commit.added;
           const filesRemoved = payload.head_commit.removed;
