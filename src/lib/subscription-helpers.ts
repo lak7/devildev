@@ -34,7 +34,7 @@ export class SubscriptionService {
           status: data.status,
           productId: data.productId,
           quantity: 1,
-          // Price is $10 as per product configuration
+          // Price is $25 as per product configuration
           currency: 'USD',
           currentPeriodEnd: data.currentPeriodEnd,
         },

@@ -58,7 +58,7 @@ export default function TermsAndConditionsPage() {
                         <strong>Free Plan:</strong> We offer a Free Plan that allows you to use a limited version of the Services, as detailed on our pricing page (e.g., "Up to 3 Chats," "Only 1 Project").
                     </p>
                     <p>
-                        <strong>Pro Plan:</strong> We offer a paid Pro Plan subscription for $10 USD per month, which provides access to additional features and higher usage limits, as detailed on our pricing page (e.g., "Up to 100 Chats," "Up to 5 Projects," "Better LLM models").
+                        <strong>Pro Plan:</strong> We offer a paid Pro Plan subscription for $25 USD per month, which provides access to additional features and higher usage limits, as detailed on our pricing page (e.g., "Up to 100 Chats," "Up to 5 Projects," "Better LLM models").
                     </p>
                     <p>
                         We reserve the right to modify, suspend, or discontinue any Service plan (including the Free Plan) or any part thereof at any time with or without notice.
