@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
-import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check, FolderKanban } from 'lucide-react';
+import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, Users, Phone, Plus, Loader2, MessageSquare, Send, BrainCircuit, Code, Database, Server, Copy, Check, FolderKanban, ChevronDown, ChevronRight, Folder, FolderOpen, File } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
 import { SignOutButton, useUser } from '@clerk/nextjs';
-import { generateArchitecture, triggerReverseArchitectureGeneration, checkProjectArchitectureByGenerationId } from '../../../../actions/reverse-architecture';
+import { triggerReverseArchitectureGeneration, checkProjectArchitectureByGenerationId, checkPendingArchitectureUpdate, triggerPendingArchitectureRegeneration } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 import ProjectContextDocs from '@/components/core/ProjectContextDocs';
@@ -40,6 +40,16 @@ interface Project {
   ProjectChat: any[]; // Raw data from database
 }
 
+interface ProjectArchitectureVersion {
+  architecture: any;
+  componentPositions: Record<string, { x: number; y: number }>;
+  projectStructure?: any;
+  metadata: {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}
 
 const ProjectPage = () => {
     const params = useParams();
@@ -62,6 +72,15 @@ const ProjectPage = () => {
   const [project, setProject] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'architecture' | 'docs'>('architecture');
+  const [leftActiveTab, setLeftActiveTab] = useState<'chat' | 'structure'>('chat');
+  const [repoTree, setRepoTree] = useState<any>(null);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [selectedComponentOwnership, setSelectedComponentOwnership] = useState<{
+    primaryImplementation?: { directories: string[]; files: string[] };
+    supportingRelated?: { directories: string[]; files: string[] };
+    sharedDependencies?: { directories: string[]; files: string[] };
+  } | null>(null);
+  const [selectedComponentTitle, setSelectedComponentTitle] = useState<string | null>(null);
   const [inputMessage, setInputMessage] = useState('');
   const [textareaHeight, setTextareaHeight] = useState('60px');
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
@@ -71,6 +90,21 @@ const ProjectPage = () => {
   const [isArchitectureGenerating, setIsArchitectureGenerating] = useState(false);
   const [architectureData, setArchitectureData] = useState<any>(null);
   const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const [allArchitectures, setAllArchitectures] = useState<ProjectArchitectureVersion[]>([]);
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState<number>(0);
+  const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
+
+  // Pending architecture update state (for free users)
+  const [hasPendingUpdate, setHasPendingUpdate] = useState(false);
+  const [pendingUpdateInfo, setPendingUpdateInfo] = useState<{
+    timestamp: Date | null;
+    commitMessage: string | null;
+    remainingRegenerations: number;
+    limitReached: boolean;
+    latestCommitHash: string | null;
+    lastGeneratedCommitHash: string | null;
+  } | null>(null);
+  const [isRegeneratingFromPending, setIsRegeneratingFromPending] = useState(false);
   const [isPromptGenerating, setIsPromptGenerating] = useState(false);
   const [isDocsGenerating, setIsDocsGenerating] = useState(false);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
@@ -158,6 +192,252 @@ const ProjectPage = () => {
     }
   };
 
+  // Helper function to convert number to Roman numerals
+  const toRomanNumeral = (num: number): string => {
+    const romanNumerals: [number, string][] = [
+      [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+      [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+      [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+    ];
+    let result = '';
+    for (const [value, numeral] of romanNumerals) {
+      while (num >= value) {
+        result += numeral;
+        num -= value;
+      }
+    }
+    return result;
+  };
+
+  // Toggle folder expansion in tree view
+  const toggleFolder = (path: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(path)) {
+        newSet.delete(path);
+      } else {
+        newSet.add(path);
+      }
+      return newSet;
+    });
+  };
+
+  // Get file icon based on extension
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const iconClass = "h-4 w-4 flex-shrink-0";
+
+    switch (ext) {
+      case 'ts':
+      case 'tsx':
+        return <span className={`${iconClass} text-blue-400`}>TS</span>;
+      case 'js':
+      case 'jsx':
+        return <span className={`${iconClass} text-yellow-400`}>JS</span>;
+      case 'json':
+        return <span className={`${iconClass} text-yellow-600`}>{'{}'}</span>;
+      case 'md':
+        return <span className={`${iconClass} text-gray-400`}>M↓</span>;
+      case 'css':
+      case 'scss':
+        return <span className={`${iconClass} text-pink-400`}>#</span>;
+      case 'html':
+        return <span className={`${iconClass} text-orange-400`}>{'<>'}</span>;
+      case 'prisma':
+        return <span className={`${iconClass} text-teal-400`}>◆</span>;
+      case 'env':
+        return <span className={`${iconClass} text-green-400`}>⚙</span>;
+      case 'yml':
+      case 'yaml':
+        return <span className={`${iconClass} text-red-400`}>Y</span>;
+      default:
+        return <File className={`${iconClass} text-gray-400`} />;
+    }
+  };
+
+  // Render tree node recursively
+  const renderTreeNode = (node: any, path: string = '', depth: number = 0): React.ReactNode => {
+    if (!node) return null;
+
+    const items: React.ReactNode[] = [];
+
+    // Helper to get highlight styles
+    const getHighlightStyles = (itemPath: string) => {
+      const highlight = getPathHighlightColor(itemPath);
+      switch (highlight) {
+        case 'primary':
+          return {
+            bg: 'bg-green-500/20 border-l-2 border-green-500',
+            text: 'text-green-300',
+            icon: 'text-green-400'
+          };
+        case 'supporting':
+          return {
+            bg: 'bg-blue-500/20 border-l-2 border-blue-500',
+            text: 'text-blue-300',
+            icon: 'text-blue-400'
+          };
+        case 'shared':
+          return {
+            bg: 'bg-yellow-500/20 border-l-2 border-yellow-500',
+            text: 'text-yellow-300',
+            icon: 'text-yellow-400'
+          };
+        default:
+          return { bg: '', text: '', icon: '' };
+      }
+    };
+
+    // Render directories first
+    if (node.d) {
+      const sortedDirs = Object.keys(node.d).sort((a, b) => a.localeCompare(b));
+      for (const dirName of sortedDirs) {
+        const dirPath = path ? `${path}/${dirName}` : dirName;
+        const isExpanded = expandedFolders.has(dirPath);
+        const highlightStyles = getHighlightStyles(dirPath);
+        const isHighlighted = !!highlightStyles.bg;
+
+        items.push(
+          <div key={dirPath}>
+            <button
+              onClick={() => toggleFolder(dirPath)}
+              className={`flex items-center w-full py-1 px-2 rounded text-left group transition-colors ${
+                isHighlighted ? highlightStyles.bg : 'hover:bg-gray-800/50'
+              }`}
+              style={{ paddingLeft: `${depth * 16 + 8}px` }}
+            >
+              <ChevronRight
+                className={`h-3 w-3 mr-1 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} ${
+                  isHighlighted ? highlightStyles.icon : 'text-gray-500'
+                }`}
+              />
+              {isExpanded ? (
+                <FolderOpen className={`h-4 w-4 mr-2 flex-shrink-0 ${isHighlighted ? highlightStyles.icon : 'text-yellow-500'}`} />
+              ) : (
+                <Folder className={`h-4 w-4 mr-2 flex-shrink-0 ${isHighlighted ? highlightStyles.icon : 'text-yellow-600'}`} />
+              )}
+              <span className={`text-sm truncate ${
+                isHighlighted ? highlightStyles.text : 'text-gray-300 group-hover:text-white'
+              }`}>{dirName}</span>
+            </button>
+            {isExpanded && renderTreeNode(node.d[dirName], dirPath, depth + 1)}
+          </div>
+        );
+      }
+    }
+
+    // Then render files
+    if (node.f) {
+      const sortedFiles = [...node.f].sort((a: string, b: string) => a.localeCompare(b));
+      for (const fileName of sortedFiles) {
+        const filePath = path ? `${path}/${fileName}` : fileName;
+        const highlightStyles = getHighlightStyles(filePath);
+        const isHighlighted = !!highlightStyles.bg;
+
+        items.push(
+          <div
+            key={filePath}
+            className={`flex items-center py-1 px-2 rounded cursor-default group transition-colors ${
+              isHighlighted ? highlightStyles.bg : 'hover:bg-gray-800/50'
+            }`}
+            style={{ paddingLeft: `${depth * 16 + 24}px` }}
+            title={filePath}
+          >
+            {getFileIcon(fileName)}
+            <span className={`text-sm ml-2 truncate ${
+              isHighlighted ? highlightStyles.text : 'text-gray-400 group-hover:text-gray-200'
+            }`}>{fileName}</span>
+          </div>
+        );
+      }
+    }
+
+    return <>{items}</>;
+  };
+
+  // Handle version change
+  const handleVersionChange = (versionIndex: number) => {
+    if (versionIndex >= 0 && versionIndex < allArchitectures.length) {
+      const selectedVersion = allArchitectures[versionIndex];
+      setSelectedVersionIndex(versionIndex);
+      setArchitectureData(selectedVersion.architecture);
+      setCustomPositions(selectedVersion.componentPositions || {});
+      // Also update the project structure/repo tree for the selected version
+      setRepoTree(selectedVersion.projectStructure || null);
+      // Clear any selected component ownership since we're switching versions
+      setSelectedComponentOwnership(null);
+      setSelectedComponentTitle(null);
+      setIsVersionDropdownOpen(false);
+    }
+  };
+
+  // Handle architecture component selection for code ownership highlighting
+  const handleArchitectureComponentSelect = (component: any, codeOwnership: any) => {
+    if (component && codeOwnership) {
+      setSelectedComponentOwnership(codeOwnership);
+      setSelectedComponentTitle(component.title);
+
+      // Auto-switch to Project Structure tab to show the highlighting
+      setLeftActiveTab('structure');
+
+      // Auto-expand folders that contain highlighted paths
+      const foldersToExpand = new Set<string>();
+
+      const addFoldersForPaths = (paths: string[] | undefined) => {
+        if (!paths) return;
+        paths.forEach(path => {
+          const parts = path.split('/');
+          let currentPath = '';
+          for (let i = 0; i < parts.length - 1; i++) {
+            currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
+            foldersToExpand.add(currentPath);
+          }
+        });
+      };
+
+      // Add folders for all ownership paths
+      addFoldersForPaths(codeOwnership.primaryImplementation?.directories);
+      addFoldersForPaths(codeOwnership.primaryImplementation?.files);
+      addFoldersForPaths(codeOwnership.supportingRelated?.directories);
+      addFoldersForPaths(codeOwnership.supportingRelated?.files);
+      addFoldersForPaths(codeOwnership.sharedDependencies?.directories);
+      addFoldersForPaths(codeOwnership.sharedDependencies?.files);
+
+      setExpandedFolders(prev => new Set([...prev, ...foldersToExpand]));
+    } else {
+      setSelectedComponentOwnership(null);
+      setSelectedComponentTitle(null);
+    }
+  };
+
+  // Get highlight color for a path based on code ownership
+  const getPathHighlightColor = (path: string): 'primary' | 'supporting' | 'shared' | null => {
+    if (!selectedComponentOwnership) return null;
+
+    // Check primary implementation (green)
+    if (selectedComponentOwnership.primaryImplementation) {
+      const { directories, files } = selectedComponentOwnership.primaryImplementation;
+      if (directories?.some(dir => path === dir || path.startsWith(dir + '/'))) return 'primary';
+      if (files?.some(file => path === file)) return 'primary';
+    }
+
+    // Check supporting related (blue)
+    if (selectedComponentOwnership.supportingRelated) {
+      const { directories, files } = selectedComponentOwnership.supportingRelated;
+      if (directories?.some(dir => path === dir || path.startsWith(dir + '/'))) return 'supporting';
+      if (files?.some(file => path === file)) return 'supporting';
+    }
+
+    // Check shared dependencies (yellow)
+    if (selectedComponentOwnership.sharedDependencies) {
+      const { directories, files } = selectedComponentOwnership.sharedDependencies;
+      if (directories?.some(dir => path === dir || path.startsWith(dir + '/'))) return 'shared';
+      if (files?.some(file => path === file)) return 'shared';
+    }
+
+    return null;
+  };
+
   // Handler for component position changes
   const handlePositionsChange = (positions: Record<string, { x: number; y: number }>) => {
     setCustomPositions(positions);
@@ -237,6 +517,57 @@ const ProjectPage = () => {
     setMAX_CHATS(userSubscription ? maxNumberOfProjectChatsPro : maxNumberOfProjectChatsFree);
     setMAX_CHARACTERS(userSubscription ? maxChatCharactersLimitPro : maxChatCharactersLimitFree);
   }, [userSubscription]);
+
+  // Check for pending architecture updates (for free users)
+  useEffect(() => {
+    const checkPending = async () => {
+      if (!projectId || isArchitectureGenerating) return;
+
+      const result = await checkPendingArchitectureUpdate(projectId);
+      if (result.success && result.needsUpdate) {
+        setHasPendingUpdate(true);
+        setPendingUpdateInfo({
+          timestamp: result.pendingTimestamp ? new Date(result.pendingTimestamp) : null,
+          commitMessage: result.commitMessage || null,
+          remainingRegenerations: result.remainingRegenerations ?? 0,
+          limitReached: result.limitReached ?? false,
+          latestCommitHash: result.latestCommitHash || null,
+          lastGeneratedCommitHash: result.lastGeneratedCommitHash || null,
+        });
+      } else {
+        setHasPendingUpdate(false);
+        setPendingUpdateInfo(null);
+      }
+    };
+
+    checkPending();
+  }, [projectId, isArchitectureGenerating]);
+
+  // Handle manual regeneration from pending update
+  const handleRegenerateFromPending = async () => {
+    if (isRegeneratingFromPending || isArchitectureGenerating) return;
+
+    setIsRegeneratingFromPending(true);
+    setIsArchitectureGenerating(true);
+
+    try {
+      const result = await triggerPendingArchitectureRegeneration(projectId);
+
+      if (result.success) {
+        setHasPendingUpdate(false);
+        setPendingUpdateInfo(null);
+        pollForProjectArchitecture();
+      } else {
+        alert(result.error || 'Failed to start regeneration');
+        setIsArchitectureGenerating(false);
+      }
+    } catch (error) {
+      console.error('Error triggering regeneration:', error);
+      setIsArchitectureGenerating(false);
+    } finally {
+      setIsRegeneratingFromPending(false);
+    }
+  };
 
   // Copy prompt function
   const copyPrompt = async (messageId: string, prompt: string) => {
@@ -487,18 +818,36 @@ const ProjectPage = () => {
 
       const loadArchitecture = async (theProjectData: any) => {
         if(theProjectData?.ProjectArchitecture && theProjectData.ProjectArchitecture.length > 0){
-                  // Load existing architecture
-                  const existingArchitecture = theProjectData.ProjectArchitecture[0];
-                  const architectureData = { 
-                      components: existingArchitecture.components,
-                      connectionLabels: existingArchitecture.connectionLabels,
-                      componentPositions: existingArchitecture.componentPositions,
-                      architectureRationale: existingArchitecture.architectureRationale,
-                      detailedAnalysis: existingArchitecture.detailedAnalysis
-                  };
-                  setArchitectureData(architectureData);
-                  // Load custom positions from the database
-                  setCustomPositions(existingArchitecture.componentPositions || {});
+                  // Process architectures already fetched by getProject
+                  // They come ordered desc (latest first), so reverse for UI (oldest = Version I)
+                  const architectures = theProjectData.ProjectArchitecture.slice().reverse().map((arch: any) => ({
+                    architecture: {
+                      components: arch.components,
+                      connectionLabels: arch.connectionLabels,
+                      componentPositions: arch.componentPositions,
+                      architectureRationale: arch.architectureRationale,
+                      detailedAnalysis: arch.detailedAnalysis,
+                    },
+                    componentPositions: arch.componentPositions || {},
+                    projectStructure: arch.projectStructure || null,
+                    metadata: {
+                      id: arch.id,
+                      createdAt: arch.createdAt,
+                      updatedAt: arch.updatedAt,
+                    },
+                  }));
+
+                  setAllArchitectures(architectures);
+
+                  // Set the latest architecture as default (last in array after reverse)
+                  const latestIndex = architectures.length - 1;
+                  setSelectedVersionIndex(latestIndex);
+                  setArchitectureData(architectures[latestIndex].architecture);
+                  setCustomPositions(architectures[latestIndex].componentPositions || {});
+                  // Set repo tree from latest architecture
+                  if (architectures[latestIndex].projectStructure) {
+                    setRepoTree(architectures[latestIndex].projectStructure);
+                  }
                   setIsArchitectureGenerating(false);
             
               }else{
@@ -617,7 +966,7 @@ const ProjectPage = () => {
     if (isCharacterLimitReached || isPromptLimitReached) {
       setShowCharacterLimitDialog(true);
       return;
-    }
+    } 
 
     
 
@@ -658,14 +1007,10 @@ const ProjectPage = () => {
         );
       } 
 
-      
-      // TODO: Add AI response handling here when implementing chat functionality
-      // here 
-
       const chatbotResponse = await projectChatBot(currentInput.trim() ,project.framework, messages, architectureData, project.detailedAnalysis);
       let cleanedResponse = chatbotResponse; 
       if (typeof cleanedResponse === 'string') {
-        cleanedResponse = cleanedResponse
+        cleanedResponse = cleanedResponse 
           .replace(/^```json\s*/i, '')
           .replace(/^```\s*/, '') 
           .replace(/\s*```\s*$/, '')
@@ -692,10 +1037,10 @@ const ProjectPage = () => {
 
       if(parsedResponse.prompt && parsedResponse.wannaStart && (parsedResponse.difficulty === "easy" || parsedResponse.difficulty === "medium")){
         // Count existing prompts already generated in this chat
-        setIsPromptGenerating(true);
+        setIsPromptGenerating(true); 
           
           const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
-
+ 
           
           // Only update the assistant message if prompt is a string
           if (typeof prompt === 'string') {
@@ -1250,7 +1595,7 @@ const ProjectPage = () => {
             </div>
           </div>
 
-          {/* Mobile bottom bar for Architecture and Documentation */}
+          {/* Mobile bottom bar for Architecture and Pacts */}
           <div className="fixed bottom-4 left-4 right-4 z-30 flex gap-3">
             <button
               onClick={() => setMobileActivePanel('architecture')}
@@ -1262,7 +1607,7 @@ const ProjectPage = () => {
               onClick={() => setMobileActivePanel('docs')}
               className="flex-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-600 bg-black/60 text-white hover:bg-gray-900"
             >
-              Documentation
+              Pacts
             </button>
           </div>
 
@@ -1271,26 +1616,80 @@ const ProjectPage = () => {
             <div className="fixed inset-0 z-40 bg-black">
               <div className="h-16 bg-black/90 backdrop-blur-sm border-b border-gray-800/50 flex items-center justify-between px-4">
                 <div className="text-white font-semibold text-base">
-                  {mobileActivePanel === 'architecture' ? 'Architecture' : 'Documentation'}
+                  {mobileActivePanel === 'architecture' ? 'Architecture' : 'Pacts'}
                 </div>
-                <button
-                  onClick={() => setMobileActivePanel(null)}
-                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
-                  title="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                
+                <div className="flex items-center space-x-2">
+                  {/* Version Dropdown for mobile */}
+                  {mobileActivePanel === 'architecture' && allArchitectures.length > 0 && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                        className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-md transition-all duration-200 border border-gray-700/50"
+                        title="Select Architecture Version"
+                      >
+                        <span className="font-medium">V{toRomanNumeral(selectedVersionIndex + 1)}</span>
+                        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {/* Dropdown Menu */}
+                      {isVersionDropdownOpen && (
+                        <>
+                          {/* Backdrop to close dropdown */}
+                          <div 
+                            className="fixed inset-0 z-30" 
+                            onClick={() => setIsVersionDropdownOpen(false)}
+                          />
+                          
+                          {/* Dropdown content */}
+                          <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                            <div className="py-1 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                              {allArchitectures.map((arch, index) => (
+                                <button
+                                  key={arch.metadata.id}
+                                  onClick={() => handleVersionChange(index)}
+                                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                    index === selectedVersionIndex
+                                      ? 'bg-red-500/20 text-white border-l-2 border-red-500'
+                                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span>Version {toRomanNumeral(index + 1)}</span>
+                                    {index === allArchitectures.length - 1 && (
+                                      <span className="text-xs text-gray-400">Latest</span>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={() => setMobileActivePanel(null)}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                    title="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
               <div className="h-[calc(100vh-4rem)] overflow-hidden">
                 {mobileActivePanel === 'architecture' ? (
-                  <RevArchitecture 
-                    architectureData={architectureData} 
+                  <RevArchitecture
+                    key={`mobile-arch-${selectedVersionIndex}`}
+                    architectureData={architectureData}
                     isFullscreen={true}
                     customPositions={customPositions}
                     onPositionsChange={handlePositionsChange}
+                    onComponentSelect={handleArchitectureComponentSelect}
                   />
                 ) : (
-                  <ProjectContextDocs 
+                  <ProjectContextDocs
                     key={activeChatId || 'no-chat-mobile'}
                     projectId={projectId}
                     projectChatId={activeChatId}
@@ -1307,22 +1706,94 @@ const ProjectPage = () => {
       ) : (
       <div ref={containerRef} className="flex-1 flex gap-1 p-4 min-h-0 relative pb-0 md:pb-4 h-full">
         {/* Left Chat Panel - Resizable */}
-        <div 
+        <div
           className="bg-black border border-gray-800 rounded-xl flex flex-col min-h-0 transition-all duration-200 ease-out"
           style={{ width: `${leftPanelWidth}%` }}
         >
           <div className="flex items-center px-4 py-3 rounded-t-xl border-b border-gray-800">
             <div className="flex space-x-1">
               <button
-                className={`px-3 py-1 text-sm font-bold rounded-md transition-all duration-200 text-white bg-gray-700/50`}
+                onClick={() => setLeftActiveTab('chat')}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                  leftActiveTab === 'chat'
+                    ? 'text-white bg-gray-700/50'
+                    : 'text-gray-400 hover:text-white'
+                }`}
               >
                 Project Chat
               </button>
+              <button
+                onClick={() => setLeftActiveTab('structure')}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                  leftActiveTab === 'structure'
+                    ? 'text-white bg-gray-700/50'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Project Structure
+              </button>
             </div>
           </div>
-          
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+
+          {/* Project Structure Tab */}
+          <div className={`flex-1 overflow-hidden min-h-0 flex flex-col ${leftActiveTab === 'structure' ? 'flex' : 'hidden'}`}>
+            {/* Selected Component Header & Legend */}
+            {selectedComponentOwnership && (
+              <div className="px-3 py-2 border-b border-gray-800 bg-gray-900/50 flex-shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400">Code ownership for:</span>
+                  <button
+                    onClick={() => {
+                      setSelectedComponentOwnership(null);
+                      setSelectedComponentTitle(null);
+                    }}
+                    className="text-xs text-gray-500 hover:text-white"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <div className="text-sm font-medium text-white truncate mb-2">{selectedComponentTitle}</div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span className="text-green-400">Primary</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span className="text-blue-400">Supporting</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    <span className="text-yellow-400">Shared</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+              {repoTree ? (
+                <div className="font-mono text-xs">
+                  {/* Root project name */}
+                  <div className="flex items-center py-1 px-2 mb-1">
+                    <FolderOpen className="h-4 w-4 text-yellow-500 mr-2" />
+                    <span className="text-sm font-medium text-white">{project?.name || 'Project'}</span>
+                  </div>
+                  <div className="border-l border-gray-700/50 ml-3">
+                    {renderTreeNode(repoTree)}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <Folder className="h-12 w-12 mb-3 opacity-50" />
+                  <p className="text-sm">Project structure not available</p>
+                  <p className="text-xs mt-1 text-gray-600">Structure is generated with architecture</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Chat Messages Tab */}
+          <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500 ${leftActiveTab === 'chat' ? 'block' : 'hidden'}`}>
 
 
             {/* Display actual messages from database */}
@@ -1451,40 +1922,42 @@ const ProjectPage = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
-          <div className="p-4 flex-shrink-0">
-            <form onSubmit={handleSubmit} className="relative">
-              <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
-                <textarea
-                  placeholder="Ask about your project..."
-                  value={inputMessage}
-                  onChange={handleTextareaChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit(e);
-                    }
-                  }}
-                  className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
-                  rows={2}
-                  style={{ height: textareaHeight }}
-                  maxLength={5000}
-                  disabled={isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
-                />
-              </div>
-              
-              {/* Button section */}
-              <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
-                <button 
-                  type="submit" 
-                  className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  disabled={!inputMessage.trim() || isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-            </form>
-          </div>
+          {/* Input Area - Only show for chat tab */}
+          {leftActiveTab === 'chat' && (
+            <div className="p-4 flex-shrink-0">
+              <form onSubmit={handleSubmit} className="relative">
+                <div className="bg-black border-t border-x border-gray-500 backdrop-blur-sm overflow-hidden rounded-t-2xl">
+                  <textarea
+                    placeholder="Ask about your project..."
+                    value={inputMessage}
+                    onChange={handleTextareaChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit(e);
+                      }
+                    }}
+                    className="w-full bg-transparent text-white placeholder-gray-400 px-4 py-3 text-sm md:text-base focus:outline-none resize-none overflow-y-auto min-h-[60px] max-h-[180px]"
+                    rows={2}
+                    style={{ height: textareaHeight }}
+                    maxLength={5000}
+                    disabled={isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
+                  />
+                </div>
+
+                {/* Button section */}
+                <div className="bg-black border-l border-r border-b border-gray-500 backdrop-blur-sm rounded-b-2xl px-3 py-2 flex justify-end">
+                  <button
+                    type="submit"
+                    className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                    disabled={!inputMessage.trim() || isChatLoading || isCreatingChat || isCharacterLimitReached || isPromptLimitReached}
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
 
         {/* Resize Handle */}
@@ -1531,36 +2004,151 @@ const ProjectPage = () => {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                Documentation
+                Pacts
               </button>
             </div>
             
-            {/* Fullscreen button - only show for architecture tab */}
+            {/* Version dropdown and Fullscreen button - only show for architecture tab */}
             {activeTab === 'architecture' && (
-              <button
-                onClick={() => setIsArchitectureFullscreen(true)}
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
-                title="Fullscreen Architecture View"
-              >
-                <Maximize className="h-4 w-4" />
-              </button>
+              <div className="flex items-center space-x-2">
+                {/* Version Dropdown */}
+                {allArchitectures.length > 0 && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                      className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-md transition-all duration-200 border border-gray-700/50"
+                      title="Select Architecture Version"
+                    >
+                      <span className="font-medium">Version {toRomanNumeral(selectedVersionIndex + 1)}</span>
+                      <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    {isVersionDropdownOpen && (
+                      <>
+                        {/* Backdrop to close dropdown */}
+                        <div 
+                          className="fixed inset-0 z-30" 
+                          onClick={() => setIsVersionDropdownOpen(false)}
+                        />
+                        
+                        {/* Dropdown content */}
+                        <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                          <div className="py-1 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                            {allArchitectures.map((arch, index) => (
+                              <button
+                                key={arch.metadata.id}
+                                onClick={() => handleVersionChange(index)}
+                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                  index === selectedVersionIndex
+                                    ? 'bg-red-500/20 text-white border-l-2 border-red-500'
+                                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span>Version {toRomanNumeral(index + 1)}</span>
+                                  {index === allArchitectures.length - 1 && (
+                                    <span className="text-xs text-gray-400">Latest</span>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+                
+                {/* Fullscreen button */}
+                <button
+                  onClick={() => setIsArchitectureFullscreen(true)}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200"
+                  title="Fullscreen Architecture View"
+                >
+                  <Maximize className="h-4 w-4" />
+                </button>
+              </div>
             )}
           </div>
 
           {/* Tab Content */}
           <div className="flex-1 overflow-hidden min-h-0">
-            
+
             {/* Architecture Tab */}
-            <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
-              <RevArchitecture 
-                architectureData={architectureData} 
+            <div className={`h-full flex flex-col ${activeTab === 'architecture' ? 'flex' : 'hidden'}`}>
+              {/* Pending Update Banner - Only for free users with pending updates */}
+              {hasPendingUpdate && !isArchitectureGenerating && (
+                <div className={`border rounded-lg p-3 mx-3 mt-3 flex-shrink-0 ${
+                  pendingUpdateInfo?.limitReached
+                    ? 'bg-red-500/10 border-red-500/30'
+                    : 'bg-amber-500/10 border-amber-500/30'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className={`text-sm font-medium ${
+                        pendingUpdateInfo?.limitReached ? 'text-red-200' : 'text-amber-200'
+                      }`}>
+                        {pendingUpdateInfo?.limitReached
+                          ? 'Regeneration Limit Reached'
+                          : 'Architecture Update Available'}
+                      </h3>
+                      <p className="text-xs text-gray-400">
+                        {pendingUpdateInfo?.limitReached ? (
+                          'Upgrade to Pro for unlimited regenerations'
+                        ) : (
+                          <>
+                            <span className="font-mono">
+                              {pendingUpdateInfo?.lastGeneratedCommitHash?.slice(0, 7) || 'initial'}
+                            </span>
+                            <span className="mx-1">→</span>
+                            <span className="font-mono text-amber-300">
+                              {pendingUpdateInfo?.latestCommitHash?.slice(0, 7)}
+                            </span>
+                            <span className="ml-2 text-gray-500">
+                              ({pendingUpdateInfo?.remainingRegenerations} left)
+                            </span>
+                          </>
+                        )}
+                      </p>
+                      {!pendingUpdateInfo?.limitReached && pendingUpdateInfo?.commitMessage && (
+                        <p className="text-xs text-gray-500 mt-1 truncate max-w-xs">
+                          &quot;{pendingUpdateInfo.commitMessage.slice(0, 50)}{pendingUpdateInfo.commitMessage.length > 50 ? '...' : ''}&quot;
+                        </p>
+                      )}
+                    </div>
+                    {pendingUpdateInfo?.limitReached ? (
+                      <Button
+                        onClick={() => router.push('/pricing')}
+                        className="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1"
+                      >
+                        Upgrade
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleRegenerateFromPending}
+                        disabled={isRegeneratingFromPending}
+                        className="bg-amber-500 hover:bg-amber-600 text-black text-sm px-3 py-1"
+                      >
+                        {isRegeneratingFromPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sync'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div className="flex-1 min-h-0">
+              <RevArchitecture
+                key={`desktop-arch-${selectedVersionIndex}`}
+                architectureData={architectureData}
                 isFullscreen={false}
                 customPositions={customPositions}
                 onPositionsChange={handlePositionsChange}
+                onComponentSelect={handleArchitectureComponentSelect}
               />
+              </div>
             </div>
-            
-            {/* Documentation Tab */}
+
+            {/* Pacts Tab */}
             <div className={`h-full ${activeTab === 'docs' ? 'block' : 'hidden'}`}>
               <ProjectContextDocs 
                 key={activeChatId || 'no-chat'}
@@ -1604,23 +2192,77 @@ const ProjectPage = () => {
               </div>
             </div>
 
-            {/* Right side - Close button */}
-            <button
-              onClick={() => setIsArchitectureFullscreen(false)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
-              title="Exit Fullscreen"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            {/* Right side - Version dropdown and Close button */}
+            <div className="flex items-center space-x-3">
+              {/* Version Dropdown in fullscreen */}
+              {allArchitectures.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                    className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-800/80 hover:bg-gray-700/80 rounded-lg transition-all duration-200 border border-gray-600/40"
+                    title="Select Architecture Version"
+                  >
+                    <span className="font-medium">Version {toRomanNumeral(selectedVersionIndex + 1)}</span>
+                    <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  {isVersionDropdownOpen && (
+                    <>
+                      {/* Backdrop to close dropdown */}
+                      <div 
+                        className="fixed inset-0 z-30" 
+                        onClick={() => setIsVersionDropdownOpen(false)}
+                      />
+                      
+                      {/* Dropdown content */}
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                        <div className="py-1 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600">
+                          {allArchitectures.map((arch, index) => (
+                            <button
+                              key={arch.metadata.id}
+                              onClick={() => handleVersionChange(index)}
+                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                index === selectedVersionIndex
+                                  ? 'bg-red-500/20 text-white border-l-2 border-red-500'
+                                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span>Version {toRomanNumeral(index + 1)}</span>
+                                {index === allArchitectures.length - 1 && (
+                                  <span className="text-xs text-gray-400">Latest</span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              
+              {/* Close button */}
+              <button
+                onClick={() => setIsArchitectureFullscreen(false)}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                title="Exit Fullscreen"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Fullscreen Architecture Content */}
           <div className="h-[calc(100vh-4rem)] overflow-hidden">
-            <RevArchitecture 
-              architectureData={architectureData} 
+            <RevArchitecture
+              key={`fullscreen-arch-${selectedVersionIndex}`}
+              architectureData={architectureData}
               isFullscreen={true}
               customPositions={customPositions}
               onPositionsChange={handlePositionsChange}
+              onComponentSelect={handleArchitectureComponentSelect}
             />
           </div>
         </div>

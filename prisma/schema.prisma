@@ -149,18 +149,33 @@ model Project {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ProjectArchitecture ProjectArchitecture[]
+
+  // Pending architecture update fields (for tiered regeneration)
+  needsArchitectureUpdate    Boolean   @default(false)
+  pendingCommitData          Json?
+  pendingCommitTimestamp     DateTime?
+  lastGeneratedCommitHash    String?
 }
 
 model ProjectArchitecture {
   id        String   @id @default(uuid())
-  projectId String   @unique
+  projectId String
+  detailedProjectAnalysis String?
   architectureRationale String?
   components            Json
   connectionLabels      Json?
   componentPositions    Json?
+  commitHash            String? @unique
+  branchName            String?
+  projectStructure      Json?
+  commitMessage         String?
+  beforeCommitHash      String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt(sort: Desc)])
 }
 
 model ProjectChat {

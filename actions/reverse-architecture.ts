@@ -4,11 +4,13 @@ import { db } from '@/lib/db';
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-import { isNextOrReactPrompt, mainGenerateArchitecturePrompt, mainGenerateArchitecturePrompt2 } from '../prompts/ReverseArchitecture';
-import { getFileContentTool, getRepoTreeTool, searchCodeTool } from './github/gitTools';
+import { isNextOrReactPrompt, mainGenerateArchitecturePrompt, mainGenerateArchitecturePrompt2, regeneratePushedArchitecturePromptHuman, regeneratePushedArchitecturePromptSystem, regeneratePushedArchitectureFormatterPrompt } from '../prompts/ReverseArchitecture';
+import { getFileContentTool, searchCodeTool, getFilePatchTool } from './github/gitTools';
 import { getInstallationToken } from './githubAppAuth';
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
+import { maxFreeArchitectureRegenerations } from '../Limits';
+import { Prisma } from '@prisma/client';
 const { inngest } = await import('../src/inngest/client');
 
 const openaiKey = process.env.OPENAI_API_KEY;
@@ -19,7 +21,118 @@ const llm = new ChatOpenAI({
   const llm2 = new ChatOpenAI({
     openAIApiKey: openaiKey,
     model: "gpt-4o-2024-08-06"
-  }) 
+  })
+
+// JSON Schema for structured architecture output
+const architectureOutputSchema = {
+  type: "object",
+  description: "Architecture diagram output with components, connections, and rationale",
+  properties: {
+    components: {
+      type: "array",
+      description: "Array of architecture components representing runtime business capabilities",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Unique descriptive business-focused identifier" },
+          title: { type: "string", description: "Business-focused component name" },
+          icon: { type: "string", description: "Appropriate lucide icon name" },
+          color: { type: "string", description: "Tailwind gradient class e.g. bg-gradient-to-r from-[color1] to-[color2]" },
+          borderColor: { type: "string", description: "Tailwind border color class" },
+          technologies: {
+            type: "object",
+            properties: {
+              primary: { type: "string", description: "Main technology stack" },
+              framework: { type: "string", description: "Key supporting framework" },
+              additional: { type: "string", description: "Notable libraries or tools" }
+            },
+            required: ["primary", "framework", "additional"]
+          },
+          connections: {
+            type: "array",
+            items: { type: "string" },
+            description: "Array of connected component IDs"
+          },
+          position: {
+            type: "object",
+            properties: {
+              x: { type: "number", description: "X coordinate position" },
+              y: { type: "number", description: "Y coordinate position" }
+            },
+            required: ["x", "y"]
+          },
+          dataFlow: {
+            type: "object",
+            properties: {
+              sends: {
+                type: "array",
+                items: { type: "string" },
+                description: "Business data types sent by this component"
+              },
+              receives: {
+                type: "array",
+                items: { type: "string" },
+                description: "Business data types received by this component"
+              }
+            },
+            required: ["sends", "receives"]
+          },
+          purpose: { type: "string", description: "Clear business function + technical approach description" },
+          codeOwnership: {
+            type: "object",
+            properties: {
+              primaryImplementation: {
+                type: "object",
+                description: "REQUIRED - core directories and files that ARE the component",
+                properties: {
+                  directories: { type: "array", items: { type: "string" } },
+                  files: { type: "array", items: { type: "string" } },
+                  confidence: { type: "number", minimum: 0.8, maximum: 1.0 },
+                  rationale: { type: "string", description: "Brief explanation of why these paths are the core implementation" }
+                },
+                required: ["directories", "files", "confidence", "rationale"]
+              },
+              supportingRelated: {
+                type: "object",
+                description: "OPTIONAL - files that directly support this component",
+                properties: {
+                  directories: { type: "array", items: { type: "string" } },
+                  files: { type: "array", items: { type: "string" } },
+                  confidence: { type: "number", minimum: 0.5, maximum: 0.79 },
+                  rationale: { type: "string" }
+                },
+                required: ["directories", "files", "confidence", "rationale"]
+              },
+              sharedDependencies: {
+                type: "object",
+                description: "OPTIONAL - shared infrastructure and utilities",
+                properties: {
+                  directories: { type: "array", items: { type: "string" } },
+                  files: { type: "array", items: { type: "string" } },
+                  confidence: { type: "number", minimum: 0.2, maximum: 0.49 },
+                  rationale: { type: "string" }
+                },
+                required: ["directories", "files", "confidence", "rationale"]
+              }
+            },
+            required: ["primaryImplementation"]
+          }
+        },
+        required: ["id", "title", "icon", "color", "borderColor", "technologies", "connections", "position", "dataFlow", "purpose", "codeOwnership"]
+      }
+    },
+    connectionLabels: {
+      type: "object",
+      description: "Business-focused connection descriptions keyed by 'component1-to-component2' format",
+      additionalProperties: { type: "string" }
+    },
+    architectureRationale: {
+      type: "string",
+      description: "6-paragraph analysis focusing on current runtime architecture and business value delivery"
+    }
+  },
+  required: ["components", "connectionLabels", "architectureRationale"]
+} as const; 
 
 
 export async function checkInfo(repositoryId: string, repoFullName: string){
@@ -242,10 +355,215 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
       }
         return {result: result, project: project};
 }
- 
-export async function generateArchitecture(projectId: string){
-     
 
+export async function getRepoTree(projectId: string) {
+  try {
+    // Fetch project details
+    const project = await db.project.findUnique({
+      where: { id: projectId },
+      select: {
+        repoFullName: true,
+        defaultBranch: true,
+        githubInstallationId: true,
+      },
+    });
+
+    if (!project) {
+      return { error: 'Project not found' };
+    }
+
+    if (!project.githubInstallationId) {
+      return { error: 'GitHub installation ID not found for this project' };
+    }
+
+    if (!project.repoFullName) {
+      return { error: 'Repository full name not found' };
+    }
+
+    // Get installation token (GitHub App flow only)
+    const { token: accessToken } = await getInstallationToken(String(project.githubInstallationId));
+
+    // Parse repo owner and name
+    const [owner, repo] = project.repoFullName.split('/');
+    const branch = project.defaultBranch || 'main';
+
+    // Fetch repository tree recursively
+    const url = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'DevilDev-App',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { error: `Repository or branch not found: ${owner}/${repo}/${branch}` };
+      }
+      return { error: `GitHub API error: ${response.status} ${response.statusText}` };
+    }
+
+    const data = await response.json();
+
+    if (!data.tree || !Array.isArray(data.tree)) {
+      return { error: 'Invalid response from GitHub API' };
+    }
+
+    // Define excluded directories and files (build artifacts, dependencies, config files)
+    const excludedDirectories = [
+      '.github',
+      '.git',
+      'node_modules',
+      '.next',
+      '.nuxt',
+      '.vscode',
+      '.idea',
+      'dist',
+      'public',
+      'assets',
+      'build',
+      '.cache',
+      'coverage',
+      '.nyc_output',
+      '.turbo',
+      '.vercel',
+      '.DS_Store',
+      'Thumbs.db',
+    ];
+
+    // Filter items by depth (max depth 4) and exclude unwanted directories/files
+    // Root level = depth 0, counting '/' in path
+    const filteredTree = data.tree.filter((node: any) => {
+      const depth = node.path.split('/').length - 1;
+      if (depth > 4) {
+        return false;
+      }
+
+      // Check if path contains any excluded directory
+      const pathParts = node.path.split('/');
+      for (const part of pathParts) {
+        if (excludedDirectories.includes(part)) {
+          return false;
+        }
+      }
+
+      // Exclude actual .env files (but keep .env.example, .env.local.example, etc.)
+      if (node.path.endsWith('.env') && !node.path.includes('.example') && !node.path.includes('.sample')) {
+        return false;
+      }
+
+      // Exclude log files
+      if (node.path.endsWith('.log')) {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Transform flat array into nested tree structure
+    interface TreeNode {
+      f?: string[];
+      d?: { [key: string]: TreeNode };
+    }
+
+    const nestedTree: TreeNode = {
+      f: [],
+      d: {},
+    };
+
+    filteredTree.forEach((node: any) => {
+      const pathParts = node.path.split('/');
+      const isFile = node.type === 'blob';
+
+      if (pathParts.length === 1) {
+        // Root level item
+        if (isFile) {
+          if (!nestedTree.f) nestedTree.f = [];
+          nestedTree.f.push(pathParts[0]);
+        } else {
+          if (!nestedTree.d) nestedTree.d = {};
+          if (!nestedTree.d[pathParts[0]]) {
+            nestedTree.d[pathParts[0]] = {};
+          }
+        }
+      } else {
+        // Nested item - traverse the tree
+        let currentLevel = nestedTree;
+        
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          const dirName = pathParts[i];
+          
+          if (!currentLevel.d) currentLevel.d = {};
+          if (!currentLevel.d[dirName]) {
+            currentLevel.d[dirName] = {};
+          }
+          
+          currentLevel = currentLevel.d[dirName];
+        }
+
+        // Add the final item (file or directory)
+        const lastName = pathParts[pathParts.length - 1];
+        if (isFile) {
+          if (!currentLevel.f) currentLevel.f = [];
+          currentLevel.f.push(lastName);
+        } else {
+          if (!currentLevel.d) currentLevel.d = {};
+          if (!currentLevel.d[lastName]) {
+            currentLevel.d[lastName] = {};
+          }
+        }
+      }
+    });
+
+    // Helper function to remove empty directory objects
+    const cleanEmptyDirectories = (node: TreeNode): TreeNode | null => {
+      const cleaned: TreeNode = {};
+      
+      // Process files
+      if (node.f && node.f.length > 0) {
+        cleaned.f = node.f;
+      }
+      
+      // Process directories
+      if (node.d) {
+        const cleanedDirs: { [key: string]: TreeNode } = {};
+        for (const [dirName, dirNode] of Object.entries(node.d)) {
+          const cleanedDir = cleanEmptyDirectories(dirNode);
+          if (cleanedDir && (cleanedDir.f?.length || cleanedDir.d)) {
+            cleanedDirs[dirName] = cleanedDir;
+          }
+        }
+        if (Object.keys(cleanedDirs).length > 0) {
+          cleaned.d = cleanedDirs;
+        }
+      }
+      
+      // Return null if node is completely empty, otherwise return cleaned node
+      if (!cleaned.f?.length && !cleaned.d) {
+        return null;
+      }
+      
+      return cleaned;
+    };
+
+    const cleanedTree = cleanEmptyDirectories(nestedTree) || {};
+
+    return {
+      success: true,
+      tree: cleanedTree,
+      totalItems: filteredTree.length,
+      truncated: data.truncated || false,
+    };
+
+  } catch (error) {
+    console.error('Error fetching repository tree:', error);
+    return { error: error instanceof Error ? error.message : 'Failed to fetch repository tree' };
+  }
+}
+ 
+export async function generateArchitecture(projectId: string, repoTree?: any){
 
     const project = await db.project.findUnique({
         where: { id: projectId},
@@ -304,11 +622,13 @@ export async function generateArchitecture(projectId: string){
                 : JSON.stringify(project.detailedAnalysis);
 
             const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt2);
-            const finalChain = finalPrompt.pipe(llm).pipe(new StringOutputParser());
+            const structuredLlm = llm.withStructuredOutput(architectureOutputSchema);
+            const finalChain = finalPrompt.pipe(structuredLlm);
             const architecture = await finalChain.invoke({
                 analysis_findings: existingAnalysisString,
                 name: name,
-                framework: framework
+                framework: framework,
+                repoTree: repoTree ? JSON.stringify(repoTree) : 'Not provided'
             });
 
             return { architecture: architecture, detailedAnalysis: existingAnalysisString };
@@ -322,183 +642,142 @@ export async function generateArchitecture(projectId: string){
     const [owner, repo] = repoFullName.split('/');
     
     // Create tools with pre-filled GitHub credentials
+    // Note: getRepoTreeTool removed since repoTree is now passed as parameter
     const repoAnalysisTools = [
-        getRepoTreeTool,
-        getFileContentTool, 
+        getFileContentTool,
         searchCodeTool
     ];
     
    // Create the reverse architecture analysis prompt
       const prompt = ChatPromptTemplate.fromMessages([
-      ["system", `You are an elite software architecture reverse engineer specializing in React/Next.js applications. Your mission is to analyze GitHub repositories and extract comprehensive architectural insights through strategic code examination.
+      ["system", `You are Linus Torvalds - one of the greatest programmers and system architects in history. You built Linux and Git, and you have an unparalleled ability to understand complex codebases at a glance. Your expertise lies in cutting through complexity to reveal the essential architecture of any system.
 
-    REPOSITORY CONTEXT:
-    - Repository: {repoFullName}
-    - Framework: {framework} (React/Next.js confirmed)
-    - Default Branch: {defaultBranch}
-    - Package.json Dependencies: {packageJson}
-    - Root Structure: {repoContent}
+YOUR MISSION:
+Analyze this repository and produce a detailed architectural analysis report. This report will be used to generate a comprehensive architecture diagram that maps out every component, service, and their communication patterns. Write for developers who need to understand this codebase quickly and thoroughly.
 
-    STRATEGIC TOOL USAGE PHILOSOPHY:
-    🎯 **Use tools ONLY when critical information cannot be inferred from existing context**
-    - Start analysis with provided package.json and root structure
-    - Make educated assumptions based on React/Next.js patterns
-    - Tool calls should be strategic, not exhaustive
-    - Prioritize high-impact files over comprehensive scanning
+REPOSITORY CONTEXT:
+- Repository: {repoFullName}
+- Framework: {framework}
+- Default Branch: {defaultBranch}
+- Package.json: {packageJson}
+- Root Contents: {repoContent}
+- Full Repository Tree (4 levels deep): {repoTree}
 
-    AVAILABLE TOOLS (Use Sparingly):
-    1. **getRepoTree** - For understanding complete project structure (use only if root content is insufficient)
-    2. **getFileContent** - For reading critical configuration/implementation files
-    3. **searchCode** - For locating specific architectural patterns or technologies
+AVAILABLE TOOLS (use sparingly):
+1. **getFileContent** - Read specific files when you need implementation details
+2. **searchCode** - Search for specific patterns or implementations
 
-    TOOL PARAMETERS:
-    - owner: {owner}
-    - repo: {repo}
-    - accessToken: {githubAccessToken}
-    - branch: {defaultBranch}
+Tool Parameters: owner={owner}, repo={repo}, accessToken={githubAccessToken}, branch={defaultBranch}
 
-    ANALYSIS FRAMEWORK - REACT/NEXT.JS SPECIALIZED:
+CRITICAL - TOKEN EFFICIENCY RULES:
+You MUST minimize token usage. Every tool call costs tokens and time. Follow these rules strictly:
 
-    ## 1. PROJECT STRUCTURE ANALYSIS
-    **Infer from provided data first, tool call only if needed:**
-    - **Next.js App Router** (app/ directory) vs **Pages Router** (pages/ directory)
-    - **Component Organization**: components/, ui/, layouts/, hooks/
-    - **Configuration Files**: next.config.js, tailwind.config.js, tsconfig.json
-    - **Build System**: package.json scripts, build configurations
+1. **DO NOT read every file** - This is wasteful and unnecessary. You already have the full repo tree, package.json, and root structure.
 
-    ## 2. FRONTEND ARCHITECTURE DEEP DIVE
-    **Key Areas to Identify:**
-    - **Rendering Strategy**: SSG, SSR, ISR, Client-side patterns
-    - **Component Architecture**: Atomic design, feature-based, or hybrid
-    - **State Management**: React Context, Zustand, Redux, Jotai patterns
-    - **Styling System**: Tailwind, CSS Modules, Styled Components, Emotion
-    - **UI Framework**: shadcn/ui, Material-UI, Ant Design, Custom components
-    - **Form Handling**: React Hook Form, Formik, or native approaches
+2. **Limit file reads to 5-8 files maximum** - Only read files that are ESSENTIAL for understanding architecture:
+   - Main config files (next.config.js, prisma/schema.prisma, etc.)
+   - Key entry points (app/layout.tsx, pages/_app.tsx)
+   - Critical integration files only when dependencies suggest something non-obvious
 
-    ## 3. BACKEND/API LAYER ANALYSIS
-    **For Next.js Applications:**
-    - **API Routes Structure**: pages/api/ or app/api/ patterns
-    - **Server Components**: app/ directory server component usage
-    - **Middleware**: Authentication, logging, CORS implementations
-    - **Database Integration**: Prisma, Drizzle, direct database clients
-    - **Authentication**: NextAuth.js, Clerk, Supabase Auth, custom JWT
+3. **Infer before fetching** - Most architectural decisions can be determined from:
+   - package.json dependencies (tells you 80% of the stack)
+   - Directory structure (app/ vs pages/, presence of prisma/, lib/, etc.)
+   - File names and locations in the repo tree
 
-    ## 4. DATA MANAGEMENT & EXTERNAL SERVICES
-    **Critical Integrations to Identify:**
-    - **Database**: PostgreSQL, MySQL, MongoDB connection patterns
-    - **ORM/Query Builder**: Prisma, Drizzle ORM, raw SQL patterns
-    - **External APIs**: REST clients, GraphQL (Apollo, React Query)
-    - **File Storage**: AWS S3, Cloudinary, Supabase Storage
-    - **Real-time Features**: WebSockets, Server-Sent Events, Pusher
+4. **Ask yourself before each tool call:** "Can I infer this from what I already have?" If yes, DO NOT use the tool.
 
-    ## 5. DEPLOYMENT & INFRASTRUCTURE
-    **Production Considerations:**
-    - **Hosting Platform**: Vercel, Netlify, custom deployment
-    - **Environment Management**: .env patterns, configuration strategies
-    - **Performance**: Image optimization, bundle analysis, caching strategies
-    - **Monitoring**: Analytics, error tracking, logging solutions
+5. **Use searchCode over getFileContent** when you just need to confirm a pattern exists, not read the full file.
 
-    INTELLIGENT ANALYSIS STRATEGY:
+6. **Never read these files** (waste of tokens):
+   - README.md, LICENSE, CONTRIBUTING.md
+   - Test files unless specifically relevant
+   - Generated files, lock files
+   - Individual component files (infer from directory structure)
 
-    ### Phase 1: Context-Driven Inference (No Tools)
-    1. **Analyze provided package.json** for immediate architectural insights
-    2. **Interpret root structure** to understand project organization
-    3. **Make educated framework predictions** based on dependencies
-    4. **Identify likely patterns** from standard React/Next.js conventions
+ANALYSIS APPROACH:
+1. **Phase 1 - Context Analysis (NO TOOLS):** Extract everything possible from package.json, repo tree, and root contents. Identify the stack, patterns, and structure from what you already have. This phase should answer 70-80% of your questions.
 
-    ### Phase 2: Strategic Tool Usage (Minimal & Targeted)
-    **Only use tools for:**
-    - **Critical missing information** that affects architectural decisions
-    - **Ambiguous technology choices** requiring code inspection
-    - **Custom implementations** not evident from dependencies
-    - **Complex integrations** needing specific configuration analysis
+2. **Phase 2 - Targeted Tool Usage (MAX 5-8 calls):** Only use tools for critical unknowns that directly impact the architecture diagram. Examples of valid reads:
+   - prisma/schema.prisma (to understand data models)
+   - next.config.js (to understand custom configurations)
+   - A key API route to understand patterns
 
-    ### Phase 3: Comprehensive Architecture Synthesis
-    **Deliver detailed analysis covering:**
+3. **Phase 3 - Synthesis:** Combine findings into a cohesive architectural analysis.
 
-    **FRONTEND ARCHITECTURE:**
-    - Component hierarchy and organization patterns
-    - State management implementation details
-    - Routing and navigation structure
-    - UI/UX framework integration
-    - Performance optimization strategies
+WHAT TO ANALYZE:
 
-    **BACKEND/API DESIGN:**
-    - API endpoint organization and patterns
-    - Authentication and authorization flow
-    - Database schema and relationship patterns
-    - External service integration architecture
-    - Server-side rendering implementations
+**Core Architecture:**
+- Is this App Router (app/) or Pages Router (pages/)?
+- What's the component organization strategy?
+- How is state managed (Context, Zustand, Redux, etc.)?
+- What styling approach is used?
 
-    **DATA FLOW & INTEGRATIONS:**
-    - Client-server communication patterns
-    - Database connection and query strategies
-    - Third-party service integrations
-    - Real-time data handling approaches
-    - Caching and optimization layers
+**Backend & Data Layer:**
+- API routes structure and patterns
+- Database setup (Prisma, Drizzle, direct clients)
+- Authentication system (NextAuth, Clerk, Supabase, custom)
+- External service integrations
 
-    **DEPLOYMENT & SCALABILITY:**
-    - Production deployment configuration
-    - Environment variable management
-    - Performance monitoring setup
-    - Scalability considerations and patterns
+**Infrastructure:**
+- Third-party services (payment, email, storage, etc.)
+- Real-time features if any
+- Background jobs or queues
+- Caching strategies
 
-    ANALYSIS OUTPUT REQUIREMENTS:
+OUTPUT FORMAT - Your analysis MUST include these sections:
 
-    Provide a comprehensive architectural analysis structured as:
+1. **EXECUTIVE SUMMARY** (2-3 sentences describing what this app does and its core architecture)
 
-    1. **Executive Summary** (2-3 sentences)
-    2. **Technology Stack Identification** (definitive list)
-    3. **Architectural Patterns** (specific implementations found)
-    4. **Component Relationships** (data flow and dependencies)
-    5. **External Integrations** (APIs, databases, services)
-    6. **Performance & Scalability Considerations**
-    7. **Security Implementation Details**
-    8. **Development & Deployment Workflow**
+2. **TECH STACK** (List every technology with its purpose)
+   - Frontend: [frameworks, UI libraries, styling]
+   - Backend: [API patterns, server framework]
+   - Database: [DB type, ORM]
+   - Auth: [authentication solution]
+   - Infrastructure: [hosting, services]
 
-    **Quality Standards:**
-    - Be specific and technical, avoid generic descriptions
-    - Provide concrete evidence for architectural decisions
-    - Highlight unique or custom implementations
-    - Note potential architectural improvements or concerns
-    - Focus on actionable insights for diagram generation
+3. **ARCHITECTURE OVERVIEW** (How the system is organized)
+   - Directory structure philosophy
+   - Component organization pattern
+   - Data flow patterns
 
-    Remember: Tool efficiency is paramount. Make intelligent inferences from available data before resorting to repository exploration.`],
+4. **CORE COMPONENTS** (List each major component/module)
+   For each: Name, Purpose, Dependencies, Communication patterns
 
-      ["human", `Analyze the repository {repoFullName} and reverse engineer its complete software architecture.
+5. **DATA FLOW** (How data moves through the system)
+   - Client to server patterns
+   - Database interactions
+   - External API integrations
 
-    **Primary Objectives:**
-    1. **Architectural Pattern Recognition** - Identify specific React/Next.js implementation patterns
-    2. **Technology Stack Mapping** - Map exact technologies and their integration points
-    3. **Component Relationship Analysis** - Understand data flow and component interactions
-    4. **Integration Architecture** - Identify external services, APIs, and data sources
-    5. **Performance & Security Patterns** - Analyze optimization and security implementations
+6. **EXTERNAL INTEGRATIONS** (Every third-party service)
+   - Service name, purpose, how it's integrated
 
-    **Analysis Approach:**
-    - Start with the provided package.json and root structure analysis
-    - Use your React/Next.js expertise to infer architectural patterns
-    - Make strategic tool calls only for critical missing information
-    - Focus on architectural decisions that impact diagram generation
-    - Provide specific, technical insights rather than generic observations
+7. **KEY ARCHITECTURAL DECISIONS** (Notable patterns or choices)
 
-    **Expected Output:**
-    A comprehensive architectural analysis that enables accurate diagram generation, including:
-    - Exact technology stack with versions and integration patterns
-    - Specific component architecture and organization strategy
-    - Detailed data flow and state management implementation
-    - Complete external service integration mapping
-    - Performance optimization and security implementation details
+CRITICAL CONSTRAINTS:
+- Keep your entire analysis under 10000 characters
+- Be specific and technical - no generic descriptions
+- Every claim should be backed by evidence from the codebase
+- Focus on what's needed to create accurate architecture diagrams
+- Identify all components that would appear in a system architecture diagram`],
 
-    **Constraint:** Minimize tool usage - leverage your expertise and provided context first, then make targeted tool calls only for essential missing information.
+      ["human", `Analyze {repoFullName} and produce a comprehensive architectural analysis.
 
-    Begin your strategic analysis now.`],
+Your analysis will be used to generate a detailed architecture diagram showing:
+- All major components and microservices
+- How they communicate with each other
+- External service integrations
+- Data flow patterns
+
+REMEMBER:
+- The repo tree is already provided - DO NOT fetch it again
+- Use tools ONLY when absolutely necessary (max 5-8 file reads)
+- Infer from package.json and directory structure first
+- Be efficient with tokens - every tool call has a cost
+
+Start your analysis now.`],
 
       new MessagesPlaceholder("agent_scratchpad")
     ]);
-
-
-
-    
     
     // Create agent executor
     const agent = await createToolCallingAgent({
@@ -511,7 +790,7 @@ export async function generateArchitecture(projectId: string){
         agent,
         tools: repoAnalysisTools,
         verbose: true,
-        maxIterations: 40, // Allow thorough analysis
+        maxIterations: 15, // Efficient analysis with limited tool calls
     });
     
     try {
@@ -524,26 +803,28 @@ export async function generateArchitecture(projectId: string){
             packageJson: stringifiedPackageJson,
             repoContent: stringifiedRepoContent,
             defaultBranch: defaultBranch || 'main',
-            githubAccessToken: resolvedAccessToken
+            githubAccessToken: resolvedAccessToken,
+            repoTree: repoTree ? JSON.stringify(repoTree) : 'Not provided'
         });
-        
-        
         
         const detailedAnalysis = await db.project.update({
             where: { id: projectId },
             data: { detailedAnalysis: JSON.stringify(analysisResult.output) }
         });
+
         
             // Create the final architecture synthesis prompt
         // Enhanced Architecture Generation Prompt - Dynamic & Analysis-Driven
-        const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt2);       // Generate final architecture based on analysis
-        const finalChain = finalPrompt.pipe(llm).pipe(new StringOutputParser());
+        const finalPrompt = PromptTemplate.fromTemplate(mainGenerateArchitecturePrompt2);
+        const structuredLlm = llm.withStructuredOutput(architectureOutputSchema);
+        const finalChain = finalPrompt.pipe(structuredLlm);
         const architecture = await finalChain.invoke({
             analysis_findings: JSON.stringify(analysisResult.output),
             name: name,
-            framework: framework
+            framework: framework,
+            repoTree: repoTree ? JSON.stringify(repoTree) : 'Not provided'
         });
-        
+
         return {architecture: architecture, detailedAnalysis: JSON.stringify(analysisResult.output)};
 
     } catch (error) {
@@ -677,3 +958,282 @@ export async function checkProjectArchitectureById(projectId: string) {
 
 // Legacy alias for backward compatibility
 export const checkProjectArchitectureByGenerationId = checkProjectArchitectureById;
+
+export async function getGitHubCommitComparison(
+  repoFullName: string,
+  beforeCommit: string,
+  afterCommit: string
+) {
+  try {
+    // Step 1: Find project by repoFullName
+    const project = await db.project.findFirst({
+      where: { repoFullName: repoFullName },
+      select: {
+        id: true,
+        userId: true,
+        githubInstallationId: true,
+        ProjectArchitecture: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!project) {
+      return { error: 'Project not found' };
+    }
+
+    // Step 2: Verify project has ProjectArchitecture
+    if (!project.ProjectArchitecture || project.ProjectArchitecture.length === 0) {
+      return { error: 'Project has no existing architecture' };
+    }
+
+    // Step 3: Get installation token (no OAuth fallback)
+    if (!project.githubInstallationId) {
+      return { error: 'Project has no GitHub installation ID' };
+    }
+
+    const { getInstallationToken } = await import('./githubAppAuth');
+    const { token } = await getInstallationToken(project.githubInstallationId);
+
+    // Step 4: Make GitHub API call to compare commits
+    const compareResponse = await fetch(
+      `https://api.github.com/repos/${repoFullName}/compare/${beforeCommit}...${afterCommit}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'DevilDev-App',
+        },
+      }
+    );
+
+    if (!compareResponse.ok) {
+      const errorText = await compareResponse.text();
+      return { error: `GitHub API error (${compareResponse.status}): ${errorText}` };
+    }
+
+    const compareData = await compareResponse.json();
+
+    return { success: true, data: compareData, userId: project.userId, projectId: project.id };
+  } catch (error) {
+    console.error('Error in getGitHubCommitComparison:', error);
+    return { error: error instanceof Error ? error.message : 'Failed to get commit comparison' };
+  }
+}
+
+export async function regeneratePushedArchitecture(args: {
+  projectId: string;
+  repoFullName: string;
+  beforeCommit: string;
+  afterCommit: string;
+  exactFilesChanges: Array<{
+    filename: string;
+    status: string;
+    additions: number;
+    deletions: number;
+    changes: number;
+  }>;
+  latestArchitecture: any;
+  repoTree: any;
+}) {
+  const { projectId, repoFullName, beforeCommit, afterCommit, exactFilesChanges, latestArchitecture, repoTree } = args;
+
+  try {
+    // Fetch project details
+    const project = await db.project.findUnique({
+      where: { id: projectId },
+      select: {
+        githubInstallationId: true,
+        framework: true,
+        name: true,
+      },
+    });
+
+    if (!project) {
+      return { error: 'Project not found' };
+    }
+
+    // Get installation token
+    if (!project.githubInstallationId) {
+      return { error: 'Project has no GitHub installation ID' };
+    }
+
+    const { token: accessToken } = await getInstallationToken(String(project.githubInstallationId));
+
+    // Parse repo owner and name
+    const [owner, repo] = repoFullName.split('/');
+
+    // Create tools for the agent
+    const tools = [getFilePatchTool, getFileContentTool];
+
+    // Create the prompt for architecture regeneration
+    const prompt = ChatPromptTemplate.fromMessages([
+      ["system", regeneratePushedArchitecturePromptSystem],
+      ["human", regeneratePushedArchitecturePromptHuman],
+      new MessagesPlaceholder("agent_scratchpad")
+    ]);
+
+    // Create agent
+    const agent = await createToolCallingAgent({
+      llm,
+      tools,
+      prompt,
+    });
+
+    const agentExecutor = new AgentExecutor({
+      agent,
+      tools,
+      verbose: true,
+      maxIterations: 20,
+    });
+
+    // Execute the agent
+    const result = await agentExecutor.invoke({
+      latestArchitecture: JSON.stringify(latestArchitecture, null, 2),
+      exactFilesChanges: JSON.stringify(exactFilesChanges, null, 2),
+      repoTree: repoTree ? JSON.stringify(repoTree, null, 2) : 'Not provided',
+      projectName: project.name,
+      framework: project.framework || 'Unknown',
+      owner,
+      repo,
+      beforeCommit,
+      afterCommit,
+      accessToken,
+    });
+
+    // Use structured output agent to format the result
+    const formatterPrompt = PromptTemplate.fromTemplate(regeneratePushedArchitectureFormatterPrompt);
+    const structuredLlm = llm.withStructuredOutput(architectureOutputSchema);
+    const formatterChain = formatterPrompt.pipe(structuredLlm);
+
+    const parsedArchitecture = await formatterChain.invoke({
+      agentOutput: result.output,
+    });
+
+    // Validate required fields
+    if (!parsedArchitecture.components || !parsedArchitecture.architectureRationale) {
+      throw new Error('Invalid architecture structure - missing required fields');
+    }
+
+    return { success: true, architecture: parsedArchitecture };
+  } catch (error) {
+    console.error('Error in regeneratePushedArchitecture:', error);
+    return { error: error instanceof Error ? error.message : 'Failed to regenerate architecture' };
+  }
+}
+
+// Trigger manual architecture regeneration using pending commit data (for free users)
+export async function triggerPendingArchitectureRegeneration(projectId: string) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    const project = await db.project.findUnique({
+      where: { id: projectId, userId },
+      select: {
+        id: true,
+        needsArchitectureUpdate: true,
+        pendingCommitData: true,
+        lastGeneratedCommitHash: true,
+        _count: { select: { ProjectArchitecture: true } },
+      },
+    });
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    if (!project.needsArchitectureUpdate || !project.pendingCommitData) {
+      return { success: false, error: 'No pending update available' };
+    }
+
+    const architectureCount = project._count.ProjectArchitecture;
+
+    // Check regeneration limit for free users
+    if (architectureCount >= maxFreeArchitectureRegenerations) {
+      return {
+        success: false,
+        error: 'Regeneration limit reached',
+        limitReached: true,
+        count: architectureCount,
+        max: maxFreeArchitectureRegenerations,
+      };
+    }
+
+    // Use lastGeneratedCommitHash as beforeCommit if available
+    const commitData = project.pendingCommitData as Record<string, unknown>;
+    const dataToSend = {
+      ...commitData,
+      beforeCommit: project.lastGeneratedCommitHash ?? commitData.beforeCommit,
+    };
+
+    // Trigger Inngest with stored commit data
+    await inngest.send({
+      name: "reverse-architecture/regenerate",
+      data: dataToSend,
+    });
+
+    return {
+      success: true,
+      remainingRegenerations: maxFreeArchitectureRegenerations - architectureCount - 1,
+    };
+  } catch (error) {
+    console.error('Error triggering pending architecture regeneration:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Check if project has pending architecture update (includes limit info)
+export async function checkPendingArchitectureUpdate(projectId: string) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    const project = await db.project.findUnique({
+      where: { id: projectId, userId },
+      select: {
+        needsArchitectureUpdate: true,
+        pendingCommitTimestamp: true,
+        pendingCommitData: true,
+        lastGeneratedCommitHash: true,
+        _count: { select: { ProjectArchitecture: true } },
+      },
+    });
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    const commitData = project.pendingCommitData as {
+      afterCommit?: string;
+      commitMessage?: string;
+    } | null;
+    const count = project._count.ProjectArchitecture || 0;
+
+    return {
+      success: true,
+      needsUpdate: project.needsArchitectureUpdate,
+      pendingTimestamp: project.pendingCommitTimestamp,
+      commitMessage: commitData?.commitMessage || null,
+      latestCommitHash: commitData?.afterCommit || null,
+      lastGeneratedCommitHash: project.lastGeneratedCommitHash,
+      regenerationCount: count,
+      remainingRegenerations: maxFreeArchitectureRegenerations - count,
+      limitReached: count >= maxFreeArchitectureRegenerations,
+    };
+  } catch (error) {
+    console.error('Error checking pending architecture update:', error);
+    return { success: false, error: 'Failed to check pending update' };
+  }
+}

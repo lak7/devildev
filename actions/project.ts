@@ -64,7 +64,12 @@ export async function getProject(projectId: string) {
             framework: true,
             createdAt: true,
             updatedAt: true,
-            ProjectArchitecture: true,
+            ProjectArchitecture: {
+                orderBy: {
+                    createdAt: 'desc', // Latest first
+                },
+                take: 5, // Only fetch latest 5
+            },
             detailedAnalysis: true,
             ProjectChat: {
                 orderBy: {
@@ -83,7 +88,14 @@ export async function saveProjectArchitecture(
     components: any,
     connectionLabels: any,
     componentPositions?: any,
-    initialMessage?: string
+    projectStructure?: any,
+    initialMessage?: string,
+    commitInfo?: {
+        commitHash?: string;
+        branchName?: string;
+        commitMessage?: string;
+        beforeCommitHash?: string;
+    }
 ) {
     ;
 
@@ -101,49 +113,33 @@ export async function saveProjectArchitecture(
             return { error: 'Project not found' };
         }
 
-        // Check if ProjectArchitecture already exists
-        const existingArchitecture = await db.projectArchitecture.findUnique({
-            where: { projectId: projectId } 
-        });
-        ;
-        let savedArchitecture;
-        
-        if (existingArchitecture) {
-            // Update existing architecture
-            savedArchitecture = await db.projectArchitecture.update({
-                where: { projectId: projectId },
-                data: {
-                    architectureRationale,
-                    components,
-                    connectionLabels,
-                    componentPositions: componentPositions || existingArchitecture.componentPositions,
-                    updatedAt: new Date()
-                }
-            });
-        } else {
-            // Create new architecture
-            savedArchitecture = await db.projectArchitecture.create({
-                data: {
-                    projectId,
-                    architectureRationale,
-                    components,
-                    connectionLabels,
-                    componentPositions: componentPositions || {}
-                }
-            });
-
-            // If this is a new architecture and we have an initial message, save it as the first assistant message
-            if (initialMessage) {
-                const assistantMessage: ProjectMessage = {
-                    id: `${Date.now()}-init`,
-                    type: 'assistant',
-                    content: initialMessage,
-                    timestamp: new Date().toISOString()
-                };
-
-                // Add the initial message to the project (will create/use first chat)
-                await addMessageToProject(projectId, assistantMessage);
+        // Always create a new architecture version (history)
+        const savedArchitecture = await db.projectArchitecture.create({
+            data: {
+                projectId,
+                architectureRationale,
+                components,
+                connectionLabels,
+                componentPositions: componentPositions || {},
+                projectStructure: projectStructure || null,
+                ...(commitInfo?.commitHash && { commitHash: commitInfo.commitHash }),
+                ...(commitInfo?.branchName && { branchName: commitInfo.branchName }),
+                ...(commitInfo?.commitMessage && { commitMessage: commitInfo.commitMessage }),
+                ...(commitInfo?.beforeCommitHash && { beforeCommitHash: commitInfo.beforeCommitHash }),
             }
+        });
+
+        // If we have an initial message, save it as the first assistant message
+        if (initialMessage) {
+            const assistantMessage: ProjectMessage = {
+                id: `${Date.now()}-init`,
+                type: 'assistant',
+                content: initialMessage,
+                timestamp: new Date().toISOString()
+            };
+
+            // Add the initial message to the project (will create/use first chat)
+            await addMessageToProject(projectId, assistantMessage);
         }
         ;
         return { success: true, architecture: savedArchitecture };
@@ -174,18 +170,22 @@ export async function updateProjectComponentPositions(
             return { error: 'Project not found' };
         }
 
-        // Check if ProjectArchitecture exists
-        const existingArchitecture = await db.projectArchitecture.findUnique({
-            where: { projectId: projectId }
+        // Fetch the latest architecture for this project
+        const latestArchitectures = await db.projectArchitecture.findMany({
+            where: { projectId: projectId },
+            orderBy: { createdAt: 'desc' },
+            take: 1
         });
         
-        if (!existingArchitecture) {
+        if (!latestArchitectures || latestArchitectures.length === 0) {
             return { error: 'Architecture not found' };
         }
 
-        // Update only positions
+        const latestArchitecture = latestArchitectures[0];
+
+        // Update only positions on the latest architecture
         const savedArchitecture = await db.projectArchitecture.update({
-            where: { projectId: projectId },
+            where: { id: latestArchitecture.id },
             data: {
                 componentPositions: positions,
                 updatedAt: new Date()

@@ -58,6 +58,27 @@ interface ComponentData {
   }
 }
 
+interface CodeOwnership {
+  primaryImplementation?: {
+    directories: string[]
+    files: string[]
+    confidence: number
+    rationale: string
+  }
+  supportingRelated?: {
+    directories: string[]
+    files: string[]
+    confidence: number
+    rationale: string
+  }
+  sharedDependencies?: {
+    directories: string[]
+    files: string[]
+    confidence: number
+    rationale: string
+  }
+}
+
 interface ArchitectureProps {
   architectureData?: {
     components: ComponentData[]
@@ -67,6 +88,7 @@ interface ArchitectureProps {
   isFullscreen?: boolean
   customPositions?: Record<string, Position>
   onPositionsChange?: (positions: Record<string, Position>) => void
+  onComponentSelect?: (component: ComponentData | null, codeOwnership: CodeOwnership | null) => void
 }
 
 // Predefined color schemes for components
@@ -440,7 +462,7 @@ const initialComponents: ComponentData[] = [
 
 
 
-export default function RevArchitecture({ 
+export default function RevArchitecture({
   architectureData = {
     components: initialComponents,
     connectionLabels: {
@@ -449,11 +471,12 @@ export default function RevArchitecture({
       "backend-authentication": "Session",
       "authentication-frontend": "Auth Flow",
     }
-  }, 
-  isLoading = false, 
-  isFullscreen = false, 
-  customPositions = {}, 
-  onPositionsChange 
+  },
+  isLoading = false,
+  isFullscreen = false,
+  customPositions = {},
+  onPositionsChange,
+  onComponentSelect
 }: ArchitectureProps) {
   // Idle animation state - always declared to maintain hook order
   const [currentFactIndex, setCurrentFactIndex] = useState(0)
@@ -477,6 +500,39 @@ export default function RevArchitecture({
   )
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
   const [hoveredComponent, setHoveredComponent] = useState<string | null>(null)
+
+  // Use refs to avoid infinite loops - store latest values without triggering effect
+  const onComponentSelectRef = useRef(onComponentSelect)
+  const componentsRef = useRef(components)
+  const architectureDataRef = useRef(architectureData)
+
+  // Keep refs updated
+  useEffect(() => {
+    onComponentSelectRef.current = onComponentSelect
+  }, [onComponentSelect])
+
+  useEffect(() => {
+    componentsRef.current = components
+  }, [components])
+
+  useEffect(() => {
+    architectureDataRef.current = architectureData
+  }, [architectureData])
+
+  // Use effect to notify parent when selected component changes - only depends on selectedComponent
+  useEffect(() => {
+    const callback = onComponentSelectRef.current
+    if (callback) {
+      if (selectedComponent) {
+        const component = componentsRef.current.find(c => c.id === selectedComponent)
+        const originalComponent = architectureDataRef.current?.components?.find(c => c.id === selectedComponent)
+        const codeOwnership = (originalComponent as any)?.codeOwnership || null
+        callback(component || null, codeOwnership)
+      } else {
+        callback(null, null)
+      }
+    }
+  }, [selectedComponent])
   const [showDataFlow, setShowDataFlow] = useState(true)
   const [isDragging, setIsDragging] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 })
@@ -756,7 +812,7 @@ export default function RevArchitecture({
     (e: React.MouseEvent, componentId: string) => {
       e.stopPropagation()
       if (!isDragging && !isPanning) {
-        setSelectedComponent((prev) => (prev === componentId ? null : componentId))
+        setSelectedComponent((prev) => prev === componentId ? null : componentId)
       }
     },
     [isDragging, isPanning],
