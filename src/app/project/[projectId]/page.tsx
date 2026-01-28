@@ -346,9 +346,15 @@ const ProjectPage = () => {
   // Handle version change
   const handleVersionChange = (versionIndex: number) => {
     if (versionIndex >= 0 && versionIndex < allArchitectures.length) {
+      const selectedVersion = allArchitectures[versionIndex];
       setSelectedVersionIndex(versionIndex);
-      setArchitectureData(allArchitectures[versionIndex].architecture);
-      setCustomPositions(allArchitectures[versionIndex].componentPositions || {});
+      setArchitectureData(selectedVersion.architecture);
+      setCustomPositions(selectedVersion.componentPositions || {});
+      // Also update the project structure/repo tree for the selected version
+      setRepoTree(selectedVersion.projectStructure || null);
+      // Clear any selected component ownership since we're switching versions
+      setSelectedComponentOwnership(null);
+      setSelectedComponentTitle(null);
       setIsVersionDropdownOpen(false);
     }
   };
@@ -1616,6 +1622,7 @@ const ProjectPage = () => {
               <div className="h-[calc(100vh-4rem)] overflow-hidden">
                 {mobileActivePanel === 'architecture' ? (
                   <RevArchitecture
+                    key={`mobile-arch-${selectedVersionIndex}`}
                     architectureData={architectureData}
                     isFullscreen={true}
                     customPositions={customPositions}
@@ -2012,6 +2019,7 @@ const ProjectPage = () => {
             {/* Architecture Tab */}
             <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
               <RevArchitecture
+                key={`desktop-arch-${selectedVersionIndex}`}
                 architectureData={architectureData}
                 isFullscreen={false}
                 customPositions={customPositions}
@@ -2129,6 +2137,7 @@ const ProjectPage = () => {
           {/* Fullscreen Architecture Content */}
           <div className="h-[calc(100vh-4rem)] overflow-hidden">
             <RevArchitecture
+              key={`fullscreen-arch-${selectedVersionIndex}`}
               architectureData={architectureData}
               isFullscreen={true}
               customPositions={customPositions}
