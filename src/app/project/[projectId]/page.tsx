@@ -903,7 +903,7 @@ const ProjectPage = () => {
     if (isCharacterLimitReached || isPromptLimitReached) {
       setShowCharacterLimitDialog(true);
       return;
-    }
+    } 
 
     
 
@@ -944,14 +944,10 @@ const ProjectPage = () => {
         );
       } 
 
-      
-      // TODO: Add AI response handling here when implementing chat functionality
-      // here 
-
       const chatbotResponse = await projectChatBot(currentInput.trim() ,project.framework, messages, architectureData, project.detailedAnalysis);
       let cleanedResponse = chatbotResponse; 
       if (typeof cleanedResponse === 'string') {
-        cleanedResponse = cleanedResponse
+        cleanedResponse = cleanedResponse 
           .replace(/^```json\s*/i, '')
           .replace(/^```\s*/, '') 
           .replace(/\s*```\s*$/, '')
@@ -978,10 +974,10 @@ const ProjectPage = () => {
 
       if(parsedResponse.prompt && parsedResponse.wannaStart && (parsedResponse.difficulty === "easy" || parsedResponse.difficulty === "medium")){
         // Count existing prompts already generated in this chat
-        setIsPromptGenerating(true);
+        setIsPromptGenerating(true); 
           
           const  prompt = await generatePrompt(inputMessage.trim(), project.framework, messages, project.detailedAnalysis);
-
+ 
           
           // Only update the assistant message if prompt is a string
           if (typeof prompt === 'string') {

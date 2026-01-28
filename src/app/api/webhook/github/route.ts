@@ -28,10 +28,7 @@ export async function POST(req: NextRequest) {
     const delivery = req.headers.get('x-github-delivery');
     const event = req.headers.get('x-github-event');
     const rawBody = await req.text();
-    console.log("event", event);
-    console.log('rawBody', rawBody);
     const action = JSON.parse(rawBody).action;
-    console.log('action', action);
 
     if (!verifySignature(secret, rawBody, signature)) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
@@ -51,7 +48,6 @@ export async function POST(req: NextRequest) {
     });
 
     const payload = JSON.parse(rawBody);
-    console.log('payload', payload);
 
     switch (event) {
       case 'installation': {
