@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
         const defaultBranch = payload.repository.default_branch;
 
         // Only regenerating the architecture if the pushed branch is the default branch
-        if(pushedBranch === defaultBranch){
+        if (pushedBranch === defaultBranch) {
           const repoFullName = payload.repository.full_name;
           const beforeCommit = payload.before;
 
@@ -144,22 +144,66 @@ export async function POST(req: NextRequest) {
           const filesRemoved = payload.head_commit.removed;
           const filesModified = payload.head_commit.modified;
           const commitMessage = payload.head_commit.message;
-          const inngestDataToSend = {
-            repoFullName: repoFullName,
-            beforeCommit: beforeCommit,
-            afterCommit: afterCommit,
-            filesAdded: filesAdded,
-            filesRemoved: filesRemoved,
-            filesModified: filesModified,
-            commitMessage: commitMessage,
+
+          // Find project and check if it has existing architecture
+          const project = await db.project.findFirst({
+            where: { repoFullName },
+            select: {
+              id: true,
+              userId: true,
+              _count: { select: { ProjectArchitecture: true } },
+            },
+          });
+
+          // Skip if no project found or no existing architecture
+          if (!project || project._count.ProjectArchitecture === 0) {
+            return NextResponse.json({ ok: true });
+          }
+
+          const architectureCount = project._count.ProjectArchitecture;
+
+          // Check user subscription status
+          const user = await db.user.findUnique({
+            where: { id: project.userId },
+            select: {
+              subscriptionPlan: true,
+              subscription: { select: { status: true } },
+            },
+          });
+
+          const isPro = user?.subscriptionPlan === "PRO" && user?.subscription?.status === "ACTIVE";
+
+          const commitData = {
+            repoFullName,
+            beforeCommit,
+            afterCommit,
+            filesAdded,
+            filesRemoved,
+            filesModified,
+            commitMessage,
             branchName: pushedBranch,
           };
-          await inngest.send({
-            name: "reverse-architecture/regenerate",
-            data: inngestDataToSend,
-          });
-        } else {
-          return NextResponse.json({ ok: true });
+
+          if (isPro) {
+            // Pro users: trigger Inngest immediately (existing behavior)
+            await inngest.send({
+              name: "reverse-architecture/regenerate",
+              data: commitData,
+            });
+          } else {
+            // Free users: store pending update data (overwrites any previous pending data)
+            // If this is the first push after initial architecture (count === 1),
+            // set lastGeneratedCommitHash to beforeCommit to track the baseline
+            await db.project.update({
+              where: { id: project.id },
+              data: {
+                needsArchitectureUpdate: true,
+                pendingCommitData: commitData,
+                pendingCommitTimestamp: new Date(),
+                ...(architectureCount === 1 && { lastGeneratedCommitHash: beforeCommit }),
+              },
+            });
+          }
         }
         break;
       }

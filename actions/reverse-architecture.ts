@@ -9,6 +9,8 @@ import { getFileContentTool, searchCodeTool, getFilePatchTool } from './github/g
 import { getInstallationToken } from './githubAppAuth';
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
+import { maxFreeArchitectureRegenerations } from '../Limits';
+import { Prisma } from '@prisma/client';
 const { inngest } = await import('../src/inngest/client');
 
 const openaiKey = process.env.OPENAI_API_KEY;
@@ -1119,5 +1121,119 @@ export async function regeneratePushedArchitecture(args: {
   } catch (error) {
     console.error('Error in regeneratePushedArchitecture:', error);
     return { error: error instanceof Error ? error.message : 'Failed to regenerate architecture' };
+  }
+}
+
+// Trigger manual architecture regeneration using pending commit data (for free users)
+export async function triggerPendingArchitectureRegeneration(projectId: string) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    const project = await db.project.findUnique({
+      where: { id: projectId, userId },
+      select: {
+        id: true,
+        needsArchitectureUpdate: true,
+        pendingCommitData: true,
+        lastGeneratedCommitHash: true,
+        _count: { select: { ProjectArchitecture: true } },
+      },
+    });
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    if (!project.needsArchitectureUpdate || !project.pendingCommitData) {
+      return { success: false, error: 'No pending update available' };
+    }
+
+    const architectureCount = project._count.ProjectArchitecture;
+
+    // Check regeneration limit for free users
+    if (architectureCount >= maxFreeArchitectureRegenerations) {
+      return {
+        success: false,
+        error: 'Regeneration limit reached',
+        limitReached: true,
+        count: architectureCount,
+        max: maxFreeArchitectureRegenerations,
+      };
+    }
+
+    // Use lastGeneratedCommitHash as beforeCommit if available
+    const commitData = project.pendingCommitData as Record<string, unknown>;
+    const dataToSend = {
+      ...commitData,
+      beforeCommit: project.lastGeneratedCommitHash ?? commitData.beforeCommit,
+    };
+
+    // Trigger Inngest with stored commit data
+    await inngest.send({
+      name: "reverse-architecture/regenerate",
+      data: dataToSend,
+    });
+
+    return {
+      success: true,
+      remainingRegenerations: maxFreeArchitectureRegenerations - architectureCount - 1,
+    };
+  } catch (error) {
+    console.error('Error triggering pending architecture regeneration:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Check if project has pending architecture update (includes limit info)
+export async function checkPendingArchitectureUpdate(projectId: string) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    const project = await db.project.findUnique({
+      where: { id: projectId, userId },
+      select: {
+        needsArchitectureUpdate: true,
+        pendingCommitTimestamp: true,
+        pendingCommitData: true,
+        lastGeneratedCommitHash: true,
+        _count: { select: { ProjectArchitecture: true } },
+      },
+    });
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    const commitData = project.pendingCommitData as {
+      afterCommit?: string;
+      commitMessage?: string;
+    } | null;
+    const count = project._count.ProjectArchitecture || 0;
+
+    return {
+      success: true,
+      needsUpdate: project.needsArchitectureUpdate,
+      pendingTimestamp: project.pendingCommitTimestamp,
+      commitMessage: commitData?.commitMessage || null,
+      latestCommitHash: commitData?.afterCommit || null,
+      lastGeneratedCommitHash: project.lastGeneratedCommitHash,
+      regenerationCount: count,
+      remainingRegenerations: maxFreeArchitectureRegenerations - count,
+      limitReached: count >= maxFreeArchitectureRegenerations,
+    };
+  } catch (error) {
+    console.error('Error checking pending architecture update:', error);
+    return { success: false, error: 'Failed to check pending update' };
   }
 }

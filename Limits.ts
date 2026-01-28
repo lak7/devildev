@@ -11,6 +11,7 @@ export const maxNumberOfProjectChatsPro = 100;
 // REGENERATE ARCHITECTURE FREE
 export const maxFilesChangedFree = 50;
 export const maxLinesChangedFree = 5000;
+export const maxFreeArchitectureRegenerations = 5;
 
 // REGENERATE ARCHITECTURE PRO
 export const maxFilesChangedPro = 300;

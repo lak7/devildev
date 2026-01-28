@@ -7,7 +7,7 @@ import { Search, FileText, Globe, BarChart3, Maximize, X, Menu, MessageCircle, U
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getProject, saveProjectArchitecture, updateProjectComponentPositions, ProjectMessage, addMessageToProject, projectChatBot, generatePrompt, initialDocsGeneration, createProjectContextDocs, generateProjectPlan, generateNthPhase, updateProjectContextDocs, getProjectContextDocs, createProjectChat, getProjectChats, getProjectChat, addMessageToProjectChat } from "../../../../actions/project";
 import { SignOutButton, useUser } from '@clerk/nextjs';
-import { triggerReverseArchitectureGeneration, checkProjectArchitectureByGenerationId } from '../../../../actions/reverse-architecture';
+import { triggerReverseArchitectureGeneration, checkProjectArchitectureByGenerationId, checkPendingArchitectureUpdate, triggerPendingArchitectureRegeneration } from '../../../../actions/reverse-architecture';
 import { Json } from 'langchain/tools';
 import RevArchitecture from '@/components/core/revArchitecture';
 import ProjectContextDocs from '@/components/core/ProjectContextDocs';
@@ -93,6 +93,18 @@ const ProjectPage = () => {
   const [allArchitectures, setAllArchitectures] = useState<ProjectArchitectureVersion[]>([]);
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<number>(0);
   const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
+
+  // Pending architecture update state (for free users)
+  const [hasPendingUpdate, setHasPendingUpdate] = useState(false);
+  const [pendingUpdateInfo, setPendingUpdateInfo] = useState<{
+    timestamp: Date | null;
+    commitMessage: string | null;
+    remainingRegenerations: number;
+    limitReached: boolean;
+    latestCommitHash: string | null;
+    lastGeneratedCommitHash: string | null;
+  } | null>(null);
+  const [isRegeneratingFromPending, setIsRegeneratingFromPending] = useState(false);
   const [isPromptGenerating, setIsPromptGenerating] = useState(false);
   const [isDocsGenerating, setIsDocsGenerating] = useState(false);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
@@ -505,6 +517,57 @@ const ProjectPage = () => {
     setMAX_CHATS(userSubscription ? maxNumberOfProjectChatsPro : maxNumberOfProjectChatsFree);
     setMAX_CHARACTERS(userSubscription ? maxChatCharactersLimitPro : maxChatCharactersLimitFree);
   }, [userSubscription]);
+
+  // Check for pending architecture updates (for free users)
+  useEffect(() => {
+    const checkPending = async () => {
+      if (!projectId || isArchitectureGenerating) return;
+
+      const result = await checkPendingArchitectureUpdate(projectId);
+      if (result.success && result.needsUpdate) {
+        setHasPendingUpdate(true);
+        setPendingUpdateInfo({
+          timestamp: result.pendingTimestamp ? new Date(result.pendingTimestamp) : null,
+          commitMessage: result.commitMessage || null,
+          remainingRegenerations: result.remainingRegenerations ?? 0,
+          limitReached: result.limitReached ?? false,
+          latestCommitHash: result.latestCommitHash || null,
+          lastGeneratedCommitHash: result.lastGeneratedCommitHash || null,
+        });
+      } else {
+        setHasPendingUpdate(false);
+        setPendingUpdateInfo(null);
+      }
+    };
+
+    checkPending();
+  }, [projectId, isArchitectureGenerating]);
+
+  // Handle manual regeneration from pending update
+  const handleRegenerateFromPending = async () => {
+    if (isRegeneratingFromPending || isArchitectureGenerating) return;
+
+    setIsRegeneratingFromPending(true);
+    setIsArchitectureGenerating(true);
+
+    try {
+      const result = await triggerPendingArchitectureRegeneration(projectId);
+
+      if (result.success) {
+        setHasPendingUpdate(false);
+        setPendingUpdateInfo(null);
+        pollForProjectArchitecture();
+      } else {
+        alert(result.error || 'Failed to start regeneration');
+        setIsArchitectureGenerating(false);
+      }
+    } catch (error) {
+      console.error('Error triggering regeneration:', error);
+      setIsArchitectureGenerating(false);
+    } finally {
+      setIsRegeneratingFromPending(false);
+    }
+  };
 
   // Copy prompt function
   const copyPrompt = async (messageId: string, prompt: string) => {
@@ -2011,9 +2074,69 @@ const ProjectPage = () => {
 
           {/* Tab Content */}
           <div className="flex-1 overflow-hidden min-h-0">
-            
+
             {/* Architecture Tab */}
-            <div className={`h-full ${activeTab === 'architecture' ? 'block' : 'hidden'}`}>
+            <div className={`h-full flex flex-col ${activeTab === 'architecture' ? 'flex' : 'hidden'}`}>
+              {/* Pending Update Banner - Only for free users with pending updates */}
+              {hasPendingUpdate && !isArchitectureGenerating && (
+                <div className={`border rounded-lg p-3 mx-3 mt-3 flex-shrink-0 ${
+                  pendingUpdateInfo?.limitReached
+                    ? 'bg-red-500/10 border-red-500/30'
+                    : 'bg-amber-500/10 border-amber-500/30'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className={`text-sm font-medium ${
+                        pendingUpdateInfo?.limitReached ? 'text-red-200' : 'text-amber-200'
+                      }`}>
+                        {pendingUpdateInfo?.limitReached
+                          ? 'Regeneration Limit Reached'
+                          : 'Architecture Update Available'}
+                      </h3>
+                      <p className="text-xs text-gray-400">
+                        {pendingUpdateInfo?.limitReached ? (
+                          'Upgrade to Pro for unlimited regenerations'
+                        ) : (
+                          <>
+                            <span className="font-mono">
+                              {pendingUpdateInfo?.lastGeneratedCommitHash?.slice(0, 7) || 'initial'}
+                            </span>
+                            <span className="mx-1">→</span>
+                            <span className="font-mono text-amber-300">
+                              {pendingUpdateInfo?.latestCommitHash?.slice(0, 7)}
+                            </span>
+                            <span className="ml-2 text-gray-500">
+                              ({pendingUpdateInfo?.remainingRegenerations} left)
+                            </span>
+                          </>
+                        )}
+                      </p>
+                      {!pendingUpdateInfo?.limitReached && pendingUpdateInfo?.commitMessage && (
+                        <p className="text-xs text-gray-500 mt-1 truncate max-w-xs">
+                          &quot;{pendingUpdateInfo.commitMessage.slice(0, 50)}{pendingUpdateInfo.commitMessage.length > 50 ? '...' : ''}&quot;
+                        </p>
+                      )}
+                    </div>
+                    {pendingUpdateInfo?.limitReached ? (
+                      <Button
+                        onClick={() => router.push('/pricing')}
+                        className="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1"
+                      >
+                        Upgrade
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleRegenerateFromPending}
+                        disabled={isRegeneratingFromPending}
+                        className="bg-amber-500 hover:bg-amber-600 text-black text-sm px-3 py-1"
+                      >
+                        {isRegeneratingFromPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sync'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div className="flex-1 min-h-0">
               <RevArchitecture
                 key={`desktop-arch-${selectedVersionIndex}`}
                 architectureData={architectureData}
@@ -2022,8 +2145,9 @@ const ProjectPage = () => {
                 onPositionsChange={handlePositionsChange}
                 onComponentSelect={handleArchitectureComponentSelect}
               />
+              </div>
             </div>
-            
+
             {/* Pacts Tab */}
             <div className={`h-full ${activeTab === 'docs' ? 'block' : 'hidden'}`}>
               <ProjectContextDocs 

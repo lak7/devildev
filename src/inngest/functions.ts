@@ -4,6 +4,7 @@ import { inngest } from "./client";
 import { generateArchitecture, getGitHubCommitComparison, regeneratePushedArchitecture, getRepoTree } from "../../actions/reverse-architecture";
 import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { maxFilesChangedFree, maxFilesChangedPro, maxLinesChangedFree, maxLinesChangedPro } from "../../Limits";
 
 
@@ -373,6 +374,20 @@ export const regenerateReverseArchitectureFunction = inngest.createFunction(
         }
 
         return saveResult.architecture;
+      });
+
+      // Step 11: Clear pending state and update last generated commit hash 
+      await step.run("clear-pending-state", async () => {
+        await db.project.update({
+          where: { id: projectId },
+          data: {
+            needsArchitectureUpdate: false,
+            pendingCommitData: Prisma.DbNull,
+            pendingCommitTimestamp: null,
+            lastGeneratedCommitHash: afterCommit,
+          },
+        });
+        return { cleared: true };
       });
 
       return {
