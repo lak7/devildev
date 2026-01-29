@@ -412,6 +412,78 @@ export async function triggerArchitectureGeneration(data: {
   }
 }
 
+// JSON Schema for structured architecture output
+const architectureJsonSchema = {
+  type: "object",
+  description: "Complete software architecture with components, connections, and rationale",
+  properties: {
+    components: {
+      type: "array",
+      description: "Array of architecture components",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Kebab-case unique identifier for the component" },
+          title: { type: "string", description: "Exact component name" },
+          icon: { type: "string", description: "Lucide icon name for the component" },
+          color: { type: "string", description: "Color for the component (e.g., 'from-blue-500 to-blue-600')" },
+          borderColor: { type: "string", description: "Border color for the component (e.g., 'border-blue-500/30')" },
+          technologies: {
+            type: "object",
+            properties: {
+              primary: { type: "string", description: "Primary technology from input" },
+              framework: { type: "string", description: "Framework/library if applicable" },
+              additional: { type: "string", description: "Supporting tools and libraries" }
+            },
+            required: ["primary", "framework", "additional"]
+          },
+          connections: {
+            type: "array",
+            items: { type: "string" },
+            description: "Array of connected component IDs"
+          },
+          position: {
+            type: "object",
+            properties: {
+              x: { type: "number", description: "X coordinate for component position" },
+              y: { type: "number", description: "Y coordinate for component position" }
+            },
+            required: ["x", "y"]
+          },
+          dataFlow: {
+            type: "object",
+            properties: {
+              sends: {
+                type: "array",
+                items: { type: "string" },
+                description: "Specific data types this component sends"
+              },
+              receives: {
+                type: "array",
+                items: { type: "string" },
+                description: "Specific data types this component receives"
+              }
+            },
+            required: ["sends", "receives"]
+          },
+          purpose: { type: "string", description: "Clear, detailed explanation of component's role in the architecture" }
+        },
+        required: ["id", "title", "icon", "color", "borderColor", "technologies", "connections", "position", "dataFlow", "purpose"]
+      }
+    },
+    connectionLabels: {
+      type: "object",
+      description: "Map of connection IDs (component1-id-component2-id) to their protocol/method labels",
+      additionalProperties: { type: "string" }
+    },
+    architectureRationale: {
+      type: "string",
+      description: "2-3 sentence explanation of why this architecture is well-designed for the given requirements"
+    }
+  },
+  required: ["components", "connectionLabels", "architectureRationale"]
+};
+
 export async function generateArchitectureWithToolCalling(requirement: string, conversationHistory: any[] = [], architectureData: any){
   // Format conversation history for the prompt
   const formattedHistory = conversationHistory.map(msg => 
@@ -616,7 +688,9 @@ const finalPrompt = PromptTemplate.fromTemplate(`
   
   Return only the JSON architecture structure.
   `);
-const finalChain = finalPrompt.pipe(llm).pipe(new StringOutputParser());
+// Use structured output with JSON schema for guaranteed format
+const structuredLlm = llm.withStructuredOutput(architectureJsonSchema);
+const finalChain = finalPrompt.pipe(structuredLlm);
 
 const tools = [basicWebComponentsTool, aimlComponentsTool, analyticsComponentsTool, authComponentsTool, blockchainComponentsTool, databaseComponentsTool, mobileComponentsTool, notificationComponentsTool, paymentComponentsTool, realtimeComponentsTool];
 

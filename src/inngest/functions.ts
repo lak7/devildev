@@ -1,5 +1,5 @@
 import { generateArchitectureWithToolCalling } from "../../actions/architecture";
-import { saveArchitectureWithUserId } from "../../actions/architecturePersistence";
+import { saveArchitectureWithUserId, ArchitectureData } from "../../actions/architecturePersistence";
 import { inngest } from "./client";
 import { generateArchitecture, getGitHubCommitComparison, regeneratePushedArchitecture, getRepoTree } from "../../actions/reverse-architecture";
 import { saveProjectArchitecture, saveInitialMessageForInngestRevArchitecture } from "../../actions/project";
@@ -18,36 +18,22 @@ export const generateArchitectureFunction = inngest.createFunction(
 
     try {
       // Step 1: Generate architecture (the expensive 5-10 min operation)
-      const architectureResult = await step.run("generate-architecture", async () => {
-        return await generateArchitectureWithToolCalling(
+      // Returns structured output directly from withStructuredOutput
+      const architecture = await step.run("generate-architecture", async () => {
+        const result = await generateArchitectureWithToolCalling(
           requirement,
           conversationHistory,
           architectureData
-        ); 
+        );
+        return result as ArchitectureData;
       });
 
-      // Step 2: Clean and parse the result
-      const parsedArchitecture = await step.run("parse-result", async () => {
-        let cleanedResult = architectureResult;
-        if (typeof architectureResult === 'string') {
-          cleanedResult = architectureResult
-            .replace(/^```json\s*/i, '')
-            .replace(/^```\s*/, '')
-            .replace(/\s*```\s*$/, '')
-            .trim();
-        }
-
-        return typeof cleanedResult === 'string'
-          ? JSON.parse(cleanedResult)
-          : cleanedResult;
-      });
-
-      // Step 3: Save architecture to database
-      if (chatId && parsedArchitecture) {
+      // Step 2: Save architecture to database
+      if (chatId && architecture) {
         await step.run("save-architecture", async () => {
           const saveResult = await saveArchitectureWithUserId(generationId, {
             chatId,
-            architectureData: parsedArchitecture,
+            architectureData: architecture,
             requirement,
             componentPositions: componentPositions,
           }, userId);
@@ -63,7 +49,7 @@ export const generateArchitectureFunction = inngest.createFunction(
       return {
         success: true,
         architectureId: generationId,
-        architecture: parsedArchitecture,
+        architecture,
       };
 
     } catch (error) {
