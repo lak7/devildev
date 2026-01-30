@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(sortedProjects, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60', // Cache for 5 minutes
+        'Cache-Control': 'private, s-maxage=300, stale-while-revalidate=60', // Cache for 5 minutes
       },
     });
   } catch (error) {
