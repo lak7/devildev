@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-blue" />
+  <img src="https://img.shields.io/badge/version-0.2.0-blue" />
    <img src="https://img.shields.io/badge/status-experimental-orange" />
    <a href="https://opensource.org/licenses/Apache-2.0">
     <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" />
@@ -95,11 +95,8 @@ Before you begin, ensure you have the following installed:
 - **PostgreSQL** database (local or cloud-hosted)
 - **Git** for version control
 
-Choose your setup path:
-
 ---
 
-### Option 1: Local Development Setup
 
 ### Step 1: Clone and Install Dependencies
 
