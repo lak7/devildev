@@ -69,17 +69,17 @@ export async function POST(request: NextRequest) {
         }
       );
 
-      
+
       if (contentsResponse.ok) {
         theProjectStructure = await contentsResponse.json();
       }
 
-      // Get package.json if it exists (for Node.js projects)
-      
+      // Get package.json if it exists (check root first, then subdirectories)
+
       try {
         const packageResponse = await fetch(
           `https://api.github.com/repos/${fullName}/contents/package.json`,
-          { 
+          {
             headers: {
               'Authorization': `Bearer ${authToken}`,
               'Accept': 'application/vnd.github.v3+json',
@@ -87,11 +87,64 @@ export async function POST(request: NextRequest) {
             },
           }
         );
-        
+
         if (packageResponse.ok) {
           const packageData = await packageResponse.json();
-          if (packageData.content) { 
+          if (packageData.content) {
             packageJson = JSON.parse(atob(packageData.content));
+          }
+        } else {
+          // package.json not in root, search subdirectories using Git tree API
+          const repoInfoResponse = await fetch(
+            `https://api.github.com/repos/${fullName}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'DevilDev-App',
+              },
+            }
+          );
+          if (repoInfoResponse.ok) {
+            const repoInfo = await repoInfoResponse.json();
+            const branch = repoInfo.default_branch || 'main';
+            const treeResponse = await fetch(
+              `https://api.github.com/repos/${fullName}/git/trees/${branch}?recursive=1`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${authToken}`,
+                  'Accept': 'application/vnd.github.v3+json',
+                  'User-Agent': 'DevilDev-App',
+                },
+              }
+            );
+            if (treeResponse.ok) {
+              const treeData = await treeResponse.json();
+              if (treeData.tree && Array.isArray(treeData.tree)) {
+                // Find the shallowest package.json in subdirectories
+                const packageJsonEntries = treeData.tree
+                  .filter((node: any) => node.type === 'blob' && node.path.endsWith('/package.json'))
+                  .sort((a: any, b: any) => a.path.split('/').length - b.path.split('/').length);
+                if (packageJsonEntries.length > 0) {
+                  const subPackageResponse = await fetch(
+                    `https://api.github.com/repos/${fullName}/contents/${packageJsonEntries[0].path}`,
+                    {
+                      headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'DevilDev-App',
+                      },
+                    }
+                  );
+                  if (subPackageResponse.ok) {
+                    const packageData = await subPackageResponse.json();
+                    if (packageData.content) {
+                      packageJson = JSON.parse(atob(packageData.content));
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       } catch (error) {
