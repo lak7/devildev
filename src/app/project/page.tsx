@@ -38,6 +38,13 @@ import { useEffect, useState } from "react"
 import { submitFeedback } from "../../../actions/feedback"
 import Nav from "@/components/core/Nav"
 import GithubOAuthDeprecatedNotice from "@/components/GithubOAuthDeprecatedNotice"
+import {
+  SWR_DEDUPING_INTERVAL_MS,
+  SWR_REFRESH_INTERVAL_MS,
+  SWR_ERROR_RETRY_COUNT,
+  SWR_ERROR_RETRY_INTERVAL_MS,
+  FEEDBACK_SUCCESS_CLOSE_DELAY_MS,
+} from '@/constants'
 
 interface Project {
   id: string;
@@ -74,10 +81,10 @@ export default function ProjectsPage() {
     {
       revalidateOnFocus: false, // Don't refetch when window gains focus
       revalidateOnReconnect: true, // Refetch when reconnecting to the internet
-      dedupingInterval: 60000, // Dedupe requests within 1 minute
-      refreshInterval: 5 * 60 * 1000, // Refresh every 5 minutes
-      errorRetryCount: 3, // Retry on error 3 times
-      errorRetryInterval: 1000, // Wait 1 second between retries
+      dedupingInterval: SWR_DEDUPING_INTERVAL_MS,
+      refreshInterval: SWR_REFRESH_INTERVAL_MS,
+      errorRetryCount: SWR_ERROR_RETRY_COUNT,
+      errorRetryInterval: SWR_ERROR_RETRY_INTERVAL_MS,
     }
   );
 
@@ -102,7 +109,7 @@ export default function ProjectsPage() {
         setTimeout(() => {
           setIsFeedbackOpen(false);
           setFeedbackMessage(null);
-        }, 2000);
+        }, FEEDBACK_SUCCESS_CLOSE_DELAY_MS);
       } else {
         setFeedbackMessage({
           type: 'error',

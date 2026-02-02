@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { CHAT_TITLE_FROM_MESSAGE_LENGTH } from "@/constants";
 
 export interface ChatMessage {
   id: string;
@@ -50,8 +51,8 @@ export async function createChatWithId(chatId: string, initialMessage: string) {
         id: chatId,
         userId: userId,
         messages: [initialMessageObj] as any,
-        title: initialMessage.length > 50 
-          ? initialMessage.substring(0, 50) + "..." 
+        title: initialMessage.length > CHAT_TITLE_FROM_MESSAGE_LENGTH
+          ? initialMessage.substring(0, CHAT_TITLE_FROM_MESSAGE_LENGTH) + "..."
           : initialMessage,
       },
     });
