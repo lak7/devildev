@@ -15,13 +15,22 @@ import { webResearchAgentPrompt, summarizeProjectDocsContextPrompt } from "../pr
 import openai from "openai";
 
 import { RunnableLambda } from "@langchain/core/runnables";
+import {
+    DEFAULT_MAX_INPUT_TOKENS,
+    DEFAULT_MAX_OUTPUT_TOKENS,
+    WEB_SEARCH_MAX_INPUT_TOKENS,
+    WEB_SEARCH_MAX_OUTPUT_TOKENS,
+    MIN_REMAINING_TOKENS_THRESHOLD,
+    FALLBACK_TRUNCATION_LENGTH,
+    TOKEN_TRUNCATION_SAFETY_MARGIN,
+} from "@/constants";
 
 // Custom context window manager class
 class ContextWindowManager {
     private maxInputTokens: number;
     private maxOutputTokens: number;
     
-    constructor(maxInputTokens: number = 8000, maxOutputTokens: number = 2000) {
+    constructor(maxInputTokens: number = DEFAULT_MAX_INPUT_TOKENS, maxOutputTokens: number = DEFAULT_MAX_OUTPUT_TOKENS) {
         this.maxInputTokens = maxInputTokens;
         this.maxOutputTokens = maxOutputTokens;
     }
@@ -37,7 +46,7 @@ class ContextWindowManager {
         if (estimatedTokens <= maxTokens) return text;
         
         const ratio = maxTokens / estimatedTokens;
-        const truncatedLength = Math.floor(text.length * ratio * 0.9); // 10% safety margin
+        const truncatedLength = Math.floor(text.length * ratio * TOKEN_TRUNCATION_SAFETY_MARGIN);
         return text.substring(0, truncatedLength) + "...[truncated]";
     }
     
@@ -56,7 +65,7 @@ class ContextWindowManager {
             if (totalTokens + messageTokens > this.maxInputTokens) {
                 // Truncate this message to fit remaining space
                 const remainingTokens = this.maxInputTokens - totalTokens;
-                if (remainingTokens > 100) { // Only include if we have reasonable space
+                if (remainingTokens > MIN_REMAINING_TOKENS_THRESHOLD) {
                     content = this.truncateToTokens(content, remainingTokens);
                     processedMessages.unshift({ ...message, content });
                 }
@@ -132,7 +141,7 @@ export async function summarizeProjectDocsContext(userQuery: string, projectFram
 
 export async function generateWebSearchDocs(summarizedContext: string, framework: string) {
 
-    const contextManager = new ContextWindowManager(12000, 5000);
+    const contextManager = new ContextWindowManager(WEB_SEARCH_MAX_INPUT_TOKENS, WEB_SEARCH_MAX_OUTPUT_TOKENS);
 
 
 
@@ -169,7 +178,7 @@ export async function generateWebSearchDocs(summarizedContext: string, framework
     } catch (error) {
         console.error("Context window exceeded:", error);
         // Fallback with even more aggressive truncation
-        const veryShortContext = truncatedContext.substring(0, 1000);
+        const veryShortContext = truncatedContext.substring(0, FALLBACK_TRUNCATION_LENGTH);
         const response = await chain.invoke({
             summarizedContext: veryShortContext,
             framework: framework

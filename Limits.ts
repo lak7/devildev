@@ -1,26 +1,68 @@
-// PROJECT FREE 
-export const maxNumberOfProjectsFree = 1;
-export const maxProjectSizeFree = 25000;
-export const maxNumberOfProjectChatsFree = 3; 
+// ============================================================
+// Project Limits - Free Tier
+// ============================================================
 
-// PROJECT PRO 
+/** Maximum number of projects a free-tier user can create */
+export const maxNumberOfProjectsFree = 1;
+
+/** Maximum project size in characters for free-tier users */
+export const maxProjectSizeFree = 25_000;
+
+/** Maximum number of chats per project for free-tier users */
+export const maxNumberOfProjectChatsFree = 3;
+
+// ============================================================
+// Project Limits - Pro Tier
+// ============================================================
+
+/** Maximum number of projects a pro-tier user can create */
 export const maxNumberOfProjectsPro = 15;
-export const maxProjectSizePro = 100000;
+
+/** Maximum project size in characters for pro-tier users */
+export const maxProjectSizePro = 100_000;
+
+/** Maximum number of chats per project for pro-tier users */
 export const maxNumberOfProjectChatsPro = 100;
 
-// REGENERATE ARCHITECTURE FREE
+// ============================================================
+// Architecture Regeneration Limits - Free Tier
+// ============================================================
+
+/** Maximum number of files changed allowed per regeneration for free-tier users */
 export const maxFilesChangedFree = 50;
-export const maxLinesChangedFree = 5000;
+
+/** Maximum number of lines changed allowed per regeneration for free-tier users */
+export const maxLinesChangedFree = 5_000;
+
+/** Maximum number of architecture regenerations for free-tier users */
 export const maxFreeArchitectureRegenerations = 5;
 
-// REGENERATE ARCHITECTURE PRO
+// ============================================================
+// Architecture Regeneration Limits - Pro Tier
+// ============================================================
+
+/** Maximum number of files changed allowed per regeneration for pro-tier users */
 export const maxFilesChangedPro = 300;
-export const maxLinesChangedPro = 50000;
 
-// CHAT FREE 
+/** Maximum number of lines changed allowed per regeneration for pro-tier users */
+export const maxLinesChangedPro = 50_000;
+
+// ============================================================
+// Chat Limits - Free Tier
+// ============================================================
+
+/** Maximum number of chats for free-tier users */
 export const maxFreeChats = 3;
-export const maxChatCharactersLimitFree = 20000;
 
-// CHAT PRO 
-export const maxProChats = 100; 
-export const maxChatCharactersLimitPro = 100000; 
+/** Maximum total characters across all messages in a chat for free-tier users */
+export const maxChatCharactersLimitFree = 20_000;
+
+// ============================================================
+// Chat Limits - Pro Tier
+// ============================================================
+
+/** Maximum number of chats for pro-tier users */
+export const maxProChats = 100;
+
+/** Maximum total characters across all messages in a chat for pro-tier users */
+export const maxChatCharactersLimitPro = 100_000;

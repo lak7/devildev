@@ -20,6 +20,24 @@ import { submitFeedback } from '../../../../actions/feedback';
 import { maxChatCharactersLimitFree, maxChatCharactersLimitPro, maxFreeChats, maxNumberOfProjectChatsFree, maxNumberOfProjectChatsPro } from '../../../../Limits';
 import useUserSubscription from '@/hooks/useSubscription';
 import PricingDialog from '@/components/PricingDialog';
+import {
+  POLLING_MAX_ATTEMPTS,
+  POLLING_INITIAL_PHASE_DURATION_MS,
+  POLLING_INITIAL_INTERVAL_MS,
+  POLLING_FINAL_INTERVAL_MS,
+  POSITION_SAVE_DEBOUNCE_MS,
+  FEEDBACK_SUCCESS_CLOSE_DELAY_MS,
+  COPY_FEEDBACK_RESET_DELAY_MS,
+  TEXTAREA_MAX_HEIGHT_PX,
+  PANEL_MIN_WIDTH_PERCENT,
+  PANEL_MAX_WIDTH_PERCENT,
+  MOBILE_BREAKPOINT_PX,
+  TREE_INDENT_PER_DEPTH_PX,
+  TREE_DIRECTORY_PADDING_PX,
+  TREE_FILE_PADDING_PX,
+  CHAT_TITLE_PREVIEW_LENGTH,
+  MAX_PROMPTS_PER_CHAT,
+} from '@/constants';
 
 interface ProjectChat {
   id: bigint;
@@ -174,7 +192,7 @@ const ProjectPage = () => {
         setTimeout(() => {
           setIsFeedbackOpen(false);
           setFeedbackMessage(null);
-        }, 2000);
+        }, FEEDBACK_SUCCESS_CLOSE_DELAY_MS);
       } else {
         setFeedbackMessage({
           type: 'error',
@@ -304,7 +322,7 @@ const ProjectPage = () => {
               className={`flex items-center w-full py-1 px-2 rounded text-left group transition-colors ${
                 isHighlighted ? highlightStyles.bg : 'hover:bg-gray-800/50'
               }`}
-              style={{ paddingLeft: `${depth * 16 + 8}px` }}
+              style={{ paddingLeft: `${depth * TREE_INDENT_PER_DEPTH_PX + TREE_DIRECTORY_PADDING_PX}px` }}
             >
               <ChevronRight
                 className={`h-3 w-3 mr-1 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} ${
@@ -340,7 +358,7 @@ const ProjectPage = () => {
             className={`flex items-center py-1 px-2 rounded cursor-default group transition-colors ${
               isHighlighted ? highlightStyles.bg : 'hover:bg-gray-800/50'
             }`}
-            style={{ paddingLeft: `${depth * 16 + 24}px` }}
+            style={{ paddingLeft: `${depth * TREE_INDENT_PER_DEPTH_PX + TREE_FILE_PADDING_PX}px` }}
             title={filePath}
           >
             {getFileIcon(fileName)}
@@ -447,7 +465,7 @@ const ProjectPage = () => {
       clearTimeout(debounceTimerRef.current);
     }
     
-    // Debounced save to database (only save after user stops dragging for 500ms)
+    // Debounced save to database (only save after user stops dragging)
     debounceTimerRef.current = setTimeout(async () => {
       if (projectId) {
         try {
@@ -456,16 +474,16 @@ const ProjectPage = () => {
           console.error('Failed to save positions:', error);
         }
       }
-    }, 500);
+    }, POSITION_SAVE_DEBOUNCE_MS);
   };
 
   // Function to poll for project architecture completion
   const pollForProjectArchitecture = async () => {
-    const maxAttempts = 120; // Poll for up to 10 minutes total
+    const maxAttempts = POLLING_MAX_ATTEMPTS;
     let attempts = 0;
-    const initialPhaseDuration = 4 * 60 * 1000; // 4 minutes in milliseconds
-    const initialPollInterval = 15 * 1000; // 15 seconds for first 4 minutes
-    const finalPollInterval = 5 * 1000; // 5 seconds after 4 minutes
+    const initialPhaseDuration = POLLING_INITIAL_PHASE_DURATION_MS;
+    const initialPollInterval = POLLING_INITIAL_INTERVAL_MS;
+    const finalPollInterval = POLLING_FINAL_INTERVAL_MS;
     const startTime = Date.now();
 
     const poll = async () => {
@@ -575,10 +593,10 @@ const ProjectPage = () => {
       await navigator.clipboard.writeText(prompt);
       setCopiedPrompts(prev => ({ ...prev, [messageId]: true }));
       
-      // Reset the copied state after 2 seconds
+      // Reset the copied state after delay
       setTimeout(() => {
         setCopiedPrompts(prev => ({ ...prev, [messageId]: false }));
-      }, 2000);
+      }, COPY_FEEDBACK_RESET_DELAY_MS);
     } catch (error) {
       console.error('Failed to copy prompt:', error);
     }
@@ -886,7 +904,7 @@ const ProjectPage = () => {
   // Check if mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT_PX);
     };
     
     checkMobile();
@@ -905,7 +923,7 @@ const ProjectPage = () => {
     const totalCharacters = calculateTotalCharacters(messages);
     const existingPromptCount = messages.filter(m => m.type === 'assistant' && (m as any).prompt).length;
     setIsCharacterLimitReached(totalCharacters >= MAX_CHARACTERS);
-    setIsPromptLimitReached(existingPromptCount >= 3);
+    setIsPromptLimitReached(existingPromptCount >= MAX_PROMPTS_PER_CHAT);
   }, [messages]);
 
 
@@ -918,8 +936,8 @@ const ProjectPage = () => {
         const containerWidth = containerRect.width;
         const newLeftWidth = (newX / containerWidth) * 100;
         
-        // Constrain between 25% and 75%
-        const constrainedWidth = Math.min(75, Math.max(25, newLeftWidth));
+        // Constrain between min and max panel width
+        const constrainedWidth = Math.min(PANEL_MAX_WIDTH_PERCENT, Math.max(PANEL_MIN_WIDTH_PERCENT, newLeftWidth));
         setLeftPanelWidth(constrainedWidth);
       }
     };
@@ -949,14 +967,12 @@ const ProjectPage = () => {
     const textarea = e.target;
     textarea.style.height = 'auto';
     const scrollHeight = textarea.scrollHeight;
-    const maxHeight = 180;
-    
-    if (scrollHeight <= maxHeight) {
+    if (scrollHeight <= TEXTAREA_MAX_HEIGHT_PX) {
       textarea.style.height = scrollHeight + 'px';
       setTextareaHeight(scrollHeight + 'px');
     } else {
-      textarea.style.height = maxHeight + 'px';
-      setTextareaHeight(maxHeight + 'px');
+      textarea.style.height = TEXTAREA_MAX_HEIGHT_PX + 'px';
+      setTextareaHeight(TEXTAREA_MAX_HEIGHT_PX + 'px');
     }
   };
 
@@ -994,8 +1010,8 @@ const ProjectPage = () => {
       
       // Update chat title in local state if this is the first user message
       if (saveResult.success && messages.length === 0) {
-        const title = currentInput.length > 20 
-          ? currentInput.substring(0, 20) + '...' 
+        const title = currentInput.length > CHAT_TITLE_PREVIEW_LENGTH
+          ? currentInput.substring(0, CHAT_TITLE_PREVIEW_LENGTH) + '...'
           : currentInput;
         
         setProjectChats(prevChats => 

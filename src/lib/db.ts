@@ -1,17 +1,17 @@
 import { PrismaClient } from "@prisma/client";
+import { DB_TRANSACTION_MAX_WAIT_MS, DB_TRANSACTION_TIMEOUT_MS } from "@/constants";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Increase transaction timeout from default 5000ms to 15000ms (15 seconds)
+// Increase transaction timeout from default 5000ms to prevent "Transaction already closed" errors
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
-    // Configure longer transaction timeout to prevent "Transaction already closed" errors
     transactionOptions: {
-      maxWait: 15000, // maximum time in ms to wait to acquire a transaction
-      timeout: 15000, // maximum time in ms for the transaction to finish
+      maxWait: DB_TRANSACTION_MAX_WAIT_MS,
+      timeout: DB_TRANSACTION_TIMEOUT_MS,
     },
   });
 

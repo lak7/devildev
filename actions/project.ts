@@ -6,6 +6,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { generateEasyMediumPrompt, generateNthProjectPhase, generateProjectPlanDocs, initialDocsGenerationPrompt, ultraProjectChatBotPrompt } from "../prompts/ReverseArchitecture";
+import { LATEST_ARCHITECTURES_FETCH_LIMIT, CHAT_TITLE_PREVIEW_LENGTH } from "@/constants";
 const openaiKey = process.env.OPENAI_API_KEY;
 const llm = new ChatOpenAI({
   openAIApiKey: openaiKey,
@@ -68,7 +69,7 @@ export async function getProject(projectId: string) {
                 orderBy: {
                     createdAt: 'desc', // Latest first
                 },
-                take: 5, // Only fetch latest 5
+                take: LATEST_ARCHITECTURES_FETCH_LIMIT,
             },
             detailedAnalysis: true,
             ProjectChat: {
@@ -333,8 +334,8 @@ export async function addMessageToProjectChat(projectId: string, chatId: string,
 
         // If this is a user message and it's the first message in the chat, update the title
         if (message.type === 'user' && currentMessages.length === 0) {
-            const title = message.content.length > 20 
-                ? message.content.substring(0, 20) + '...' 
+            const title = message.content.length > CHAT_TITLE_PREVIEW_LENGTH
+                ? message.content.substring(0, CHAT_TITLE_PREVIEW_LENGTH) + '...'
                 : message.content;
             updateData.title = title;
         }
@@ -663,8 +664,8 @@ export async function saveInitialMessageForInngestRevArchitecture(
         };
 
         // Title from initial message
-        const title = initialMessage.length > 20
-            ? initialMessage.substring(0, 20) + '...'
+        const title = initialMessage.length > CHAT_TITLE_PREVIEW_LENGTH
+            ? initialMessage.substring(0, CHAT_TITLE_PREVIEW_LENGTH) + '...'
             : initialMessage;
 
         const updatedProjectChat = await db.projectChat.update({
