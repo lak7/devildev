@@ -7,9 +7,7 @@
     "build": "next build",
     "start": "next start",
     "postinstall": "prisma generate",
-    "lint": "next lint",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "lint": "next lint"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.28.0",
@@ -43,6 +41,7 @@
     "dodopayments": "^2.0.1",
     "dotenv": "^17.2.3",
     "fs": "^0.0.1-security",
+    "github-language-colors": "^1.0.0",
     "gpt-tokenizer": "^3.0.1",
     "inngest": "^3.44.3",
     "jszip": "^3.10.1",
@@ -74,8 +73,6 @@
     "prisma": "^6.9.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.3",
-    "typescript": "^5",
-    "vitest": "^2.1.9",
-    "jsdom": "^24.1.0"
+    "typescript": "^5"
   }
 }

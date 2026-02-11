@@ -20,7 +20,6 @@ import { submitFeedback } from '../../../../actions/feedback';
 import { maxChatCharactersLimitFree, maxChatCharactersLimitPro, maxFreeChats, maxNumberOfProjectChatsFree, maxNumberOfProjectChatsPro } from '../../../../Limits';
 import useUserSubscription from '@/hooks/useSubscription';
 import PricingDialog from '@/components/PricingDialog';
-import { updateChatUrlWithReload } from '@/lib/projectChatUrl';
 
 interface ProjectChat {
   id: bigint;
@@ -764,7 +763,7 @@ const ProjectPage = () => {
                   }
                 }
               }
-                              // Set active chat and load its messages
+              // Set active chat and load its messages
               if (targetChatId) {
                 setActiveChatId(targetChatId);
                 const activeChat = sortedChats.find(chat => chat.id.toString() === targetChatId) || 
@@ -796,9 +795,12 @@ const ProjectPage = () => {
                 setProjectChats([newChatFormatted]);
                 setActiveChatId(newChat.id.toString());
                 setMessages([]);
-                
+                 
                 // Update URL
-                updateChatUrlWithReload(newChat.id.toString());
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('c', newChat.id.toString());
+                window.history.replaceState({}, '', newUrl.toString());
+                window.location.reload();
               }
             }
             if(isThisFirstGeneration){
