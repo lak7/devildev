@@ -2,6 +2,7 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
+import { ensureUserExists } from "@/lib/ensureUser";
 
 export async function joinWaitlist(email: string) {
   try {
@@ -224,6 +225,7 @@ export async function getCurrentUserProfile() {
     if (!userId) {
       return { error: 'Not authenticated' } as const;
     }
+    await ensureUserExists(userId);
     const user = await db.user.findUnique({
       where: { id: userId },
       select: {

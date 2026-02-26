@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { ensureUserExists } from '@/lib/ensureUser';
 
 export async function GET(request: NextRequest) {
   try {
@@ -79,8 +80,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Update user in database with GitHub information
+    // Ensure user exists in DB (creates from Clerk if missing), then update GitHub info
     try {
+      await ensureUserExists(userId);
       await db.user.update({
         where: { id: userId },
         data: {
@@ -88,7 +90,7 @@ export async function GET(request: NextRequest) {
           githubUsername: githubUser.login,
           githubEmail: primaryEmail,
           githubAvatarUrl: githubUser.avatar_url,
-          githubAccessToken: accessToken, // Note: In production, you should encrypt this
+          githubAccessToken: accessToken,
           githubConnectedAt: new Date(),
           isGithubConnected: true,
         },
