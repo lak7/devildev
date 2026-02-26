@@ -103,6 +103,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const [searchTerm, setSearchTerm] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
   const [installationId, setInstallationId] = useState<string | null>(null);
+  const [isOAuthConnected, setIsOAuthConnected] = useState(false);
   const [importing, setImporting] = useState<number | null>(null);
   const [isGithubStatusLoading, setIsGithubStatusLoading] = useState(true);
   const [userProjects, setUserProjects] = useState<UserProject[]>([]);
@@ -143,10 +144,10 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   }, []);
 
   useEffect(() => {
-    if (installationId) {
+    if (installationId || isOAuthConnected) {
       fetchRepos();
     }
-  }, [installationId]);
+  }, [installationId, isOAuthConnected]);
 
   // Debounced search effect
   useEffect(() => {
@@ -172,8 +173,11 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
         if ((result as any).projects) {
           setUserProjects((result as any).projects);
         }
-        setUserProfile((result as any).user ?? null);
-
+        const usr = (result as any).user ?? null;
+        setUserProfile(usr);
+        if (usr?.isGithubConnected) {
+          setIsOAuthConnected(true);
+        }
       } else {
         setInstallationId(null);
       }
@@ -222,7 +226,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
   const fetchRepos = async (search?: string) => {
 
     // Only fetch when the user is connected to GitHub or we have an installationId
-    if (!installationId) {
+    if (!installationId && !isOAuthConnected) {
       return;
     }
     try {
@@ -397,7 +401,7 @@ export default function ImportGitRepository({ onImport }: ImportGitRepositoryPro
     );
   }
 
-  if (!installationId) {
+  if (!installationId && !isOAuthConnected) {
     return (
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full h-full max-w-4xl">

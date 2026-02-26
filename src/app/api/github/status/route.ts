@@ -24,8 +24,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
  
+    const appFlowEnabled = process.env.GITHUB_APP_FLOW_ENABLED === 'true';
+
     return NextResponse.json({
       isConnected: user.isGithubConnected,
+      oauthDeprecated: appFlowEnabled && user.isGithubConnected,
       githubUsername: user.githubUsername,
       githubAvatarUrl: user.githubAvatarUrl,
       connectedAt: user.githubConnectedAt,
