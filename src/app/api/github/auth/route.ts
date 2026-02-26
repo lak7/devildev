@@ -45,11 +45,26 @@ export async function GET(request: NextRequest) {
         const installUrl = new URL(`https://github.com/apps/${appSlug}/installations/new`);
         installUrl.searchParams.set('state', state); // Just the state, not userId
         installUrl.searchParams.set('setup_action', 'install');
-        return NextResponse.redirect(installUrl.toString()); 
+        return NextResponse.redirect(installUrl.toString());
     }
 
-    
- 
+    // Fallback: Standard GitHub OAuth flow
+    const clientId = process.env.GITHUB_OAUTH_CLIENT_ID;
+    if (!clientId) {
+      return NextResponse.json({ error: 'GitHub OAuth not configured' }, { status: 500 });
+    }
+
+    const state = `${crypto.randomUUID()}:${userId}`;
+    const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/github/callback`;
+
+    const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
+    githubAuthUrl.searchParams.set('client_id', clientId);
+    githubAuthUrl.searchParams.set('redirect_uri', redirectUri);
+    githubAuthUrl.searchParams.set('scope', 'repo user:email');
+    githubAuthUrl.searchParams.set('state', state);
+
+    return NextResponse.redirect(githubAuthUrl.toString());
+
   } catch (error) {
     console.error('Error initiating GitHub OAuth:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
