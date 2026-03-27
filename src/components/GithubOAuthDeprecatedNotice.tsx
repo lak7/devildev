@@ -32,8 +32,9 @@ export default function GithubOAuthDeprecatedNotice() {
     try {
       const response = await fetch('/api/github/status');
       const data = await response.json();
-      setGithubOAuthConnected(data.isConnected);
-      localStorage.setItem('githubOAuthConnected', data.isConnected.toString());
+      const deprecated = data.oauthDeprecated ?? false;
+      setGithubOAuthConnected(deprecated);
+      localStorage.setItem('githubOAuthConnected', deprecated.toString());
       setIsGithubStatusLoading(false);
     } catch (error) {
       console.error('Error checking GitHub status:', error);
