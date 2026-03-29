@@ -318,17 +318,51 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
         return { error: 'Failed to fetch repository contents' };
       }
       
-      // Get package.json if exists
-      try{ 
-        if(repoContent){ 
-            
-            const packageJsonResponse = repoContent.find((item: any) => item === 'package.json');
-            
-            if(packageJsonResponse){
-                
+      // Get package.json if exists (check root first, then subdirectories)
+      try{
+        if(repoContent){
+
+            const packageJsonInRoot = repoContent.find((item: any) => item === 'package.json');
+
+            // Determine the path to package.json: root or first match in subdirectories
+            let packageJsonPath: string | null = null;
+
+            if(packageJsonInRoot){
+                packageJsonPath = 'package.json';
+            } else {
+                // Search subdirectories for package.json using the Git tree API
+                try {
+                    const treeResponse = await fetch(
+                        `https://api.github.com/repos/${repoFullName}/git/trees/${defaultBranch || 'main'}?recursive=1`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'User-Agent': 'DevilDev-App',
+                            },
+                        }
+                    );
+                    if (treeResponse.ok) {
+                        const treeData = await treeResponse.json();
+                        if (treeData.tree && Array.isArray(treeData.tree)) {
+                            // Find the shallowest package.json (prefer fewer nested levels)
+                            const packageJsonEntries = treeData.tree
+                                .filter((node: any) => node.type === 'blob' && node.path.endsWith('/package.json'))
+                                .sort((a: any, b: any) => a.path.split('/').length - b.path.split('/').length);
+                            if (packageJsonEntries.length > 0) {
+                                packageJsonPath = packageJsonEntries[0].path;
+                            }
+                        }
+                    }
+                } catch (treeError) {
+                    console.error('Error searching subdirectories for package.json:', treeError);
+                }
+            }
+
+            if(packageJsonPath){
                 const packageJsonContent = await fetch(
-                    `https://api.github.com/repos/${repoFullName}/contents/package.json`,
-                    { 
+                    `https://api.github.com/repos/${repoFullName}/contents/${packageJsonPath}`,
+                    {
                         headers: {
                           'Authorization': `Bearer ${authToken}`,
                           'Accept': 'application/vnd.github.v3+json',
@@ -336,22 +370,22 @@ export async function checkPackageAndFramework(repositoryId: string, repoFullNam
                         },
                       }
                 );
-                
+
                 if (packageJsonContent.ok) {
-                  
+
                   packageJson = await packageJsonContent.json();
-                  
+
                   // Decode the Base64 content to plain text
                   if (packageJson.content && packageJson.encoding === "base64") {
                     const decoded = Buffer.from(packageJson.content, "base64").toString("utf-8");
                     packageJson = JSON.parse(decoded); // Now it's the actual JSON object
                   }
-                  
+
                 }else{
                     return { error: 'Failed to fetch package.json' };
                 }
             }else{
-                
+
                 return { isValid: false, framework: "" };
             }
           }
